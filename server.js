@@ -1,18 +1,32 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const app = express();
 
-// Configuração de porta dinâmica para o Render e fallback local (8000)
 const PORT = process.env.PORT || 8000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
 const estacoesRegistradas = new Map();
 const comandosPendentes = new Map();
 const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
 
-// Rota de Login
+// Rota Raiz Explícita (Garante a entrega do index.html)
+app.get('/', (req, res) => {
+    const publicPath = path.join(__dirname, 'public', 'index.html');
+    const rootPath = path.join(__dirname, 'index.html');
+    
+    if (fs.existsSync(publicPath)) {
+        res.sendFile(publicPath);
+    } else if (fs.existsSync(rootPath)) {
+        res.sendFile(rootPath);
+    } else {
+        res.send('<h2>Servidor RMM Online</h2><p>Agente conectado! Ficheiro index.html não foi localizado no repositório.</p>');
+    }
+});
+
 app.post('/api/v1/login', (req, res) => {
     const { usuario, senha, tipo } = req.body;
     const cleanUser = (usuario || '').trim().toLowerCase();
@@ -27,7 +41,6 @@ app.post('/api/v1/login', (req, res) => {
     res.json({ sucesso: true, tipo, usuario: cleanUser });
 });
 
-// Recebimento de Telemetria das máquinas
 app.post('/api/v1/telemetria', (req, res) => {
     const data = req.body;
     const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
@@ -48,7 +61,6 @@ app.post('/api/v1/telemetria', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// Consulta de Métricas para o Painel Web
 app.get('/api/v1/rmm-metrics', (req, res) => {
     const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
     const estacoesAtivas = [];
@@ -62,7 +74,6 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     res.json({ meu_ip: clientIp, estacoes: estacoesAtivas });
 });
 
-// Envio de Ações Remotas
 app.post('/api/v1/executar-acao', (req, res) => {
     const { target, acao, parametros } = req.body;
     const hostKey = (target || '').toUpperCase().trim();
@@ -75,7 +86,6 @@ app.post('/api/v1/executar-acao', (req, res) => {
     res.json({ status: 'sucesso', mensagem: 'Comando enviado.' });
 });
 
-// Consulta de Pendências pelo Agente PowerShell
 app.get('/api/v1/pendencias/:hostname', (req, res) => {
     const hostKey = req.params.hostname.toUpperCase().trim();
     const tarefas = comandosPendentes.get(hostKey) || [];
