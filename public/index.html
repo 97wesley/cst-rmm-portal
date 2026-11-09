@@ -35,7 +35,6 @@
             display: flex; flex-direction: column; justify-content: space-around;
             opacity: 0.10;
         }
-
         .marquee-line {
             white-space: nowrap; font-size: 38px; font-weight: 900;
             color: var(--green-primary); letter-spacing: 8px;
@@ -71,7 +70,7 @@
         .form-group input { width: 100%; padding: 10px; background: #f0fdf4; border: 1px solid var(--border-color); color: var(--text-body); border-radius: 6px; outline: none; }
         .btn-login { width: 100%; padding: 12px; background: var(--green-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* NAVEGAÇÃO TOPO */
+        /* TOPO NAVBAR */
         .top-navbar {
             background: #ffffff; border-bottom: 2px solid #e5e7eb;
             padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;
@@ -82,8 +81,13 @@
         .breadcrumb span { color: #9ca3af; }
         .nav-actions { display: flex; align-items: center; gap: 10px; }
         .btn-add { background: var(--orange-btn); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-bi { background: var(--blue-bi); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .search-input { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 20px; outline: none; width: 180px; }
+        .btn-bi { background: var(--blue-bi); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-logout { background: #ef4444; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+        /* PISCADEIRA E RELÓGIO DE 5S */
+        .sync-pulse { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 8px; border-radius: 12px; color: #047857; font-weight: bold; }
+        .pulse-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; animation: blink 1s infinite alternate; }
+        @keyframes blink { from { opacity: 0.3; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
 
         /* VISTAS */
         .content-area { flex: 1; overflow-y: auto; padding: 16px; }
@@ -164,12 +168,12 @@
         .ramal-dot-item { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; transition: transform 0.2s; }
         .ramal-dot-item:hover { transform: scale(1.3); }
 
-        /* MODAL BI / RELATÓRIOS */
+        /* MODAL BI */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 5000; }
         .modal-card { background: #ffffff; border-radius: 12px; border: 2px solid var(--blue-bi); width: 550px; padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
         .modal-header { font-size: 16px; font-weight: bold; color: var(--blue-bi); margin-bottom: 16px; display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
         .export-options-list { display: flex; flex-direction: column; gap: 12px; }
-        .export-item-btn { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .export-item-btn { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; }
         .export-item-btn:hover { background: #eff6ff; border-color: var(--blue-bi); }
         .export-btn-title { font-size: 13px; font-weight: bold; color: #1e293b; }
         .export-btn-desc { font-size: 11px; color: #64748b; }
@@ -182,13 +186,6 @@
         .lightbox-close-btn { background: #ef4444; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; cursor: pointer; }
         .lightbox-body { display: flex; justify-content: center; align-items: center; padding: 20px; background: #0f172a; flex: 1; overflow: hidden; }
         .lightbox-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
-
-        @media print {
-            .top-navbar, .watermark-bg, .btn-back, .nav-actions, .actions-section { display: none !important; }
-            body { overflow: visible !important; background: white !important; }
-            .app-container { height: auto !important; }
-            #detail-screen, #list-screen, #inventory-screen, #telephony-screen { display: block !important; }
-        }
     </style>
 </head>
 <body>
@@ -213,28 +210,28 @@
                         <div class="export-btn-title">📄 Exportar CSV (Inventário RMM)</div>
                         <div class="export-btn-desc">Baixa arquivo .CSV formatado de todos os computadores.</div>
                     </div>
-                    <span style="font-size:18px;">📥</span>
+                    <span>📥</span>
                 </div>
                 <div class="export-item-btn" onclick="exportarCsvTelefonia()">
                     <div>
                         <div class="export-btn-title">📞 Exportar CSV (Telefonia net2phone)</div>
                         <div class="export-btn-desc">Relatório completo dos ramais, IPs, MACs e registro SIP.</div>
                     </div>
-                    <span style="font-size:18px;">📥</span>
+                    <span>📥</span>
                 </div>
                 <div class="export-item-btn" onclick="window.print()">
                     <div>
                         <div class="export-btn-title">🖨️ Imprimir / Exportar PDF Executivo</div>
-                        <div class="export-btn-desc">Gera PDF limpo da tela atual para apresentação diretoria.</div>
+                        <div class="export-btn-desc">Gera PDF limpo da tela atual para apresentação.</div>
                     </div>
-                    <span style="font-size:18px;">🖨️</span>
+                    <span>🖨️</span>
                 </div>
                 <div class="export-item-btn" onclick="copiarUrlBiFeed()">
                     <div>
                         <div class="export-btn-title">📈 Conector API Modo BI (Power BI / Grafana)</div>
-                        <div class="export-btn-desc">Copia URL JSON ao vivo para alimentar dashboards no Power BI.</div>
+                        <div class="export-btn-desc">Copia URL JSON ao vivo para alimentar dashboards.</div>
                     </div>
-                    <span style="font-size:18px;">🔗</span>
+                    <span>🔗</span>
                 </div>
             </div>
         </div>
@@ -270,14 +267,13 @@
                 <input type="password" id="input-pass" placeholder="••••••••••••" onkeypress="if(event.key==='Enter') realizarLogin()">
             </div>
             <button class="btn-login" onclick="realizarLogin()">ENTRAR NO SISTEMA</button>
-            <div class="login-error" id="login-error"></div>
         </div>
     </div>
 
     <!-- APP PRINCIPAL -->
     <div class="app-container" id="app-screen" style="display:none;">
         
-        <!-- NAVEGAÇÃO TOPO -->
+        <!-- TOPO NAVBAR -->
         <div class="top-navbar">
             <div class="breadcrumb">
                 <div class="breadcrumb-link" onclick="irParaHome()">🏠 Home</div> 
@@ -289,10 +285,11 @@
                 <div class="breadcrumb-link" onclick="irParaComputadores()">💻 Computador</div>
             </div>
             <div class="nav-actions">
+                <div class="sync-pulse"><span class="pulse-dot"></span> <span id="lbl-last-sync">Sincronizando 5s...</span></div>
                 <button class="btn-bi" id="btn-modal-bi" onclick="abrirModalBi()">📊 Exportar & BI</button>
                 <button class="btn-add" id="btn-add-ativo" onclick="adicionarAtivoManual()">+ Adicionar Ativo</button>
-                <input type="text" class="search-input" placeholder="Pesquisar ativo...">
                 <span style="font-weight:bold; color:var(--green-dark);" id="lbl-usuario-topo">Utilizador</span>
+                <button class="btn-logout" onclick="fazerLogout()" title="Sair do Portal">🚪 Sair</button>
             </div>
         </div>
 
@@ -451,8 +448,8 @@
                 <div class="tel-chart-box">
                     <div class="tel-box-header">🌐 Central net2phone <span>IP: Nuvem / AWS</span></div>
                     <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:8px; margin-top:10px;">
-                        <div>Tráfego RX: <b style="color:#38bdf8;">12.4 Mbps</b></div>
-                        <div>Tráfego TX: <b style="color:#38bdf8;">8.7 Mbps</b></div>
+                        <div>Tráfego RX: <b style="color:#38bdf8;" id="txt-rx-mbps">12.4 Mbps</b></div>
+                        <div>Tráfego TX: <b style="color:#38bdf8;" id="txt-tx-mbps">8.7 Mbps</b></div>
                         <div>Uptime PABX: <b style="color:#10b981;">15 dias contínuos</b></div>
                     </div>
                 </div>
@@ -472,7 +469,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbody-ramais">
-                            <tr><td colspan="7" style="text-align:center;">A carregar PABX net2phone...</td></tr>
+                            <tr><td colspan="7" style="text-align:center;">Carregando PABX net2phone...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -486,7 +483,7 @@
                     <div class="tel-table-container">
                         <div class="tel-box-header">⚡ Eventos Recentes de Voz</div>
                         <div style="font-size:11px; display:flex; flex-direction:column; gap:8px;" id="box-eventos-tel">
-                            <div>A carregar registo...</div>
+                            <div>Carregando registo...</div>
                         </div>
                     </div>
                 </div>
@@ -515,6 +512,19 @@
             teclado: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=1200&auto=format&fit=crop&q=80',
             headset: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=1200&auto=format&fit=crop&q=80'
         };
+
+        // AUTO-LOGIN AO PRESSIONAR F5
+        window.addEventListener('DOMContentLoaded', () => {
+            const sessao = localStorage.getItem('cst_user_session');
+            if (sessao) {
+                try {
+                    const dados = JSON.parse(sessao);
+                    usuarioLogado = dados.usuario;
+                    isUserAdmin = dados.isTI;
+                    iniciarPainelComSessao();
+                } catch(e) { localStorage.removeItem('cst_user_session'); }
+            }
+        });
 
         function initCharts() {
             const opts = { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
@@ -548,7 +558,18 @@
             usuarioLogado = user;
             isUserAdmin = EQUIPE_TI.includes(user);
 
-            document.getElementById('lbl-usuario-topo').innerText = isUserAdmin ? `${user} (TI)` : user;
+            // SALVA SESSÃO NO NAVEGADOR
+            localStorage.setItem('cst_user_session', JSON.stringify({ usuario: user, isTI: isUserAdmin }));
+            iniciarPainelComSessao();
+        }
+
+        function fazerLogout() {
+            localStorage.removeItem('cst_user_session');
+            window.location.reload();
+        }
+
+        function iniciarPainelComSessao() {
+            document.getElementById('lbl-usuario-topo').innerText = isUserAdmin ? `${usuarioLogado} (TI)` : usuarioLogado;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'flex';
             
@@ -565,13 +586,19 @@
             initCharts();
             carregarDadosAtivos();
 
-            // ATUALIZAÇÃO AUTOMÁTICA A CADA 5 SEGUNDOS (5000ms)
+            // LOOP DE 5 SEGUNDOS COM ATUALIZAÇÃO VISUAL DE PULSO
             setInterval(() => {
                 carregarDadosAtivos();
                 if (document.getElementById('telephony-screen').style.display === 'flex') {
                     carregarDadosTelefonia();
                 }
             }, 5000);
+        }
+
+        function atualizarTagSincronizacao(hora) {
+            const lbl = document.getElementById('lbl-last-sync');
+            const h = hora || new Date().toLocaleTimeString('pt-BR');
+            if (lbl) lbl.innerText = `🟢 Atualizado: ${h}`;
         }
 
         function abrirModalBi() { document.getElementById('export-bi-modal').style.display = 'flex'; }
@@ -586,7 +613,7 @@
         function copiarUrlBiFeed() {
             const urlBi = `${window.location.origin}/api/v1/export/bi-json`;
             navigator.clipboard.writeText(urlBi);
-            alert(`URL de feed do Power BI copiada para a área de transferência!\n\nURL: ${urlBi}`);
+            alert(`URL de feed do Power BI copiada:\n\n${urlBi}`);
         }
 
         function abrirLightbox(src, titulo) {
@@ -617,7 +644,7 @@
         function irParaComputadores() { irParaHome(); }
 
         function irParaInventarioAtivos() {
-            if (!isUserAdmin) return alert('Acesso restrito à equipa de TI.');
+            if (!isUserAdmin) return alert('Acesso restrito à equipe de TI.');
             document.getElementById('list-screen').style.display = 'none';
             document.getElementById('detail-screen').style.display = 'none';
             document.getElementById('telephony-screen').style.display = 'none';
@@ -626,7 +653,7 @@
         }
 
         function irParaTelefoniaIP() {
-            if (!isUserAdmin) return alert('Acesso restrito à equipa de TI.');
+            if (!isUserAdmin) return alert('Acesso restrito à equipe de TI.');
             document.getElementById('list-screen').style.display = 'none';
             document.getElementById('detail-screen').style.display = 'none';
             document.getElementById('inventory-screen').style.display = 'none';
@@ -644,6 +671,12 @@
                 document.getElementById('tel-ramais-offline').innerText = data.ramaisOffline;
                 document.getElementById('tel-sem-sip').innerText = data.semRegistroSip;
                 document.getElementById('tel-disp-geral').innerText = `${data.disponibilidadeGeral}%`;
+                
+                // Oscilação em tempo real de RX/TX no painel
+                if (data.trafegoRxMbps) document.getElementById('txt-rx-mbps').innerText = `${data.trafegoRxMbps} Mbps`;
+                if (data.trafegoTxMbps) document.getElementById('txt-tx-mbps').innerText = `${data.trafegoTxMbps} Mbps`;
+
+                atualizarTagSincronizacao(data.horaAtualizacao);
 
                 const tbody = document.getElementById('tbody-ramais');
                 tbody.innerHTML = '';
@@ -657,7 +690,7 @@
                         <td style="font-family:monospace; color:#94a3b8;">${r.mac}</td>
                         <td><span class="status-dot ${dot}"></span>${r.status}</td>
                         <td>${r.sip}</td>
-                        <td>${r.latencia > 0 ? r.latencia + ' ms' : '-'}</td>
+                        <td style="color:#38bdf8; font-weight:bold;">${r.latencia > 0 ? r.latencia + ' ms' : '-'}</td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -688,6 +721,8 @@
                 const data = await res.json();
                 estacoesCache = data.estacoes || [];
                 
+                if (data.hora_servidor) atualizarTagSincronizacao(data.hora_servidor);
+
                 const tbody = document.getElementById('tabela-ativos');
                 tbody.innerHTML = '';
 
