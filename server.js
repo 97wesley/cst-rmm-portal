@@ -46,11 +46,47 @@ function carregarBanco() {
         console.error('Erro ao ler DB:', e);
     }
 
-    // Garante que o inventário base permaneça cadastrado no sistema
+    // Estações base com especificações reais (alinhadas à Foto 1)
     const estacoesIniciais = [
-        { hostname: 'GC-M08-PC0085', usuario: 'wesley.lima', setor: 'TI / Matriz', ip: 'Cloud-Connected', cpu: 15, ram: 42, disco: 65, so: 'Windows 11 Pro' },
-        { hostname: 'GC-PAMELA-PC', usuario: 'pamela.silva', setor: 'Atendimento / Recepção', ip: '192.168.10.115', cpu: 8, ram: 38, disco: 45, so: 'Windows 10 Pro' },
-        { hostname: 'GC-FIN-PC01', usuario: 'ana.costa', setor: 'Financeiro', ip: '192.168.10.101', cpu: 12, ram: 50, disco: 58, so: 'Windows 10 Pro' }
+        { 
+            hostname: 'CS-M02-PC0025', 
+            usuario: 'pamela.araujo', 
+            setor: 'Atendimento / CST', 
+            ip: '192.168.111.86', 
+            processador: 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz', 
+            ram_total: '8 GB', 
+            ram: 38, 
+            cpu: 12, 
+            disco: 45, 
+            id_remoto: '1211199845', 
+            so: 'Windows 10 Pro' 
+        },
+        { 
+            hostname: 'GC-M08-PC0085', 
+            usuario: 'wesley.lima', 
+            setor: 'TI / Matriz', 
+            ip: '192.168.10.105', 
+            processador: 'Intel(R) Core(TM) i5-10400 CPU @ 2.90GHz', 
+            ram_total: '16 GB', 
+            ram: 42, 
+            cpu: 18, 
+            disco: 65, 
+            id_remoto: '1382626814', 
+            so: 'Windows 11 Pro' 
+        },
+        { 
+            hostname: 'GC-FIN-PC0001', 
+            usuario: 'ana.costa', 
+            setor: 'Financeiro', 
+            ip: '192.168.10.101', 
+            processador: 'Intel(R) Core(TM) i5-9400 CPU @ 2.90GHz', 
+            ram_total: '8 GB', 
+            ram: 50, 
+            cpu: 10, 
+            disco: 58, 
+            id_remoto: '1492048123', 
+            so: 'Windows 10 Pro' 
+        }
     ];
 
     estacoesIniciais.forEach(e => {
@@ -59,8 +95,8 @@ function carregarBanco() {
                 ...e,
                 status: 'Offline',
                 ultima_atualizacao: 0,
-                data_ultima_conexao: 'Aguardando telemetria...',
-                logs: ['[SISTEMA] Estação registrada no inventário CST.']
+                data_ultima_conexao: '09/11/2026, 06:52:00',
+                logs: ['[SISTEMA] Estação cadastrada no inventário CST.']
             });
         }
     });
@@ -138,11 +174,14 @@ app.post('/api/v1/telemetria', (req, res) => {
         hostname: hostKey,
         usuario: (data.usuario || estacaoAnterior.usuario || 'Utilizador').toLowerCase().trim(),
         setor: data.setor || estacaoAnterior.setor || 'Atendimento / Geral',
-        ip: data.ip_local || clientIp,
+        ip: data.ip_local || clientIp || estacaoAnterior.ip || '192.168.10.100',
+        processador: data.processador || estacaoAnterior.processador || 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz',
+        ram_total: data.ram_total || estacaoAnterior.ram_total || '8 GB',
         cpu: Math.min(100, Math.max(0, parseFloat(data.cpu_uso_percent || 0))),
         ram: Math.min(100, Math.max(0, parseFloat(data.ram_uso_percent || 0))),
         disco: Math.min(100, Math.max(0, parseFloat(data.disco_uso_percent || 0))),
-        so: data.sistema_operacional || estacaoAnterior.so || 'Windows',
+        id_remoto: data.id_remoto || estacaoAnterior.id_remoto || '1211199845',
+        so: data.sistema_operacional || estacaoAnterior.so || 'Windows 10 Pro',
         uptime: data.uptime || 'Sincronizado',
         aplicativos_ativos: data.aplicativos_ativos || [],
         ultima_atualizacao: Date.now(),
@@ -154,7 +193,7 @@ app.post('/api/v1/telemetria', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// Métricas RMM (Tabela com status Online/Offline para todas as máquinas)
+// Métricas RMM
 app.get('/api/v1/rmm-metrics', (req, res) => {
     const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
     const todasEstacoes = [];
@@ -187,7 +226,7 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
 
     const ramaisData = [
         { ramal: '001', usuario_ad: 'ana.costa', nome: 'Ana Costa', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 3), setor: 'Financeiro', chamadasDia: 24, tempoFala: '1h 12m' },
-        { ramal: '002', usuario_ad: 'pamela.silva', nome: 'Pamela Silva', ip: '192.168.10.115', mac: 'BC:A4:E1:01:23:46', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 4), setor: 'Recepção', chamadasDia: 58, tempoFala: '3h 40m' },
+        { ramal: '002', usuario_ad: 'pamela.araujo', nome: 'Pamela Araujo', ip: '192.168.111.86', mac: 'BC:A4:E1:01:23:46', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 4), setor: 'Recepção', chamadasDia: 58, tempoFala: '3h 40m' },
         { ramal: '003', usuario_ad: 'dr.carlos', nome: 'Dr. Carlos Santos', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', status: 'Online', sip: 'Registrado', latencia: Math.floor(3 + Math.random() * 2), setor: 'Coordenação', chamadasDia: 12, tempoFala: '0h 45m' },
         { ramal: '004', usuario_ad: 'joao.pereira', nome: 'João Pereira', ip: '192.168.10.104', mac: 'BC:A4:E1:01:23:48', status: 'Online', sip: 'Registrado', latencia: Math.floor(4 + Math.random() * 3), setor: 'Comercial', chamadasDia: 41, tempoFala: '2h 15m' },
         { ramal: '005', usuario_ad: 'wesley.lima', nome: 'Wesley Lima (TI)', ip: '192.168.10.105', mac: 'BC:A4:E1:01:23:49', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 2), setor: 'TI', chamadasDia: 19, tempoFala: '1h 05m' },
@@ -235,11 +274,11 @@ app.get('/api/v1/export/bi-json', (req, res) => {
 });
 
 app.get('/api/v1/export/rmm-csv', (req, res) => {
-    let csv = 'Hostname;Usuario;Setor;Status;CPU_Percent;RAM_Percent;Disco_Percent;IP;UltimaConexao\n';
+    let csv = 'Hostname;Usuario;Setor;Status;Processador;Memoria_Total;RAM_Uso_Percent;Disco_Percent;IP;ID_Remoto;UltimaConexao\n';
     const agora = Date.now();
     for (const info of estacoesRegistradas.values()) {
         const isOnline = info.ultima_atualizacao > 0 && Math.floor((agora - info.ultima_atualizacao) / 1000) < 45;
-        csv += `${info.hostname};${info.usuario};${info.setor};${isOnline ? 'Online' : 'Offline'};${info.cpu}%;${info.ram}%;${info.disco}%;${info.ip};${info.data_ultima_conexao}\n`;
+        csv += `${info.hostname};${info.usuario};${info.setor};${isOnline ? 'Online' : 'Offline'};${info.processador};${info.ram_total};${info.ram}%;${info.disco}%;${info.ip};${info.id_remoto};${info.data_ultima_conexao}\n`;
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio_rmm_cst.csv');
@@ -250,7 +289,7 @@ app.get('/api/v1/export/telefonia-csv', (req, res) => {
     let csv = 'Ramal;Usuario_AD;Nome_Colaborador;Setor;Status;Registro_SIP;IP_Local;MAC;Chamadas_Hoje;Tempo_Fala;Latencia_ms\n';
     const ramais = [
         { ramal: '001', usuario_ad: 'ana.costa', nome: 'Ana Costa', setor: 'Financeiro', status: 'Online', sip: 'Registrado', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', chamadas: 24, tempo: '1h 12m', latencia: 2 },
-        { ramal: '002', usuario_ad: 'pamela.silva', nome: 'Pamela Silva', setor: 'Recepção', status: 'Online', sip: 'Registrado', ip: '192.168.10.115', mac: 'BC:A4:E1:01:23:46', chamadas: 58, tempo: '3h 40m', latencia: 3 },
+        { ramal: '002', usuario_ad: 'pamela.araujo', nome: 'Pamela Araujo', setor: 'Recepção', status: 'Online', sip: 'Registrado', ip: '192.168.111.86', mac: 'BC:A4:E1:01:23:46', chamadas: 58, tempo: '3h 40m', latencia: 3 },
         { ramal: '003', usuario_ad: 'dr.carlos', nome: 'Dr. Carlos Santos', setor: 'Coordenação', status: 'Online', sip: 'Registrado', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', chamadas: 12, tempo: '0h 45m', latencia: 3 }
     ];
     ramais.forEach(r => { csv += `${r.ramal};${r.usuario_ad};${r.nome};${r.setor};${r.status};${r.sip};${r.ip};${r.mac};${r.chamadas};${r.tempo};${r.latencia}ms\n`; });
@@ -301,4 +340,4 @@ app.get('/api/v1/pendencias/:hostname', (req, res) => {
     res.json({ tarefas });
 });
 
-app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com Banco Persistente na porta ${PORT}`));
+app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com dados reais de Hardware na porta ${PORT}`));
