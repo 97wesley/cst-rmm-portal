@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CST - Medicina do Trabalho | Portal RMM</title>
+    <title>CST - Medicina do Trabalho | Portal RMM TI</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -14,7 +14,8 @@
             --text-muted: #94a3b8; 
             --accent-blue: #0284c7; 
             --accent-green: #10b981; 
-            --accent-red: #ef4444; 
+            --accent-red: #ef4444;
+            --status-offline: #64748b;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; }
@@ -57,36 +58,54 @@
         .btn-reparar:hover { background: var(--accent-blue); }
 
         .panel { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; }
-        .panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-card); padding-bottom: 8px; margin-bottom: 12px; }
+        .panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-card); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { text-align: left; padding: 8px; color: var(--text-muted); border-bottom: 1px solid var(--border-card); font-size: 11px; }
-        td { padding: 10px 8px; border-bottom: 1px solid #2d3d54; }
+        th { text-align: left; padding: 10px; color: var(--text-muted); border-bottom: 1px solid var(--border-card); font-size: 11px; text-transform: uppercase; }
+        td { padding: 10px; border-bottom: 1px solid #2d3d54; }
+        tr.host-row { cursor: pointer; transition: background 0.2s; }
+        tr.host-row:hover { background: #26354a; }
 
+        .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .badge-online { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+        .badge-offline { background: rgba(100, 116, 139, 0.2); color: var(--status-offline); border: 1px solid var(--status-offline); }
+        .setor-tag { background: #0f172a; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; font-size: 11px; }
+
+        /* Modal Interativo 3D */
         .interactive-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.85); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
-        .interactive-box { background: var(--bg-card); border: 1px solid var(--border-card); width: 340px; border-radius: 16px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
-        .interactive-icon { font-size: 65px; margin-bottom: 16px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4)); }
-        .spin { animation: spinGear 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; display: inline-block; transform-origin: center; }
-        @keyframes spinGear { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
-        .pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-        .interactive-title { font-size: 17px; font-weight: bold; color: #fff; margin-bottom: 8px; }
-        .interactive-message { font-size: 12px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
-        .interactive-btn { background: var(--accent-blue); color: white; border: none; padding: 10px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; display: none; }
-        .interactive-btn:hover { background: #026aa7; }
-        .interactive-btn.btn-error { background: var(--accent-red); }
+        .interactive-box { background: var(--bg-card); border: 1px solid var(--border-card); width: 460px; border-radius: 16px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; }
+        .interactive-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); padding-bottom: 10px; }
+        .interactive-title { font-size: 16px; font-weight: bold; color: #fff; }
+        .interactive-btn-close { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+        .detail-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px dashed #2d3d54; }
+        .logs-box { background: #0f172a; border: 1px solid var(--border-card); border-radius: 6px; padding: 10px; max-height: 140px; overflow-y: auto; font-family: monospace; font-size: 11px; color: var(--text-muted); }
     </style>
 </head>
 <body>
 
-    <div class="interactive-overlay" id="interactive-modal">
+    <!-- MODAL DE DETALHES DO COMPUTADOR -->
+    <div class="interactive-overlay" id="modal-host-details">
         <div class="interactive-box">
-            <div class="interactive-icon" id="interactive-icon">⚙️</div>
-            <div class="interactive-title" id="interactive-title">A Processar...</div>
-            <div class="interactive-message" id="interactive-message">Aguarde um momento.</div>
-            <button class="interactive-btn" id="interactive-btn" onclick="fecharInteractiveModal()">OK</button>
+            <div class="interactive-header">
+                <div class="interactive-title" id="md-hostname">💻 HOSTNAME</div>
+                <button class="interactive-btn-close" onclick="fecharModalHost()">✕</button>
+            </div>
+            <div>
+                <div class="detail-row"><span>Status:</span><strong id="md-status">---</strong></div>
+                <div class="detail-row"><span>Usuário Logado:</span><span id="md-usuario">---</span></div>
+                <div class="detail-row"><span>Setor / Área:</span><span><input type="text" id="md-setor-input" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;" /> <button onclick="salvarSetor()" style="background:var(--accent-blue); color:#fff; border:none; padding:2px 6px; border-radius:4px; cursor:pointer;">Salvar</button></span></div>
+                <div class="detail-row"><span>IP Local:</span><span id="md-ip">---</span></div>
+                <div class="detail-row"><span>Sistema Operacional:</span><span id="md-so">---</span></div>
+                <div class="detail-row"><span>Última Sincronização:</span><span id="md-ultima-conexao">---</span></div>
+                <div class="detail-row"><span>Consumo de Hardware:</span><span id="md-hardware">---</span></div>
+            </div>
+            <div style="font-size:11px; font-weight:bold; color:var(--text-muted); margin-top:6px;">📋 Histórico de Logs & Auditoria:</div>
+            <div class="logs-box" id="md-logs-list">Carregando logs...</div>
+            <button class="btn-reparar" onclick="fecharModalHost()" style="margin-top:8px;">FECHAR</button>
         </div>
     </div>
 
+    <!-- TELA DE LOGIN -->
     <div id="login-screen">
         <div class="login-card">
             <div class="login-title">CST - Medicina do Trabalho<span>PORTAL DE SUPORTE E RMM TI</span></div>
@@ -95,8 +114,8 @@
                 <div class="tipo-btn" id="btn-tipo-admin" onclick="mudarTipo('admin')">Administrador (TI)</div>
             </div>
             <div class="form-group">
-                <label id="label-user">Utilizador Active Directory (ex: edenilza.paixao)</label>
-                <input type="text" id="input-user" placeholder="Digite seu login...">
+                <label>Utilizador Active Directory (ex: wesley.lima)</label>
+                <input type="text" id="input-user" placeholder="Digite o seu login...">
             </div>
             <div class="form-group">
                 <label>Senha do Windows / AD</label>
@@ -107,6 +126,7 @@
         </div>
     </div>
 
+    <!-- TELA PRINCIPAL DO PAINEL -->
     <div id="app-screen">
         <div class="header">
             <div class="brand">CST - Medicina do Trabalho <span id="painel-tipo-label">PORTAL DO FUNCIONÁRIO</span></div>
@@ -118,7 +138,7 @@
 
         <div class="content">
             <div class="panel" id="secao-graficos-topo">
-                <div class="panel-title">📊 Monitoramento em Tempo Real da sua Estação</div>
+                <div class="panel-title">📊 Monitoramento de Consumo da Sua Estação</div>
                 <div class="topo-metrics-grid">
                     <div class="metric-card"><div class="metric-title">Uso de CPU</div><div class="chart-container"><canvas id="chartCpuTopo"></canvas></div></div>
                     <div class="metric-card"><div class="metric-title">Uso de Memória RAM</div><div class="chart-container"><canvas id="chartRamTopo"></canvas></div></div>
@@ -157,11 +177,25 @@
             </div>
 
             <div class="panel">
-                <div class="panel-title" id="titulo-tabela">Dispositivos Conectados na Rede</div>
+                <div class="panel-title">
+                    <span>💻 Frota de Computadores CST (Clique no Host para abrir Detalhes)</span>
+                    <span style="font-size:10px; color:var(--text-muted);">Atualizado a cada 10s</span>
+                </div>
                 <table>
-                    <thead><tr><th>ESTAÇÃO</th><th>USUÁRIO LOGADO</th><th>IP LOCAL</th><th>CPU</th><th>RAM</th><th>DISCO C:</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>ESTAÇÃO</th>
+                            <th>SETOR</th>
+                            <th>USUÁRIO LOGADO</th>
+                            <th>STATUS</th>
+                            <th>IP LOCAL</th>
+                            <th>CPU</th>
+                            <th>RAM</th>
+                            <th>DISCO C:</th>
+                        </tr>
+                    </thead>
                     <tbody id="tabela-estacoes">
-                        <tr><td colspan="6" style="text-align:center; color:var(--text-muted)">Aguardando inicialização do Plugin CST Assist...</td></tr>
+                        <tr><td colspan="8" style="text-align:center; color:var(--text-muted)">A carregar estações...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -172,6 +206,9 @@
         let tipoLogin = 'usuario';
         let usuarioAtual = '';
         let meuHostname = '';
+        let isAdmin = false;
+        let hostSelecionadoModal = '';
+        let estacoesCache = [];
         let chartCpu, chartRam, chartDisco;
 
         const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
@@ -196,100 +233,138 @@
             errorDiv.innerText = '';
             
             if (!usuario || !senha) return errorDiv.innerText = 'Preencha o utilizador e a senha.';
-            if (tipoLogin === 'admin' && !EQUIPE_TI.includes(usuario)) return errorDiv.innerText = 'Acesso negado. Apenas TI.';
+            
+            isAdmin = EQUIPE_TI.includes(usuario);
+            if (tipoLogin === 'admin' && !isAdmin) return errorDiv.innerText = 'Acesso restrito à equipe de TI.';
 
             usuarioAtual = usuario;
             document.getElementById('lbl-usuario-logado').innerText = usuarioAtual;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'flex';
-            document.getElementById('painel-tipo-label').innerText = tipoLogin === 'admin' ? 'PAINEL ADMINISTRATIVO' : 'PORTAL DO FUNCIONÁRIO';
+            document.getElementById('painel-tipo-label').innerText = isAdmin ? 'PAINEL ADMINISTRATIVO (TI)' : 'PORTAL DO FUNCIONÁRIO';
+            
             initCharts();
-            iniciarMonitoramento();
+            carregarDadosRMM();
+            setInterval(carregarDadosRMM, 10000); // Polling exatamente a cada 10 segundos
         }
 
         function fazerLogout() { location.reload(); }
 
-        function mostrarAnimacao(tipo, titulo, mensagem) {
-            const modal = document.getElementById('interactive-modal');
-            const icon = document.getElementById('interactive-icon');
-            const btn = document.getElementById('interactive-btn');
-            modal.style.display = 'flex';
-            document.getElementById('interactive-title').innerText = titulo;
-            document.getElementById('interactive-message').innerText = mensagem;
-            btn.style.display = 'none';
-            btn.className = 'interactive-btn';
+        async function carregarDadosRMM() {
+            try {
+                const res = await fetch('/api/v1/rmm-metrics');
+                const data = await res.json();
+                estacoesCache = data.estacoes || [];
+                const tbody = document.getElementById('tabela-estacoes');
+                tbody.innerHTML = '';
 
-            if (tipo === 'loading') { icon.innerHTML = '⚙️'; icon.className = 'interactive-icon spin'; } 
-            else if (tipo === 'success') { icon.innerHTML = '✅'; icon.className = 'interactive-icon pop'; btn.style.display = 'block'; } 
-            else if (tipo === 'error') { icon.innerHTML = '❌'; icon.className = 'interactive-icon pop'; btn.classList.add('btn-error'); btn.style.display = 'block'; btn.innerText = 'FECHAR'; }
+                let estacoesExibicao = estacoesCache;
+                if (!isAdmin) {
+                    const minhaMaq = estacoesCache.find(e => e.usuario === usuarioAtual || e.ip === data.meu_ip);
+                    estacoesExibicao = minhaMaq ? [minhaMaq] : [];
+                }
+
+                if (estacoesExibicao.length > 0) {
+                    estacoesExibicao.forEach(e => {
+                        if (!meuHostname && (e.usuario === usuarioAtual || isAdmin)) meuHostname = e.hostname;
+
+                        if (e.hostname === meuHostname && chartCpu) {
+                            chartCpu.data.datasets[0].data = [e.cpu, 100 - e.cpu]; chartCpu.update();
+                            chartRam.data.datasets[0].data = [e.ram, 100 - e.ram]; chartRam.update();
+                            chartDisco.data.datasets[0].data = [e.disco, 100 - e.disco]; chartDisco.update();
+                        }
+
+                        const statusBadge = e.status === 'Online' 
+                            ? `<span class="badge-status badge-online">● Online</span>` 
+                            : `<span class="badge-status badge-offline">○ Offline (${e.visto_ha})</span>`;
+
+                        const tr = document.createElement('tr');
+                        tr.className = 'host-row';
+                        tr.onclick = () => abrirModalHost(e.hostname);
+                        tr.innerHTML = `
+                            <td style="font-weight:bold; color:var(--accent-blue)">💻 ${e.hostname}</td>
+                            <td><span class="setor-tag">${e.setor || 'Geral'}</span></td>
+                            <td style="color:var(--accent-green)">👤 ${e.usuario}</td>
+                            <td>${statusBadge}</td>
+                            <td>${e.ip}</td>
+                            <td>${e.cpu}%</td>
+                            <td>${e.ram}%</td>
+                            <td>${e.disco}%</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted)">Nenhum computador registrado até o momento.</td></tr>`;
+                }
+            } catch (err) {}
         }
-        function fecharInteractiveModal() { document.getElementById('interactive-modal').style.display = 'none'; }
+
+        function abrirModalHost(hostname) {
+            hostSelecionadoModal = hostname;
+            const est = estacoesCache.find(e => e.hostname === hostname);
+            if (!est) return;
+
+            document.getElementById('md-hostname').innerText = `💻 ${est.hostname}`;
+            document.getElementById('md-status').innerText = est.status;
+            document.getElementById('md-usuario').innerText = est.usuario;
+            document.getElementById('md-setor-input').value = est.setor || 'Geral';
+            document.getElementById('md-ip').innerText = est.ip;
+            document.getElementById('md-so').innerText = est.so;
+            document.getElementById('md-ultima-conexao').innerText = est.data_ultima_conexao || est.visto_ha;
+            document.getElementById('md-hardware').innerText = `CPU: ${est.cpu}% | RAM: ${est.ram}% | Disco: ${est.disco}%`;
+            
+            const logsBox = document.getElementById('md-logs-list');
+            logsBox.innerHTML = (est.logs && est.logs.length > 0) 
+                ? est.logs.map(l => `<div>${l}</div>`).join('') 
+                : '<div>Sem registros de auditoria.</div>';
+
+            document.getElementById('modal-host-details').style.display = 'flex';
+        }
+
+        function fecharModalHost() {
+            document.getElementById('modal-host-details').style.display = 'none';
+        }
+
+        async function salvarSetor() {
+            const novoSetor = document.getElementById('md-setor-input').value.trim();
+            if (!hostSelecionadoModal || !novoSetor) return;
+            try {
+                await fetch('/api/v1/definir-setor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hostname: hostSelecionadoModal, setor: novoSetor })
+                });
+                carregarDadosRMM();
+                alert(`Setor da máquina ${hostSelecionadoModal} atualizado para '${novoSetor}'!`);
+            } catch (e) { alert('Falha ao atualizar setor.'); }
+        }
 
         async function executarReparo(acao) {
-            const nomes = { 'limpar_cache': 'Limpeza de Cache', 'destravar_impressora': 'Reiniciar Spooler', 'otimizar_rede': 'Otimização de Rede', 'atualizar_gpo': 'Atualização de Políticas', 'otimizar_disco': 'Otimização de Disco' };
-            if (!meuHostname) return mostrarAnimacao('error', 'Plugin Ausente', 'O CST Assist não foi detetado nesta máquina.');
-            mostrarAnimacao('loading', `A executar ${nomes[acao] || acao}...`, `Comunicando com a máquina ${meuHostname}...`);
+            const target = isAdmin && hostSelecionadoModal ? hostSelecionadoModal : meuHostname;
+            if (!target) return alert('Selecione uma máquina válida.');
             try {
-                await fetch('/api/v1/executar-acao', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ target: meuHostname, acao }) 
+                await fetch('/api/v1/executar-acao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, acao })
                 });
-                setTimeout(() => mostrarAnimacao('success', 'Operação Concluída!', `A tarefa foi enviada e será aplicada no Windows.`), 1800);
-            } catch (err) { mostrarAnimacao('error', 'Falha na Comunicação', 'Erro ao processar o pedido.'); }
+                alert(`Comando '${acao}' enviado com sucesso para ${target}!`);
+            } catch (err) { alert('Erro ao disparar comando.'); }
         }
 
         async function criarPastaDesktop() {
-            if (!meuHostname) return mostrarAnimacao('error', 'Plugin Ausente', 'O CST Assist não foi detetado nesta máquina.');
+            const target = isAdmin && hostSelecionadoModal ? hostSelecionadoModal : meuHostname;
             const nomeBruto = prompt("Nome da pasta:", "Relatorios_CST");
             if (!nomeBruto) return;
             const nome = nomeBruto.replace(/[^a-zA-Z0-9_-]/g, '');
-            mostrarAnimacao('loading', `A criar '${nome}'...`, `A sincronizar com a Área de Trabalho.`);
             try {
-                await fetch('/api/v1/executar-acao', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ target: meuHostname, acao: 'criar_pasta', parametros: { nome } }) 
+                await fetch('/api/v1/executar-acao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, acao: 'criar_pasta', parametros: { nome } })
                 });
-                setTimeout(() => mostrarAnimacao('success', 'Pasta Criada!', `Verifique a sua Área de Trabalho.`), 1500);
-            } catch (err) { mostrarAnimacao('error', 'Erro', 'Falha ao criar pasta.'); }
-        }
-
-        async function iniciarMonitoramento() {
-            setInterval(async () => {
-                try {
-                    const res = await fetch('/api/v1/rmm-metrics');
-                    const data = await res.json();
-                    const tbody = document.getElementById('tabela-estacoes');
-                    tbody.innerHTML = '';
-                    
-                    const meuIpNavegador = data.meu_ip;
-                    let estacoes = data.estacoes || [];
-                    let minhaMaquina = estacoes.find(e => e.ip === meuIpNavegador || e.usuario === usuarioAtual);
-
-                    if (tipoLogin === 'usuario') {
-                        if (minhaMaquina) estacoes = [minhaMaquina];
-                        else estacoes = [];
-                    }
-
-                    if (estacoes.length > 0) {
-                        estacoes.forEach(e => {
-                            if (!meuHostname && (e === minhaMaquina || tipoLogin === 'admin')) meuHostname = e.hostname;
-                            
-                            if (e.hostname === meuHostname && chartCpu) {
-                                chartCpu.data.datasets[0].data = [e.cpu, 100 - e.cpu]; chartCpu.update();
-                                chartRam.data.datasets[0].data = [e.ram, 100 - e.ram]; chartRam.update();
-                                chartDisco.data.datasets[0].data = [e.disco, 100 - e.disco]; chartDisco.update();
-                            }
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `<td style="font-weight:bold; color:var(--accent-blue)">💻 ${e.hostname}</td><td style="color:var(--accent-green)">👤 ${e.usuario}</td><td>${e.ip}</td><td>${e.cpu}%</td><td>${e.ram}%</td><td>${e.disco}% usado</td>`;
-                            tbody.appendChild(tr);
-                        });
-                    } else {
-                        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted)">Aguardando inicialização do Plugin CST Assist...</td></tr>`;
-                    }
-                } catch (err) {}
-            }, 3000);
+                alert(`Pedido de criação de pasta enviado para ${target}!`);
+            } catch (err) { alert('Erro ao disparar comando.'); }
         }
     </script>
 </body>
