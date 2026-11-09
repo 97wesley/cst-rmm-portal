@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 8000;
 const AGENT_SECRET_TOKEN = 'CST_SECRET_AGENT_TOKEN_2026';
 const ADMIN_SECRET_TOKEN = 'CST_ADMIN_TOKEN_97WESLEY';
 const TIMEZONE_BR = 'America/Sao_Paulo';
+const DB_FILE = path.join(__dirname, 'estacoes_db.json');
 
 app.use(express.json({ limit: '100kb' }));
 app.use((req, res, next) => {
@@ -32,6 +33,52 @@ const ACOES_PERMITIDAS = [
     'atualizar_gpo',
     'otimizar_disco'
 ];
+
+// Carregar e salvar banco em arquivo local para evitar perdas em restarts
+function carregarBanco() {
+    try {
+        if (fs.existsSync(DB_FILE)) {
+            const data = fs.readFileSync(DB_FILE, 'utf8');
+            const parsed = JSON.parse(data);
+            Object.keys(parsed).forEach(k => estacoesRegistradas.set(k, parsed[k]));
+        }
+    } catch (e) {
+        console.error('Erro ao ler DB:', e);
+    }
+
+    // Garante que o inventário base permaneça cadastrado no sistema
+    const estacoesIniciais = [
+        { hostname: 'GC-M08-PC0085', usuario: 'wesley.lima', setor: 'TI / Matriz', ip: 'Cloud-Connected', cpu: 15, ram: 42, disco: 65, so: 'Windows 11 Pro' },
+        { hostname: 'GC-PAMELA-PC', usuario: 'pamela.silva', setor: 'Atendimento / Recepção', ip: '192.168.10.115', cpu: 8, ram: 38, disco: 45, so: 'Windows 10 Pro' },
+        { hostname: 'GC-FIN-PC01', usuario: 'ana.costa', setor: 'Financeiro', ip: '192.168.10.101', cpu: 12, ram: 50, disco: 58, so: 'Windows 10 Pro' }
+    ];
+
+    estacoesIniciais.forEach(e => {
+        if (!estacoesRegistradas.has(e.hostname)) {
+            estacoesRegistradas.set(e.hostname, {
+                ...e,
+                status: 'Offline',
+                ultima_atualizacao: 0,
+                data_ultima_conexao: 'Aguardando telemetria...',
+                logs: ['[SISTEMA] Estação registrada no inventário CST.']
+            });
+        }
+    });
+}
+
+function salvarBanco() {
+    try {
+        const obj = {};
+        for (const [k, v] of estacoesRegistradas.entries()) {
+            obj[k] = v;
+        }
+        fs.writeFileSync(DB_FILE, JSON.stringify(obj, null, 2), 'utf8');
+    } catch (e) {
+        console.error('Erro ao salvar DB:', e);
+    }
+}
+
+carregarBanco();
 
 app.get('/', (req, res) => {
     const publicPath = path.join(__dirname, 'public', 'index.html');
@@ -64,7 +111,7 @@ app.post('/api/v1/login', (req, res) => {
     });
 });
 
-// Recebimento de Telemetria
+// Recebimento de Telemetria do Agente PowerShell
 app.post('/api/v1/telemetria', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -89,37 +136,38 @@ app.post('/api/v1/telemetria', (req, res) => {
 
     estacoesRegistradas.set(hostKey, {
         hostname: hostKey,
-        usuario: (data.usuario || 'Utilizador').toLowerCase().trim(),
+        usuario: (data.usuario || estacaoAnterior.usuario || 'Utilizador').toLowerCase().trim(),
         setor: data.setor || estacaoAnterior.setor || 'Atendimento / Geral',
         ip: data.ip_local || clientIp,
         cpu: Math.min(100, Math.max(0, parseFloat(data.cpu_uso_percent || 0))),
         ram: Math.min(100, Math.max(0, parseFloat(data.ram_uso_percent || 0))),
         disco: Math.min(100, Math.max(0, parseFloat(data.disco_uso_percent || 0))),
-        so: data.sistema_operacional || 'Windows',
+        so: data.sistema_operacional || estacaoAnterior.so || 'Windows',
         uptime: data.uptime || 'Sincronizado',
         aplicativos_ativos: data.aplicativos_ativos || [],
         ultima_atualizacao: Date.now(),
         data_ultima_conexao: dataHoraConexao,
         logs: logsAtualizados
     });
-    
+
+    salvarBanco();
     res.json({ status: 'ok' });
 });
 
-// Métricas RMM
+// Métricas RMM (Tabela com status Online/Offline para todas as máquinas)
 app.get('/api/v1/rmm-metrics', (req, res) => {
     const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
     const todasEstacoes = [];
     const agora = Date.now();
     
     for (const info of estacoesRegistradas.values()) {
-        const decorridoSegundos = Math.floor((agora - info.ultima_atualizacao) / 1000);
-        const isOnline = decorridoSegundos < 45;
+        const decorridoSegundos = Math.floor((agora - (info.ultima_atualizacao || 0)) / 1000);
+        const isOnline = info.ultima_atualizacao > 0 && decorridoSegundos < 45;
         
         todasEstacoes.push({
             ...info,
             status: isOnline ? 'Online' : 'Offline',
-            visto_ha: isOnline ? 'Agora' : `Há ${decorridoSegundos}s`
+            visto_ha: isOnline ? 'Agora' : (info.ultima_atualizacao > 0 ? `Há ${Math.floor(decorridoSegundos / 60)} min` : 'Desconectado')
         });
     }
     
@@ -130,17 +178,16 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     });
 });
 
-// Telefonia net2phone Mapeada por Usuário Active Directory
+// Telefonia net2phone Mapeada por Usuário AD
 app.get('/api/v1/telefonia-metrics', (req, res) => {
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
     
     const rxVar = (11.5 + Math.random() * 2.5).toFixed(1);
     const txVar = (7.8 + Math.random() * 2.2).toFixed(1);
 
-    // Mapeamento direto de Ramal <-> Usuário AD
     const ramaisData = [
         { ramal: '001', usuario_ad: 'ana.costa', nome: 'Ana Costa', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 3), setor: 'Financeiro', chamadasDia: 24, tempoFala: '1h 12m' },
-        { ramal: '002', usuario_ad: 'maria.silva', nome: 'Maria Silva', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 4), setor: 'Recepção', chamadasDia: 58, tempoFala: '3h 40m' },
+        { ramal: '002', usuario_ad: 'pamela.silva', nome: 'Pamela Silva', ip: '192.168.10.115', mac: 'BC:A4:E1:01:23:46', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 4), setor: 'Recepção', chamadasDia: 58, tempoFala: '3h 40m' },
         { ramal: '003', usuario_ad: 'dr.carlos', nome: 'Dr. Carlos Santos', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', status: 'Online', sip: 'Registrado', latencia: Math.floor(3 + Math.random() * 2), setor: 'Coordenação', chamadasDia: 12, tempoFala: '0h 45m' },
         { ramal: '004', usuario_ad: 'joao.pereira', nome: 'João Pereira', ip: '192.168.10.104', mac: 'BC:A4:E1:01:23:48', status: 'Online', sip: 'Registrado', latencia: Math.floor(4 + Math.random() * 3), setor: 'Comercial', chamadasDia: 41, tempoFala: '2h 15m' },
         { ramal: '005', usuario_ad: 'wesley.lima', nome: 'Wesley Lima (TI)', ip: '192.168.10.105', mac: 'BC:A4:E1:01:23:49', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 2), setor: 'TI', chamadasDia: 19, tempoFala: '1h 05m' },
@@ -171,13 +218,13 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
     });
 });
 
-// Modos BI e Exportações CSV com Coluna Usuário AD
+// Modos BI e Exportações CSV
 app.get('/api/v1/export/bi-json', (req, res) => {
     const estacoes = [];
     const agora = Date.now();
     for (const info of estacoesRegistradas.values()) {
-        const decorridoSegundos = Math.floor((agora - info.ultima_atualizacao) / 1000);
-        estacoes.push({ ...info, status: decorridoSegundos < 45 ? 'Online' : 'Offline' });
+        const decorridoSegundos = Math.floor((agora - (info.ultima_atualizacao || 0)) / 1000);
+        estacoes.push({ ...info, status: (info.ultima_atualizacao > 0 && decorridoSegundos < 45) ? 'Online' : 'Offline' });
     }
     res.json({
         empresa: 'GRUPOCST/TI',
@@ -191,7 +238,7 @@ app.get('/api/v1/export/rmm-csv', (req, res) => {
     let csv = 'Hostname;Usuario;Setor;Status;CPU_Percent;RAM_Percent;Disco_Percent;IP;UltimaConexao\n';
     const agora = Date.now();
     for (const info of estacoesRegistradas.values()) {
-        const isOnline = Math.floor((agora - info.ultima_atualizacao) / 1000) < 45;
+        const isOnline = info.ultima_atualizacao > 0 && Math.floor((agora - info.ultima_atualizacao) / 1000) < 45;
         csv += `${info.hostname};${info.usuario};${info.setor};${isOnline ? 'Online' : 'Offline'};${info.cpu}%;${info.ram}%;${info.disco}%;${info.ip};${info.data_ultima_conexao}\n`;
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -203,10 +250,8 @@ app.get('/api/v1/export/telefonia-csv', (req, res) => {
     let csv = 'Ramal;Usuario_AD;Nome_Colaborador;Setor;Status;Registro_SIP;IP_Local;MAC;Chamadas_Hoje;Tempo_Fala;Latencia_ms\n';
     const ramais = [
         { ramal: '001', usuario_ad: 'ana.costa', nome: 'Ana Costa', setor: 'Financeiro', status: 'Online', sip: 'Registrado', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', chamadas: 24, tempo: '1h 12m', latencia: 2 },
-        { ramal: '002', usuario_ad: 'maria.silva', nome: 'Maria Silva', setor: 'Recepção', status: 'Online', sip: 'Registrado', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', chamadas: 58, tempo: '3h 40m', latencia: 3 },
-        { ramal: '003', usuario_ad: 'dr.carlos', nome: 'Dr. Carlos Santos', setor: 'Coordenação', status: 'Online', sip: 'Registrado', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', chamadas: 12, tempo: '0h 45m', latencia: 3 },
-        { ramal: '004', usuario_ad: 'joao.pereira', nome: 'João Pereira', setor: 'Comercial', status: 'Online', sip: 'Registrado', ip: '192.168.10.104', mac: 'BC:A4:E1:01:23:48', chamadas: 41, tempo: '2h 15m', latencia: 4 },
-        { ramal: '005', usuario_ad: 'wesley.lima', nome: 'Wesley Lima', setor: 'TI', status: 'Online', sip: 'Registrado', ip: '192.168.10.105', mac: 'BC:A4:E1:01:23:49', chamadas: 19, tempo: '1h 05m', latencia: 2 }
+        { ramal: '002', usuario_ad: 'pamela.silva', nome: 'Pamela Silva', setor: 'Recepção', status: 'Online', sip: 'Registrado', ip: '192.168.10.115', mac: 'BC:A4:E1:01:23:46', chamadas: 58, tempo: '3h 40m', latencia: 3 },
+        { ramal: '003', usuario_ad: 'dr.carlos', nome: 'Dr. Carlos Santos', setor: 'Coordenação', status: 'Online', sip: 'Registrado', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', chamadas: 12, tempo: '0h 45m', latencia: 3 }
     ];
     ramais.forEach(r => { csv += `${r.ramal};${r.usuario_ad};${r.nome};${r.setor};${r.status};${r.sip};${r.ip};${r.mac};${r.chamadas};${r.tempo};${r.latencia}ms\n`; });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -221,6 +266,7 @@ app.post('/api/v1/definir-setor', (req, res) => {
         const est = estacoesRegistradas.get(hostKey);
         est.setor = setor || 'Geral';
         estacoesRegistradas.set(hostKey, est);
+        salvarBanco();
         return res.json({ status: 'sucesso', setor: est.setor });
     }
     res.status(404).json({ status: 'erro', mensagem: 'Estação não encontrada.' });
@@ -241,6 +287,7 @@ app.post('/api/v1/executar-acao', (req, res) => {
         const est = estacoesRegistradas.get(hostKey);
         const horaAcao = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
         est.logs = [`[${horaAcao}] AÇÃO SOLICITADA: ${acao.toUpperCase()}`, ...(est.logs || [])].slice(0, 30);
+        salvarBanco();
     }
     res.json({ status: 'sucesso', mensagem: 'Comando agendado.' });
 });
@@ -254,4 +301,4 @@ app.get('/api/v1/pendencias/:hostname', (req, res) => {
     res.json({ tarefas });
 });
 
-app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com Telefonia net2phone na porta ${PORT}`));
+app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com Banco Persistente na porta ${PORT}`));
