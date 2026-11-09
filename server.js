@@ -130,25 +130,25 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     });
 });
 
-// Telefonia net2phone com Oscilação em Tempo Real
+// Telefonia net2phone Mapeada por Usuário Active Directory
 app.get('/api/v1/telefonia-metrics', (req, res) => {
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
     
-    // Gerador de oscilação em tempo real para tráfego e latência
     const rxVar = (11.5 + Math.random() * 2.5).toFixed(1);
     const txVar = (7.8 + Math.random() * 2.2).toFixed(1);
 
+    // Mapeamento direto de Ramal <-> Usuário AD
     const ramaisData = [
-        { ramal: '001', nome: 'Financeiro', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 3), setor: 'Financeiro' },
-        { ramal: '002', nome: 'Recepção Main', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 4), setor: 'Recepção' },
-        { ramal: '003', nome: 'Coordenação Médica', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', status: 'Online', sip: 'Registrado', latencia: Math.floor(3 + Math.random() * 2), setor: 'Coordenação' },
-        { ramal: '004', nome: 'Comercial 01', ip: '192.168.10.104', mac: 'BC:A4:E1:01:23:48', status: 'Online', sip: 'Registrado', latencia: Math.floor(4 + Math.random() * 3), setor: 'Comercial' },
-        { ramal: '005', nome: 'Suporte TI', ip: '192.168.10.105', mac: 'BC:A4:E1:01:23:49', status: 'Online', sip: 'Registrado', latencia: Math.floor(4 + Math.random() * 2), setor: 'TI' },
-        { ramal: '006', nome: 'Exames / Laudos', ip: '192.168.10.106', mac: 'BC:A4:E1:01:23:50', status: 'Offline', sip: 'Não Registrado', latencia: 0, setor: 'Outros' },
-        { ramal: '007', nome: 'Call Center 01', ip: '192.168.10.107', mac: 'BC:A4:E1:01:23:51', status: 'Online', sip: 'Registrado', latencia: Math.floor(6 + Math.random() * 4), setor: 'Comercial' },
-        { ramal: '008', nome: 'Call Center 02', ip: '192.168.10.108', mac: 'BC:A4:E1:01:23:52', status: 'Sem SIP', sip: 'Falha Auth', latencia: Math.floor(14 + Math.random() * 5), setor: 'Comercial' },
-        { ramal: '009', nome: 'Faturamento', ip: '192.168.10.109', mac: 'BC:A4:E1:01:23:53', status: 'Online', sip: 'Registrado', latencia: Math.floor(3 + Math.random() * 3), setor: 'Financeiro' },
-        { ramal: '010', nome: 'Diretoria', ip: '192.168.10.110', mac: 'BC:A4:E1:01:23:54', status: 'Offline', sip: 'Não Registrado', latencia: 0, setor: 'Outros' }
+        { ramal: '001', usuario_ad: 'ana.costa', nome: 'Ana Costa', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 3), setor: 'Financeiro', chamadasDia: 24, tempoFala: '1h 12m' },
+        { ramal: '002', usuario_ad: 'maria.silva', nome: 'Maria Silva', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 4), setor: 'Recepção', chamadasDia: 58, tempoFala: '3h 40m' },
+        { ramal: '003', usuario_ad: 'dr.carlos', nome: 'Dr. Carlos Santos', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', status: 'Online', sip: 'Registrado', latencia: Math.floor(3 + Math.random() * 2), setor: 'Coordenação', chamadasDia: 12, tempoFala: '0h 45m' },
+        { ramal: '004', usuario_ad: 'joao.pereira', nome: 'João Pereira', ip: '192.168.10.104', mac: 'BC:A4:E1:01:23:48', status: 'Online', sip: 'Registrado', latencia: Math.floor(4 + Math.random() * 3), setor: 'Comercial', chamadasDia: 41, tempoFala: '2h 15m' },
+        { ramal: '005', usuario_ad: 'wesley.lima', nome: 'Wesley Lima (TI)', ip: '192.168.10.105', mac: 'BC:A4:E1:01:23:49', status: 'Online', sip: 'Registrado', latencia: Math.floor(2 + Math.random() * 2), setor: 'TI', chamadasDia: 19, tempoFala: '1h 05m' },
+        { ramal: '006', usuario_ad: 'lucas.mendonca', nome: 'Lucas Mendonça', ip: '192.168.10.106', mac: 'BC:A4:E1:01:23:50', status: 'Offline', sip: 'Não Registrado', latencia: 0, setor: 'Outros', chamadasDia: 0, tempoFala: '0h 00m' },
+        { ramal: '007', usuario_ad: 'rafael.silva', nome: 'Rafael Silva (TI)', ip: '192.168.10.107', mac: 'BC:A4:E1:01:23:51', status: 'Online', sip: 'Registrado', latencia: Math.floor(5 + Math.random() * 3), setor: 'TI', chamadasDia: 31, tempoFala: '2h 02m' },
+        { ramal: '008', usuario_ad: 'romulo.evangelista', nome: 'Rômulo Evangelista (TI)', ip: '192.168.10.108', mac: 'BC:A4:E1:01:23:52', status: 'Sem SIP', sip: 'Falha Auth', latencia: Math.floor(14 + Math.random() * 5), setor: 'TI', chamadasDia: 8, tempoFala: '0h 22m' },
+        { ramal: '009', usuario_ad: 'camila.alves', nome: 'Camila Alves', ip: '192.168.10.109', mac: 'BC:A4:E1:01:23:53', status: 'Online', sip: 'Registrado', latencia: Math.floor(3 + Math.random() * 3), setor: 'Financeiro', chamadasDia: 35, tempoFala: '1h 50m' },
+        { ramal: '010', usuario_ad: 'diretoria', nome: 'Diretoria Geral', ip: '192.168.10.110', mac: 'BC:A4:E1:01:23:54', status: 'Offline', sip: 'Não Registrado', latencia: 0, setor: 'Outros', chamadasDia: 2, tempoFala: '0h 10m' }
     ];
 
     res.json({
@@ -165,13 +165,13 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
         ramais: ramaisData,
         eventosRecentes: [
             { hora: horaAtual, evento: `Sincronização PABX OK (RX: ${rxVar} Mbps / TX: ${txVar} Mbps)`, status: 'Informativo' },
-            { hora: '14:35:12', evento: 'Ramal 008 apresentou falha no registro SIP', status: 'Atenção' },
-            { hora: '13:50:04', evento: 'Ramal 006 desconectado (Offline)', status: 'Crítico' }
+            { hora: '14:35:12', evento: 'Ramal 008 (romulo.evangelista) apresentou falha no registro SIP', status: 'Atenção' },
+            { hora: '13:50:04', evento: 'Ramal 006 (lucas.mendonca) desconectado (Offline)', status: 'Crítico' }
         ]
     });
 });
 
-// Modos BI e Exportações CSV
+// Modos BI e Exportações CSV com Coluna Usuário AD
 app.get('/api/v1/export/bi-json', (req, res) => {
     const estacoes = [];
     const agora = Date.now();
@@ -200,13 +200,15 @@ app.get('/api/v1/export/rmm-csv', (req, res) => {
 });
 
 app.get('/api/v1/export/telefonia-csv', (req, res) => {
-    let csv = 'Ramal;Nome_Colaborador;Setor;Status;Registro_SIP;IP_Local;MAC;Latencia_ms\n';
+    let csv = 'Ramal;Usuario_AD;Nome_Colaborador;Setor;Status;Registro_SIP;IP_Local;MAC;Chamadas_Hoje;Tempo_Fala;Latencia_ms\n';
     const ramais = [
-        { ramal: '001', nome: 'Financeiro', setor: 'Financeiro', status: 'Online', sip: 'Registrado', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', latencia: 2 },
-        { ramal: '002', nome: 'Recepção Main', setor: 'Recepção', status: 'Online', sip: 'Registrado', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', latencia: 3 },
-        { ramal: '003', nome: 'Coordenação Médica', setor: 'Coordenação', status: 'Online', sip: 'Registrado', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', latencia: 3 }
+        { ramal: '001', usuario_ad: 'ana.costa', nome: 'Ana Costa', setor: 'Financeiro', status: 'Online', sip: 'Registrado', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', chamadas: 24, tempo: '1h 12m', latencia: 2 },
+        { ramal: '002', usuario_ad: 'maria.silva', nome: 'Maria Silva', setor: 'Recepção', status: 'Online', sip: 'Registrado', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', chamadas: 58, tempo: '3h 40m', latencia: 3 },
+        { ramal: '003', usuario_ad: 'dr.carlos', nome: 'Dr. Carlos Santos', setor: 'Coordenação', status: 'Online', sip: 'Registrado', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', chamadas: 12, tempo: '0h 45m', latencia: 3 },
+        { ramal: '004', usuario_ad: 'joao.pereira', nome: 'João Pereira', setor: 'Comercial', status: 'Online', sip: 'Registrado', ip: '192.168.10.104', mac: 'BC:A4:E1:01:23:48', chamadas: 41, tempo: '2h 15m', latencia: 4 },
+        { ramal: '005', usuario_ad: 'wesley.lima', nome: 'Wesley Lima', setor: 'TI', status: 'Online', sip: 'Registrado', ip: '192.168.10.105', mac: 'BC:A4:E1:01:23:49', chamadas: 19, tempo: '1h 05m', latencia: 2 }
     ];
-    ramais.forEach(r => { csv += `${r.ramal};${r.nome};${r.setor};${r.status};${r.sip};${r.ip};${r.mac};${r.latencia}ms\n`; });
+    ramais.forEach(r => { csv += `${r.ramal};${r.usuario_ad};${r.nome};${r.setor};${r.status};${r.sip};${r.ip};${r.mac};${r.chamadas};${r.tempo};${r.latencia}ms\n`; });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio_telefonia_net2phone.csv');
     res.send('\uFEFF' + csv);
