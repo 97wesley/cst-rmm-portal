@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GRUPOCST/TI | Portal RMM & Gestão de Ativos</title>
+    <title>GRUPOCST/TI | Portal RMM & Inventário Fotográfico</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -31,45 +31,24 @@
         /* ANIMAÇÃO DE FUNDO EM MOVIMENTO (GRUPOCST/TI) */
         .watermark-bg {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none; z-index: 0; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: space-around;
             opacity: 0.10;
         }
 
         .marquee-line {
-            white-space: nowrap;
-            font-size: 38px;
-            font-weight: 900;
-            color: var(--green-primary);
-            letter-spacing: 8px;
+            white-space: nowrap; font-size: 38px; font-weight: 900;
+            color: var(--green-primary); letter-spacing: 8px;
             animation: moveText 25s linear infinite;
         }
 
-        .marquee-line:nth-child(even) {
-            animation-direction: reverse;
-            color: var(--green-bright);
-        }
-
-        @keyframes moveText {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-        }
+        .marquee-line:nth-child(even) { animation-direction: reverse; color: var(--green-bright); }
+        @keyframes moveText { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
         .app-container {
-            position: relative;
-            z-index: 10;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-surface);
+            position: relative; z-index: 10; height: 100vh;
+            display: flex; flex-direction: column; background: var(--bg-surface);
             backdrop-filter: blur(4px);
         }
 
@@ -80,11 +59,8 @@
             display: flex; justify-content: center; align-items: center; z-index: 2000;
         }
         .login-card {
-            background: #ffffff;
-            border: 2px solid var(--green-primary);
-            padding: 36px;
-            border-radius: 12px;
-            width: 420px;
+            background: #ffffff; border: 2px solid var(--green-primary);
+            padding: 36px; border-radius: 12px; width: 420px;
             box-shadow: 0 15px 35px rgba(5, 150, 105, 0.15);
         }
         .login-title { font-size: 20px; font-weight: bold; text-align: center; color: var(--green-dark); margin-bottom: 20px; }
@@ -101,15 +77,12 @@
 
         /* NAVEGAÇÃO TOPO */
         .top-navbar {
-            background: #ffffff;
-            border-bottom: 2px solid #e5e7eb;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
+            background: #ffffff; border-bottom: 2px solid #e5e7eb;
+            padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;
         }
         .breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--green-dark); font-weight: 600; }
+        .breadcrumb-link { cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px; }
+        .breadcrumb-link:hover { color: var(--green-bright); text-decoration: underline; }
         .breadcrumb span { color: #9ca3af; }
         .nav-actions { display: flex; align-items: center; gap: 12px; }
         .btn-add { background: var(--orange-btn); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
@@ -128,20 +101,18 @@
         .badge-online { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
         .badge-offline { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
 
-        /* VISTA 2: DETALHES DO COMPUTADOR (SEM BARRA LATERAL) */
+        /* VISTA 2: DETALHES DO COMPUTADOR */
         #detail-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 20px; }
         .detail-header-bar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         .detail-title { font-size: 18px; font-weight: bold; color: var(--green-dark); display: flex; align-items: center; gap: 8px; }
         .btn-back { background: #6b7280; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-back:hover { background: #4b5563; }
 
-        /* GRÁFICOS DE HARDWARE NO DETALHE */
         .charts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         .chart-box { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .chart-box-title { font-size: 11px; font-weight: bold; text-transform: uppercase; color: var(--green-dark); margin-bottom: 12px; }
         .chart-canvas-container { width: 110px; height: 110px; position: relative; }
 
-        /* FORMULÁRIO E QR CODE */
         .details-main-grid { display: flex; gap: 20px; }
         .form-grid { flex: 3; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .form-field { display: flex; flex-direction: column; gap: 4px; }
@@ -151,7 +122,6 @@
         .qr-card { flex: 1; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .qr-code-placeholder { width: 130px; height: 130px; margin: 12px 0; border: 4px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
 
-        /* FERRAMENTAS DE AÇÃO INSTANTÂNEA */
         .actions-section { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .section-title { font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--green-dark); border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 14px; }
         .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -161,9 +131,31 @@
         .btn-action-trigger { background: var(--orange-btn); color: white; border: none; padding: 7px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; }
         .btn-action-trigger:hover { background: #d97706; }
 
-        /* LOGS AO VIVO DO COMPUTADOR */
         .logs-section { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .logs-box { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; height: 120px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 11px; color: #34d399; }
+
+        /* VISTA 3: INVENTÁRIO FOTOGRÁFICO DE ATIVOS E PERIFÉRICOS (AO CLICAR EM "ATIVOS") */
+        #inventory-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 16px; }
+        .inventory-card-row { 
+            background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; 
+            display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); 
+        }
+        .inventory-row-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
+        .inventory-host-title { font-size: 15px; font-weight: bold; color: var(--green-dark); }
+
+        .photo-cols-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .photo-slot { 
+            background: #f9fafb; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px; height: 160px;
+        }
+        .photo-slot-title { font-size: 11px; font-weight: bold; color: var(--green-dark); text-transform: uppercase; }
+        .photo-thumb { width: 100%; height: 85px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .btn-upload-camera { 
+            background: var(--green-primary); color: white; border: none; padding: 4px 8px; 
+            border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; width: 100%; text-align: center;
+        }
+        .btn-upload-camera:hover { background: var(--green-dark); }
+        .hidden-file-input { display: none; }
     </style>
 </head>
 <body>
@@ -203,16 +195,20 @@
         <!-- NAVEGAÇÃO TOPO -->
         <div class="top-navbar">
             <div class="breadcrumb">
-                🏠 Home <span>/</span> 📁 Ativos <span>/</span> 💻 Computadores
+                <div class="breadcrumb-link" onclick="irParaHome()">🏠 Home</div> 
+                <span>/</span> 
+                <div class="breadcrumb-link" onclick="irParaInventarioAtivos()">📁 Ativos</div> 
+                <span>/</span> 
+                <div class="breadcrumb-link" onclick="irParaComputadores()">💻 Computadores</div>
             </div>
             <div class="nav-actions">
-                <button class="btn-add">+ Adicionar</button>
+                <button class="btn-add" onclick="adicionarAtivoManual()">+ Adicionar Ativo</button>
                 <input type="text" class="search-input" placeholder="Pesquisar ativo...">
                 <span style="font-weight:bold; color:var(--green-dark);" id="lbl-usuario-topo">Técnico TI</span>
             </div>
         </div>
 
-        <!-- VISTA 1: LISTA DE ATIVOS -->
+        <!-- VISTA 1: LISTA COMPLETA DE ATIVOS -->
         <div class="content-area" id="list-screen">
             <div class="table-card">
                 <table class="assets-table">
@@ -239,7 +235,7 @@
             </div>
         </div>
 
-        <!-- VISTA 2: DETALHES DO COMPUTADOR (SEM BARRA LATERAL) -->
+        <!-- VISTA 2: DETALHES DO COMPUTADOR -->
         <div id="detail-screen">
             
             <div class="detail-header-bar">
@@ -247,7 +243,7 @@
                 <button class="btn-back" onclick="voltarParaLista()">← Voltar à Lista</button>
             </div>
 
-            <!-- GRÁFICOS DE TELEMETRIA EM TEMPO REAL -->
+            <!-- GRÁFICOS DE TELEMETRIA -->
             <div class="charts-row">
                 <div class="chart-box">
                     <div class="chart-box-title">Consumo de CPU</div>
@@ -263,7 +259,7 @@
                 </div>
             </div>
 
-            <!-- FORMULÁRIO DE DADOS E QR CODE -->
+            <!-- FORMULÁRIO E QR CODE -->
             <div class="details-main-grid">
                 <div class="form-grid">
                     <div class="form-field"><label>Nome da Estação</label><input type="text" id="dt-nome" readonly></div>
@@ -288,7 +284,7 @@
                 </div>
             </div>
 
-            <!-- CENTRAL DE FERRAMENTAS E MANUTENÇÃO INSTANTÂNEA -->
+            <!-- CENTRAL DE FERRAMENTAS -->
             <div class="actions-section">
                 <div class="section-title">🛠️ Ferramentas de Ação Remota Instantânea</div>
                 <div class="tools-grid">
@@ -345,12 +341,36 @@
 
         </div>
 
+        <!-- VISTA 3: INVENTÁRIO FOTOGRÁFICO DE ATIVOS E PERIFÉRICOS (CLIQUE EM "ATIVOS") -->
+        <div id="inventory-screen">
+            <div class="detail-header-bar">
+                <div class="detail-title">📷 Inventário Fotográfico de Ativos & Periféricos (GRUPOCST/TI)</div>
+                <button class="btn-add" onclick="adicionarAtivoManual()">+ Cadastrar Switch / Nobreak / PC</button>
+            </div>
+            <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;">
+                <!-- As linhas do inventário fotográfico serão geradas via JS -->
+            </div>
+        </div>
+
     </div>
 
     <script>
         let estacoesCache = [];
+        let ativosManuais = [
+            { hostname: 'SW-MATRIZ-CORE', tipo: 'Switch', setor: 'Servidores / TI', usuario: 'ti.infra' },
+            { hostname: 'SW-RECEPCAO-01', tipo: 'Switch', setor: 'Recepção', usuario: 'ti.infra' },
+            { hostname: 'NB-MEDICINA-10kVA', tipo: 'Nobreak', setor: 'Exames', usuario: 'ti.infra' }
+        ];
         let hostAtual = null;
         let chartCpu, chartRam, chartDisco;
+
+        // Fotos padrão enviadas pela internet
+        const DEFAULT_PHOTOS = {
+            gabinete: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400&auto=format&fit=crop&q=60',
+            monitor: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&auto=format&fit=crop&q=60',
+            teclado: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=60',
+            headset: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400&auto=format&fit=crop&q=60'
+        };
 
         function initCharts() {
             const opts = { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
@@ -376,6 +396,24 @@
             initCharts();
             carregarDadosAtivos();
             setInterval(carregarDadosAtivos, 10000);
+        }
+
+        /* NAVEGAÇÃO BREADCRUMB */
+        function irParaHome() {
+            document.getElementById('detail-screen').style.display = 'none';
+            document.getElementById('inventory-screen').style.display = 'none';
+            document.getElementById('list-screen').style.display = 'block';
+        }
+
+        function irParaComputadores() {
+            irParaHome();
+        }
+
+        function irParaInventarioAtivos() {
+            document.getElementById('list-screen').style.display = 'none';
+            document.getElementById('detail-screen').style.display = 'none';
+            document.getElementById('inventory-screen').style.display = 'flex';
+            renderizarInventarioFotografico();
         }
 
         async function carregarDadosAtivos() {
@@ -411,7 +449,6 @@
                     tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:20px;">Nenhum computador conectado no momento.</td></tr>`;
                 }
 
-                // Atualização em tempo real se o detalhe estiver aberto
                 if (hostAtual) {
                     const hostAtualizado = estacoesCache.find(e => e.hostname === hostAtual.hostname);
                     if (hostAtualizado) {
@@ -420,6 +457,95 @@
                     }
                 }
             } catch (err) {}
+        }
+
+        /* RENDERIZAÇÃO DA PÁGINA "ATIVOS" COM FOTOS DE PERIFÉRICOS E CÂMERA DO CELULAR */
+        function renderizarInventarioFotografico() {
+            const container = document.getElementById('inventory-items-container');
+            container.innerHTML = '';
+
+            const todosOsAtivos = [...estacoesCache, ...ativosManuais];
+
+            if (todosOsAtivos.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#6b7280;">Nenhum ativo disponível para exibição no inventário.</div>`;
+                return;
+            }
+
+            todosOsAtivos.forEach((item, index) => {
+                const host = item.hostname;
+                const tipo = item.tipo || 'Computador Desktop';
+                const setor = item.setor || 'Geral';
+                const user = item.usuario || 'ti.cst';
+
+                const fotoGabinete = localStorage.getItem(`img_${host}_gabinete`) || DEFAULT_PHOTOS.gabinete;
+                const fotoMonitor = localStorage.getItem(`img_${host}_monitor`) || DEFAULT_PHOTOS.monitor;
+                const fotoTeclado = localStorage.getItem(`img_${host}_teclado`) || DEFAULT_PHOTOS.teclado;
+                const fotoHeadset = localStorage.getItem(`img_${host}_headset`) || DEFAULT_PHOTOS.headset;
+
+                const card = document.createElement('div');
+                card.className = 'inventory-card-row';
+                card.innerHTML = `
+                    <div class="inventory-row-header">
+                        <div class="inventory-host-title">🖥️ ${host} <span style="font-size:12px; font-weight:normal; color:#6b7280;">(${tipo} - Setor: ${setor})</span></div>
+                        <span style="font-size:11px; color:var(--green-primary); font-weight:bold;">👤 Usuário: ${user}</span>
+                    </div>
+                    <div class="photo-cols-grid">
+                        <div class="photo-slot">
+                            <span class="photo-slot-title">🖥️ Gabinete / PC</span>
+                            <img src="${fotoGabinete}" id="img_${host}_gabinete" class="photo-thumb" alt="Gabinete">
+                            <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'gabinete')">📷 Tirar Foto / Mudar</button>
+                            <input type="file" accept="image/*" capture="environment" id="file_${host}_gabinete" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'gabinete')">
+                        </div>
+                        <div class="photo-slot">
+                            <span class="photo-slot-title">🖥️ Monitor</span>
+                            <img src="${fotoMonitor}" id="img_${host}_monitor" class="photo-thumb" alt="Monitor">
+                            <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'monitor')">📷 Tirar Foto / Mudar</button>
+                            <input type="file" accept="image/*" capture="environment" id="file_${host}_monitor" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'monitor')">
+                        </div>
+                        <div class="photo-slot">
+                            <span class="photo-slot-title">⌨️ Teclado / Mouse</span>
+                            <img src="${fotoTeclado}" id="img_${host}_teclado" class="photo-thumb" alt="Teclado/Mouse">
+                            <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'teclado')">📷 Tirar Foto / Mudar</button>
+                            <input type="file" accept="image/*" capture="environment" id="file_${host}_teclado" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'teclado')">
+                        </div>
+                        <div class="photo-slot">
+                            <span class="photo-slot-title">🎧 Headset / Som</span>
+                            <img src="${fotoHeadset}" id="img_${host}_headset" class="photo-thumb" alt="Headset">
+                            <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'headset')">📷 Tirar Foto / Mudar</button>
+                            <input type="file" accept="image/*" capture="environment" id="file_${host}_headset" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'headset')">
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function triggerFileInput(host, slots) {
+            const input = document.getElementById(`file_${host}_${slots}`);
+            if (input) input.click();
+        }
+
+        function salvarFotoUpload(event, host, slot) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgData = e.target.result;
+                document.getElementById(`img_${host}_${slot}`).src = imgData;
+                localStorage.setItem(`img_${host}_${slot}`, imgData);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function adicionarAtivoManual() {
+            const nomeHost = prompt("Nome do Novo Ativo (ex: SW-FINANCEIRO-01 ou GC-M09-PC0099):");
+            if (!nomeHost) return;
+            const tipo = prompt("Tipo do Ativo (ex: Switch, Nobreak, Roteador, Servidor, Desktop):", "Switch");
+            const setor = prompt("Setor / Localização:", "TI / Redes");
+            
+            ativosManuais.push({ hostname: nomeHost.toUpperCase(), tipo, setor, usuario: 'ti.infra' });
+            alert(`Ativo ${nomeHost.toUpperCase()} adicionado ao inventário!`);
+            irParaInventarioAtivos();
         }
 
         function abrirDetalhesHost(hostname) {
@@ -439,6 +565,7 @@
             atualizarMetricasDetalhe();
 
             document.getElementById('list-screen').style.display = 'none';
+            document.getElementById('inventory-screen').style.display = 'none';
             document.getElementById('detail-screen').style.display = 'flex';
         }
 
@@ -456,8 +583,7 @@
 
         function voltarParaLista() {
             hostAtual = null;
-            document.getElementById('detail-screen').style.display = 'none';
-            document.getElementById('list-screen').style.display = 'block';
+            irParaHome();
         }
 
         async function executarAcaoNoHost(acao) {
