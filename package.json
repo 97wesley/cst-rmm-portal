@@ -1,7 +1,7 @@
 {
   "name": "cst-rmm-portal",
   "version": "1.0.0",
-  "description": "Portal RMM da CST",
+  "description": "Portal RMM da CST - Versão Segura",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
