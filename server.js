@@ -8,7 +8,7 @@ const AGENT_SECRET_TOKEN = 'CST_SECRET_AGENT_TOKEN_2026';
 const ADMIN_SECRET_TOKEN = 'CST_ADMIN_TOKEN_97WESLEY';
 const TIMEZONE_BR = 'America/Sao_Paulo';
 
-app.use(express.json({ limit: '50kb' }));
+app.use(express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
@@ -50,14 +50,14 @@ app.post('/api/v1/login', (req, res) => {
     
     res.json({ 
         sucesso: true, 
-        tipo: isTI ? 'admin' : tipo, 
+        tipo: isTI ? 'admin' : 'usuario', 
         usuario: cleanUser,
         isTI: isTI,
         adminToken: isTI ? ADMIN_SECRET_TOKEN : null 
     });
 });
 
-// Recebimento de Telemetria com Fuso Horário de Brasília
+// Recebimento de Telemetria e Registro de Aplicativos Abertos
 app.post('/api/v1/telemetria', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -70,13 +70,16 @@ app.post('/api/v1/telemetria', (req, res) => {
     
     const estacaoAnterior = estacoesRegistradas.get(hostKey) || {};
     
-    // Formatação de data e hora no fuso horário de Brasília (UTC-3)
     const logHora = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
     const dataHoraConexao = new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR });
     
+    const appsAbertos = Array.isArray(data.aplicativos_ativos) && data.aplicativos_ativos.length > 0
+        ? data.aplicativos_ativos.join(', ')
+        : 'Nenhum software com janela ativa';
+
     const logsAnteriores = estacaoAnterior.logs || [];
-    const novoLog = `[${logHora}] Sinais de telemetria recebidos com sucesso.`;
-    const logsAtualizados = [novoLog, ...logsAnteriores].slice(0, 20);
+    const novoLog = `[${logHora}] Apps ativos: ${appsAbertos} | Telemetria recebida OK.`;
+    const logsAtualizados = [novoLog, ...logsAnteriores].slice(0, 30);
 
     estacoesRegistradas.set(hostKey, {
         hostname: hostKey,
@@ -88,6 +91,7 @@ app.post('/api/v1/telemetria', (req, res) => {
         disco: Math.min(100, Math.max(0, parseFloat(data.disco_uso_percent || 0))),
         so: data.sistema_operacional || 'Windows',
         uptime: data.uptime || 'Sincronizado',
+        aplicativos_ativos: data.aplicativos_ativos || [],
         ultima_atualizacao: Date.now(),
         data_ultima_conexao: dataHoraConexao,
         logs: logsAtualizados
@@ -96,7 +100,7 @@ app.post('/api/v1/telemetria', (req, res) => {
     res.json({ status: 'ok' });
 });
 
-// Métricas para o Dashboard
+// Retorna Métricas (Filtrado para usuários comuns)
 app.get('/api/v1/rmm-metrics', (req, res) => {
     const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
     const todasEstacoes = [];
@@ -152,14 +156,14 @@ app.post('/api/v1/executar-acao', (req, res) => {
     if (estacoesRegistradas.has(hostKey)) {
         const est = estacoesRegistradas.get(hostKey);
         const horaAcao = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
-        const logAcao = `[${horaAcao}] Comando agendado: ${acao.toUpperCase()}`;
-        est.logs = [logAcao, ...(est.logs || [])].slice(0, 20);
+        const logAcao = `[${horaAcao}] AÇÃO SOLICITADA PELO PAINEL: ${acao.toUpperCase()}`;
+        est.logs = [logAcao, ...(est.logs || [])].slice(0, 30);
     }
 
     res.json({ status: 'sucesso', mensagem: 'Comando enfileirado com sucesso.' });
 });
 
-// Pendências para o Agente
+// Consulta de Pendências para o Agente
 app.get('/api/v1/pendencias/:hostname', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
