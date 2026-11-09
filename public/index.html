@@ -3,368 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CST - Medicina do Trabalho | Portal RMM TI</title>
+    <title>GRUPOCST/TI | Portal RMM & Gestão de Ativos</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
-            --bg-body: #0f172a; 
-            --bg-card: #1e293b; 
-            --border-card: #334155; 
-            --text-main: #f8fafc; 
-            --text-muted: #94a3b8; 
-            --accent-blue: #0284c7; 
-            --accent-green: #10b981; 
-            --accent-red: #ef4444;
-            --status-offline: #64748b;
+            --bg-base: #ffffff; 
+            --bg-surface: rgba(255, 255, 255, 0.92); 
+            --border-color: #d1fae5; 
+            --green-primary: #059669; 
+            --green-bright: #10b981; 
+            --green-dark: #064e3b; 
+            --text-dark: #065f46; 
+            --text-muted: #34d399; 
+            --text-body: #111827;
         }
+
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; }
-
-        #login-screen { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.95)), url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover; 
-            display: flex; justify-content: center; align-items: center; z-index: 1000; 
-        }
-        #app-screen { display: none; height: 100vh; flex-direction: column; }
-        .login-card { background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border-card); padding: 32px; border-radius: 12px; width: 420px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); }
-        .login-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 20px; }
-        .login-title span { color: var(--accent-blue); display: block; font-size: 12px; margin-top: 4px; }
-        .tipo-selector { display: flex; gap: 10px; margin-bottom: 16px; }
-        .tipo-btn { flex: 1; padding: 10px; background: #334155; border: 1px solid #475569; color: #fff; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 12px; }
-        .tipo-btn.active { background: var(--accent-blue); border-color: var(--accent-blue); }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: bold; }
-        .form-group input { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-card); color: #fff; border-radius: 6px; outline: none; }
-        .btn-login { width: 100%; padding: 12px; background: var(--accent-green); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .login-error { color: var(--accent-red); font-size: 12px; text-align: center; margin-top: 10px; }
-
-        .header { background: #141e33; border-bottom: 1px solid var(--border-card); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-size: 16px; font-weight: 700; color: #fff; }
-        .brand span { color: var(--accent-blue); font-size: 12px; margin-left: 8px; border: 1px solid var(--accent-blue); padding: 2px 6px; border-radius: 4px; }
-        .user-info { display: flex; align-items: center; gap: 15px; font-size: 13px; }
-        .btn-logout { background: #ef4444; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; }
-        .content { padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; }
-
-        .topo-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-        .metric-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; }
-        .metric-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
-        .chart-container { width: 120px; height: 120px; position: relative; }
-
-        .reparos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-        .reparo-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; }
-        .reparo-title { font-size: 12px; font-weight: bold; color: #fff; margin-bottom: 4px; }
-        .reparo-desc { font-size: 10px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.3; }
-        .btn-reparar { background: #334155; color: white; border: 1px solid #475569; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; transition: 0.2s; }
-        .btn-reparar:hover { background: var(--accent-blue); }
-
-        .panel { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; }
-        .panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-card); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { text-align: left; padding: 10px; color: var(--text-muted); border-bottom: 1px solid var(--border-card); font-size: 11px; text-transform: uppercase; }
-        td { padding: 10px; border-bottom: 1px solid #2d3d54; }
-        tr.host-row { cursor: pointer; transition: background 0.2s; }
-        tr.host-row:hover { background: #26354a; }
+        body { 
+            background-color: var(--bg-base); 
+            color: var(--text-dark); 
+            height: 100vh; 
+            overflow: hidden; 
+            position: relative; 
+        }
 
-        .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-        .badge-online { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
-        .badge-offline { background: rgba(100, 116, 139, 0.2); color: var(--status-offline); border: 1px solid var(--status-offline); }
-        .setor-tag { background: #0f172a; padding: 2px 6px; border-radius: 4px; border: 1px solid #334155; font-size: 11px; }
+        /* ANIMAÇÃO DE FUNDO EM MOVIMENTO (GRUPOCST/TI) */
+        .watermark-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            opacity: 0.12;
+        }
 
-        /* Modal Interativo 3D */
-        .interactive-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.85); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
-        .interactive-box { background: var(--bg-card); border: 1px solid var(--border-card); width: 460px; border-radius: 16px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; }
-        .interactive-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); padding-bottom: 10px; }
-        .interactive-title { font-size: 16px; font-weight: bold; color: #fff; }
-        .interactive-btn-close { background: transparent; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
-        .detail-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px dashed #2d3d54; }
-        .logs-box { background: #0f172a; border: 1px solid var(--border-card); border-radius: 6px; padding: 10px; max-height: 140px; overflow-y: auto; font-family: monospace; font-size: 11px; color: var(--text-muted); }
+        .marquee-line {
+            white-space: nowrap;
+            font-size: 38px;
+            font-weight: 900;
+            color: var(--green-primary);
+            letter-spacing: 8px;
+            animation: moveText 25s linear infinite;
+        }
+
+        .marquee-line:nth-child(even) {
+            animation-direction: reverse;
+            color: var(--green-bright);
+        }
+
+        @keyframes moveText {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* CONTAINER PRINCIPAL */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-surface);
+            backdrop-filter: blur(4px);
+        }
+
+        /* TELA DE LOGIN */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .login-card {
+            background: #ffffff;
+            border: 2px solid var(--green-primary);
+            padding: 36px;
+            border-radius: 12px;
+            width: 420px;
+            box-shadow: 0 15px 35px rgba(5, 150, 105, 0.15);
+        }
+        .login-title { font-size: 20px; font-weight: bold; text-align: center; color: var(--green-dark); margin-bottom: 20px; }
+        .login-title span { color: var(--green-primary); display: block; font-size: 13px; margin-top: 4px; }
+        .tipo-selector { display: flex; gap: 10px; margin-bottom: 16px; }
+        .tipo-btn { flex: 1; padding: 10px; background: #ecfdf5; border: 1px solid var(--green-primary); color: var(--green-dark); border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 12px; }
+        .tipo-btn.active { background: var(--green-primary); color: #ffffff; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 11px; text-transform: uppercase; color: var(--green-dark); margin-bottom: 6px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; background: #f0fdf4; border: 1px solid var(--border-color); color: var(--text-body); border-radius: 6px; outline: none; }
+        .btn-login { width: 100%; padding: 12px; background: var(--green-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-login:hover { background: var(--green-dark); }
+        .login-error { color: #dc2626; font-size: 12px; text-align: center; margin-top: 10px; }
+
+        /* NAVEGAÇÃO TOPO (ESTILO GLPI) */
+        .top-navbar {
+            background: #ffffff;
+            border-bottom: 2px solid #e5e7eb;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--green-dark); font-weight: 600; }
+        .breadcrumb span { color: #9ca3af; }
+        .nav-actions { display: flex; align-items: center; gap: 12px; }
+        .btn-add { background: #f59e0b; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .search-input { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 20px; outline: none; width: 200px; }
+
+        /* VISTA 1: TABELA DE ATIVOS (IMAGEM 1) */
+        .content-area { flex: 1; overflow-y: auto; padding: 16px; }
+        .table-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        
+        table.assets-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        table.assets-table th { background: #f9fafb; text-align: left; padding: 12px 10px; color: var(--green-dark); font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; }
+        table.assets-table td { padding: 12px 10px; border-bottom: 1px solid #f3f4f6; color: var(--text-body); }
+        table.assets-table tr:hover { background: #ecfdf5; cursor: pointer; }
+        
+        .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block; }
+        .badge-online { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+        .badge-offline { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+        /* VISTA 2: PAINEL DETALHADO DO COMPUTADOR (IMAGEM 2) */
+        #detail-screen { display: none; flex: 1; flex-direction: column; }
+        .detail-header { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .detail-body { display: flex; flex: 1; overflow: hidden; }
+
+        /* Menu Lateral Esquerdo do Detalhe */
+        .sidebar-menu { width: 220px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; overflow-y: auto; }
+        .sidebar-item { padding: 12px 16px; font-size: 12px; font-weight: 600; color: #4b5563; border-bottom: 1px solid #f3f4f6; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-item:hover, .sidebar-item.active { background: #ecfdf5; color: var(--green-primary); border-left: 4px solid var(--green-primary); }
+        .sidebar-badge { background: #e5e7eb; color: #374151; padding: 2px 6px; border-radius: 10px; font-size: 10px; }
+
+        /* Conteúdo Principal do Detalhe */
+        .main-form-area { flex: 1; padding: 24px; overflow-y: auto; display: flex; gap: 24px; }
+        .form-grid { flex: 3; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-content: start; }
+        .form-field { display: flex; flex-direction: column; gap: 4px; }
+        .form-field label { font-size: 11px; font-weight: bold; color: var(--green-dark); text-transform: uppercase; }
+        .form-field input, .form-field select, .form-field textarea { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; background: #ffffff; outline: none; }
+        
+        .qr-card { flex: 1; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; height: fit-content; text-align: center; }
+        .qr-code-placeholder { width: 140px; height: 140px; background: #000; margin: 12px 0; border: 4px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center; }
+        
+        .bottom-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px; grid-column: span 2; }
+        .btn-save { background: #f59e0b; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-back { background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- MODAL DE DETALHES DO COMPUTADOR -->
-    <div class="interactive-overlay" id="modal-host-details">
-        <div class="interactive-box">
-            <div class="interactive-header">
-                <div class="interactive-title" id="md-hostname">💻 HOSTNAME</div>
-                <button class="interactive-btn-close" onclick="fecharModalHost()">✕</button>
-            </div>
-            <div>
-                <div class="detail-row"><span>Status:</span><strong id="md-status">---</strong></div>
-                <div class="detail-row"><span>Usuário Logado:</span><span id="md-usuario">---</span></div>
-                <div class="detail-row"><span>Setor / Área:</span><span><input type="text" id="md-setor-input" style="background:#0f172a; border:1px solid #334155; color:#fff; padding:2px 6px; border-radius:4px; font-size:11px;" /> <button onclick="salvarSetor()" style="background:var(--accent-blue); color:#fff; border:none; padding:2px 6px; border-radius:4px; cursor:pointer;">Salvar</button></span></div>
-                <div class="detail-row"><span>IP Local:</span><span id="md-ip">---</span></div>
-                <div class="detail-row"><span>Sistema Operacional:</span><span id="md-so">---</span></div>
-                <div class="detail-row"><span>Última Sincronização:</span><span id="md-ultima-conexao">---</span></div>
-                <div class="detail-row"><span>Consumo de Hardware:</span><span id="md-hardware">---</span></div>
-            </div>
-            <div style="font-size:11px; font-weight:bold; color:var(--text-muted); margin-top:6px;">📋 Histórico de Logs & Auditoria:</div>
-            <div class="logs-box" id="md-logs-list">Carregando logs...</div>
-            <button class="btn-reparar" onclick="fecharModalHost()" style="margin-top:8px;">FECHAR</button>
-        </div>
+    <!-- ANIMAÇÃO DE FUNDO "GRUPOCST/TI" -->
+    <div class="watermark-bg">
+        <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
+        <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
+        <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
+        <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
     </div>
 
     <!-- TELA DE LOGIN -->
     <div id="login-screen">
         <div class="login-card">
-            <div class="login-title">CST - Medicina do Trabalho<span>PORTAL DE SUPORTE E RMM TI</span></div>
+            <div class="login-title">GRUPOCST/TI<span>PORTAL RMM & GESTÃO DE ATIVOS</span></div>
             <div class="tipo-selector">
                 <div class="tipo-btn active" id="btn-tipo-user" onclick="mudarTipo('usuario')">Funcionário</div>
                 <div class="tipo-btn" id="btn-tipo-admin" onclick="mudarTipo('admin')">Administrador (TI)</div>
             </div>
             <div class="form-group">
-                <label>Utilizador Active Directory (ex: wesley.lima)</label>
-                <input type="text" id="input-user" placeholder="Digite o seu login...">
+                <label>Utilizador Active Directory</label>
+                <input type="text" id="input-user" placeholder="ex: wesley.lima">
             </div>
             <div class="form-group">
                 <label>Senha do Windows / AD</label>
                 <input type="password" id="input-pass" placeholder="••••••••••••" onkeypress="if(event.key==='Enter') realizarLogin()">
             </div>
-            <button class="btn-login" onclick="realizarLogin()">ACESSAR SISTEMA</button>
+            <button class="btn-login" onclick="realizarLogin()">ENTRAR NO SISTEMA</button>
             <div class="login-error" id="login-error"></div>
         </div>
     </div>
 
-    <!-- TELA PRINCIPAL DO PAINEL -->
-    <div id="app-screen">
-        <div class="header">
-            <div class="brand">CST - Medicina do Trabalho <span id="painel-tipo-label">PORTAL DO FUNCIONÁRIO</span></div>
-            <div class="user-info">
-                <span>👤 Logado: <strong id="lbl-usuario-logado" style="color:var(--accent-green)"></strong></span>
-                <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+    <!-- ESTRUTURA DA APLICAÇÃO -->
+    <div class="app-container" id="app-screen" style="display:none;">
+        
+        <!-- NAVEGAÇÃO TOPO -->
+        <div class="top-navbar">
+            <div class="breadcrumb">
+                🏠 Home <span>/</span> 📁 Ativos <span>/</span> 💻 Computadores
+            </div>
+            <div class="nav-actions">
+                <button class="btn-add">+ Adicionar</button>
+                <input type="text" class="search-input" placeholder="Pesquisar ativo...">
+                <span style="font-weight:bold; color:var(--green-dark);">Técnico TI</span>
             </div>
         </div>
 
-        <div class="content">
-            <div class="panel" id="secao-graficos-topo">
-                <div class="panel-title">📊 Monitoramento de Consumo da Sua Estação</div>
-                <div class="topo-metrics-grid">
-                    <div class="metric-card"><div class="metric-title">Uso de CPU</div><div class="chart-container"><canvas id="chartCpuTopo"></canvas></div></div>
-                    <div class="metric-card"><div class="metric-title">Uso de Memória RAM</div><div class="chart-container"><canvas id="chartRamTopo"></canvas></div></div>
-                    <div class="metric-card"><div class="metric-title">Ocupação Disco (C:)</div><div class="chart-container"><canvas id="chartDiscoTopo"></canvas></div></div>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">🛠️ Central de Manutenção e Autoatendimento</div>
-                <div class="reparos-grid">
-                    <div class="reparo-card">
-                        <div><div class="reparo-title">🧹 Limpar Cache & Temp</div><div class="reparo-desc">Remove ficheiros temporários para acelerar o sistema.</div></div>
-                        <button class="btn-reparar" onclick="executarReparo('limpar_cache')">LIMPAR</button>
-                    </div>
-                    <div class="reparo-card">
-                        <div><div class="reparo-title">🖨️ Reiniciar Spooler</div><div class="reparo-desc">Destrava a fila de impressão da impressora padrão.</div></div>
-                        <button class="btn-reparar" onclick="executarReparo('destravar_impressora')">REINICIAR</button>
-                    </div>
-                    <div class="reparo-card">
-                        <div><div class="reparo-title">📁 Criar Pasta Relatórios</div><div class="reparo-desc">Cria a pasta padrão na Área de Trabalho.</div></div>
-                        <button class="btn-reparar" onclick="criarPastaDesktop()">CRIAR PASTA</button>
-                    </div>
-                    <div class="reparo-card">
-                        <div><div class="reparo-title">⚡ Otimizar Rede / DNS</div><div class="reparo-desc">Limpa o cache DNS e renova o IP local.</div></div>
-                        <button class="btn-reparar" onclick="executarReparo('otimizar_rede')">OTIMIZAR REDE</button>
-                    </div>
-                    <div class="reparo-card">
-                        <div><div class="reparo-title">🔄 Atualizar GPO</div><div class="reparo-desc">Força sincronização com Active Directory da CST.</div></div>
-                        <button class="btn-reparar" onclick="executarReparo('atualizar_gpo')">SINCRONIZAR</button>
-                    </div>
-                    <div class="reparo-card">
-                        <div><div class="reparo-title">💽 Otimizar Disco</div><div class="reparo-desc">Executa TRIM/Defrag na partição C:.</div></div>
-                        <button class="btn-reparar" onclick="executarReparo('otimizar_disco')">OTIMIZAR DISCO</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">
-                    <span>💻 Frota de Computadores CST (Clique no Host para abrir Detalhes)</span>
-                    <span style="font-size:10px; color:var(--text-muted);">Atualizado a cada 10s</span>
-                </div>
-                <table>
+        <!-- VISTA 1: LISTA COMPLETA DE ATIVOS (ESTILO IMAGEM 1) -->
+        <div class="content-area" id="list-screen">
+            <div class="table-card">
+                <table class="assets-table">
                     <thead>
                         <tr>
-                            <th>ESTAÇÃO</th>
-                            <th>SETOR</th>
-                            <th>USUÁRIO LOGADO</th>
+                            <th>NOME</th>
+                            <th>ENTIDADE</th>
                             <th>STATUS</th>
-                            <th>IP LOCAL</th>
-                            <th>CPU</th>
-                            <th>RAM</th>
-                            <th>DISCO C:</th>
+                            <th>TIPO</th>
+                            <th>NOME ALTERNATIVO DO USUÁRIO</th>
+                            <th>GERENCIAMENTO REMOTO</th>
+                            <th>PROCESSADOR</th>
+                            <th>MEMÓRIA</th>
+                            <th>ID REMOTO</th>
+                            <th>VERSÃO</th>
+                            <th>IP</th>
+                            <th>ÚLTIMA ATUALIZAÇÃO</th>
                         </tr>
                     </thead>
-                    <tbody id="tabela-estacoes">
-                        <tr><td colspan="8" style="text-align:center; color:var(--text-muted)">A carregar estações...</td></tr>
+                    <tbody id="tabela-ativos">
+                        <tr><td colspan="12" style="text-align:center; padding:20px;">Carregando frota de computadores CST...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- VISTA 2: DETALHES DO COMPUTADOR (ESTILO IMAGEM 2) -->
+        <div id="detail-screen">
+            <div class="detail-header">
+                <div style="font-size:16px; font-weight:bold; color:var(--green-dark);" id="detalhe-titulo-host">💻 Computador - GC-F23-PC0214</div>
+                <button class="btn-back" onclick="voltarParaLista()">← Voltar à Lista</button>
+            </div>
+            <div class="detail-body">
+                
+                <!-- Menu Lateral Esquerdo -->
+                <div class="sidebar-menu">
+                    <div class="sidebar-item active">💻 Computador</div>
+                    <div class="sidebar-item">📊 Análise de impacto</div>
+                    <div class="sidebar-item">⚙️ Sistemas operacionais <span class="sidebar-badge">1</span></div>
+                    <div class="sidebar-item">🧩 Componentes <span class="sidebar-badge">29</span></div>
+                    <div class="sidebar-item">💾 Volumes <span class="sidebar-badge">4</span></div>
+                    <div class="sidebar-item">📦 Softwares</div>
+                    <div class="sidebar-item">⚡ Processos <span class="sidebar-badge">922</span></div>
+                    <div class="sidebar-item">🌐 Conexões <span class="sidebar-badge">2</span></div>
+                    <div class="sidebar-item">🔌 Gerenciamento remoto <span class="sidebar-badge">1</span></div>
+                    <div class="sidebar-item">📄 Documentos</div>
+                    <div class="sidebar-item">🛡️ Antivírus <span class="sidebar-badge">1</span></div>
+                    <div class="sidebar-item">💬 Chamados</div>
+                </div>
+
+                <!-- Formulário Principal de Detalhes -->
+                <div class="main-form-area">
+                    <div class="form-grid">
+                        <div class="form-field"><label>Nome</label><input type="text" id="dt-nome" readonly></div>
+                        <div class="form-field"><label>Status</label><select id="dt-status"><option>Em uso</option><option>Manutenção</option></select></div>
+                        <div class="form-field"><label>Localização / Setor</label><input type="text" id="dt-setor"></div>
+                        <div class="form-field"><label>Tipo</label><input type="text" id="dt-tipo" value="Desktop"></div>
+                        <div class="form-field"><label>Técnico Encarregado</label><input type="text" value="Equipe TI CST"></div>
+                        <div class="form-field"><label>Fabricante</label><input type="text" value="Dell Inc."></div>
+                        <div class="form-field"><label>Nome Alternativo do Usuário</label><input type="text" id="dt-usuario" readonly></div>
+                        <div class="form-field"><label>Modelo</label><input type="text" value="Vostro 3470"></div>
+                        <div class="form-field"><label>Endereço IP</label><input type="text" id="dt-ip" readonly></div>
+                        <div class="form-field"><label>Número de Série</label><input type="text" value="43M43T2"></div>
+                        <div class="form-field" style="grid-column: span 2;"><label>Comentários / Logs Recentes</label><textarea id="dt-logs" rows="3" readonly></textarea></div>
+                        
+                        <div class="bottom-actions">
+                            <button class="btn-save" onclick="executarAcaoNoHost('limpar_cache')">🧹 Executar Limpeza</button>
+                            <button class="btn-save" style="background:var(--green-primary);" onclick="salvarAlteracoes()">Salvar Alterações</button>
+                        </div>
+                    </div>
+
+                    <!-- Bloco do QR Code -->
+                    <div class="qr-card">
+                        <span style="font-size:12px; font-weight:bold; color:var(--green-dark);">URL do ativo</span>
+                        <div class="qr-code-placeholder">
+                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=GRUPOCST_RMM" alt="QR Code Ativo">
+                        </div>
+                        <span style="font-size:10px; color:#6b7280;">Identificador único patrimonial do GRUPOCST/TI</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
     <script>
-        let tipoLogin = 'usuario';
-        let usuarioAtual = '';
-        let meuHostname = '';
-        let isAdmin = false;
-        let hostSelecionadoModal = '';
         let estacoesCache = [];
-        let chartCpu, chartRam, chartDisco;
-
+        let hostAtual = null;
         const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
 
-        function initCharts() {
-            const opts = { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
-            chartCpu = new Chart(document.getElementById('chartCpuTopo'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#0284c7', '#334155'], borderWidth: 0 }] }, options: opts });
-            chartRam = new Chart(document.getElementById('chartRamTopo'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#f59e0b', '#334155'], borderWidth: 0 }] }, options: opts });
-            chartDisco = new Chart(document.getElementById('chartDiscoTopo'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#ef4444', '#334155'], borderWidth: 0 }] }, options: opts });
-        }
-
         function mudarTipo(tipo) {
-            tipoLogin = tipo;
             document.getElementById('btn-tipo-user').classList.toggle('active', tipo === 'usuario');
             document.getElementById('btn-tipo-admin').classList.toggle('active', tipo === 'admin');
         }
 
         async function realizarLogin() {
-            const usuario = document.getElementById('input-user').value.trim().toLowerCase();
-            const senha = document.getElementById('input-pass').value;
-            const errorDiv = document.getElementById('login-error');
-            errorDiv.innerText = '';
-            
-            if (!usuario || !senha) return errorDiv.innerText = 'Preencha o utilizador e a senha.';
-            
-            isAdmin = EQUIPE_TI.includes(usuario);
-            if (tipoLogin === 'admin' && !isAdmin) return errorDiv.innerText = 'Acesso restrito à equipe de TI.';
+            const user = document.getElementById('input-user').value.trim().toLowerCase();
+            const pass = document.getElementById('input-pass').value;
+            if (!user || !pass) return alert('Preencha os dados.');
 
-            usuarioAtual = usuario;
-            document.getElementById('lbl-usuario-logado').innerText = usuarioAtual;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'flex';
-            document.getElementById('painel-tipo-label').innerText = isAdmin ? 'PAINEL ADMINISTRATIVO (TI)' : 'PORTAL DO FUNCIONÁRIO';
             
-            initCharts();
-            carregarDadosRMM();
-            setInterval(carregarDadosRMM, 10000); // Polling exatamente a cada 10 segundos
+            carregarDadosAtivos();
+            setInterval(carregarDadosAtivos, 10000);
         }
 
-        function fazerLogout() { location.reload(); }
-
-        async function carregarDadosRMM() {
+        async function carregarDadosAtivos() {
             try {
                 const res = await fetch('/api/v1/rmm-metrics');
                 const data = await res.json();
                 estacoesCache = data.estacoes || [];
-                const tbody = document.getElementById('tabela-estacoes');
+                
+                const tbody = document.getElementById('tabela-ativos');
                 tbody.innerHTML = '';
 
-                let estacoesExibicao = estacoesCache;
-                if (!isAdmin) {
-                    const minhaMaq = estacoesCache.find(e => e.usuario === usuarioAtual || e.ip === data.meu_ip);
-                    estacoesExibicao = minhaMaq ? [minhaMaq] : [];
-                }
-
-                if (estacoesExibicao.length > 0) {
-                    estacoesExibicao.forEach(e => {
-                        if (!meuHostname && (e.usuario === usuarioAtual || isAdmin)) meuHostname = e.hostname;
-
-                        if (e.hostname === meuHostname && chartCpu) {
-                            chartCpu.data.datasets[0].data = [e.cpu, 100 - e.cpu]; chartCpu.update();
-                            chartRam.data.datasets[0].data = [e.ram, 100 - e.ram]; chartRam.update();
-                            chartDisco.data.datasets[0].data = [e.disco, 100 - e.disco]; chartDisco.update();
-                        }
-
-                        const statusBadge = e.status === 'Online' 
-                            ? `<span class="badge-status badge-online">● Online</span>` 
-                            : `<span class="badge-status badge-offline">○ Offline (${e.visto_ha})</span>`;
-
+                if (estacoesCache.length > 0) {
+                    estacoesCache.forEach(e => {
                         const tr = document.createElement('tr');
-                        tr.className = 'host-row';
-                        tr.onclick = () => abrirModalHost(e.hostname);
+                        tr.onclick = () => abrirDetalhesHost(e.hostname);
                         tr.innerHTML = `
-                            <td style="font-weight:bold; color:var(--accent-blue)">💻 ${e.hostname}</td>
-                            <td><span class="setor-tag">${e.setor || 'Geral'}</span></td>
-                            <td style="color:var(--accent-green)">👤 ${e.usuario}</td>
-                            <td>${statusBadge}</td>
+                            <td style="font-weight:bold; color:var(--green-dark);">💻 ${e.hostname}</td>
+                            <td>Entidade raiz > CST</td>
+                            <td><span class="badge-status ${e.status === 'Online' ? 'badge-online' : 'badge-offline'}">${e.status}</span></td>
+                            <td>Desktop</td>
+                            <td>${e.usuario}@CST</td>
+                            <td>rustdesk</td>
+                            <td>AMD / Intel Processor</td>
+                            <td>${e.ram}% usado</td>
+                            <td>1382626814</td>
+                            <td>1.21</td>
                             <td>${e.ip}</td>
-                            <td>${e.cpu}%</td>
-                            <td>${e.ram}%</td>
-                            <td>${e.disco}%</td>
+                            <td>${e.data_ultima_conexao || e.visto_ha}</td>
                         `;
                         tbody.appendChild(tr);
                     });
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted)">Nenhum computador registrado até o momento.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:20px;">Nenhum computador conectado no momento.</td></tr>`;
                 }
             } catch (err) {}
         }
 
-        function abrirModalHost(hostname) {
-            hostSelecionadoModal = hostname;
-            const est = estacoesCache.find(e => e.hostname === hostname);
-            if (!est) return;
+        function abrirDetalhesHost(hostname) {
+            hostAtual = estacoesCache.find(e => e.hostname === hostname);
+            if (!hostAtual) return;
 
-            document.getElementById('md-hostname').innerText = `💻 ${est.hostname}`;
-            document.getElementById('md-status').innerText = est.status;
-            document.getElementById('md-usuario').innerText = est.usuario;
-            document.getElementById('md-setor-input').value = est.setor || 'Geral';
-            document.getElementById('md-ip').innerText = est.ip;
-            document.getElementById('md-so').innerText = est.so;
-            document.getElementById('md-ultima-conexao').innerText = est.data_ultima_conexao || est.visto_ha;
-            document.getElementById('md-hardware').innerText = `CPU: ${est.cpu}% | RAM: ${est.ram}% | Disco: ${est.disco}%`;
-            
-            const logsBox = document.getElementById('md-logs-list');
-            logsBox.innerHTML = (est.logs && est.logs.length > 0) 
-                ? est.logs.map(l => `<div>${l}</div>`).join('') 
-                : '<div>Sem registros de auditoria.</div>';
+            document.getElementById('detalhe-titulo-host').innerText = `💻 Computador - ${hostAtual.hostname}`;
+            document.getElementById('dt-nome').value = hostAtual.hostname;
+            document.getElementById('dt-setor').value = hostAtual.setor || 'Atendimento / Geral';
+            document.getElementById('dt-usuario').value = `${hostAtual.usuario}@CST`;
+            document.getElementById('dt-ip').value = hostAtual.ip;
+            document.getElementById('dt-logs').value = (hostAtual.logs || []).join('\n');
 
-            document.getElementById('modal-host-details').style.display = 'flex';
+            document.getElementById('list-screen').style.display = 'none';
+            document.getElementById('detail-screen').style.display = 'flex';
         }
 
-        function fecharModalHost() {
-            document.getElementById('modal-host-details').style.display = 'none';
+        function voltarParaLista() {
+            document.getElementById('detail-screen').style.display = 'none';
+            document.getElementById('list-screen').style.display = 'block';
         }
 
-        async function salvarSetor() {
-            const novoSetor = document.getElementById('md-setor-input').value.trim();
-            if (!hostSelecionadoModal || !novoSetor) return;
-            try {
-                await fetch('/api/v1/definir-setor', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ hostname: hostSelecionadoModal, setor: novoSetor })
-                });
-                carregarDadosRMM();
-                alert(`Setor da máquina ${hostSelecionadoModal} atualizado para '${novoSetor}'!`);
-            } catch (e) { alert('Falha ao atualizar setor.'); }
+        async function executarAcaoNoHost(acao) {
+            if (!hostAtual) return;
+            await fetch('/api/v1/executar-acao', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target: hostAtual.hostname, acao })
+            });
+            alert(`Comando de manutenção enviado para ${hostAtual.hostname}!`);
         }
 
-        async function executarReparo(acao) {
-            const target = isAdmin && hostSelecionadoModal ? hostSelecionadoModal : meuHostname;
-            if (!target) return alert('Selecione uma máquina válida.');
-            try {
-                await fetch('/api/v1/executar-acao', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ target, acao })
-                });
-                alert(`Comando '${acao}' enviado com sucesso para ${target}!`);
-            } catch (err) { alert('Erro ao disparar comando.'); }
-        }
-
-        async function criarPastaDesktop() {
-            const target = isAdmin && hostSelecionadoModal ? hostSelecionadoModal : meuHostname;
-            const nomeBruto = prompt("Nome da pasta:", "Relatorios_CST");
-            if (!nomeBruto) return;
-            const nome = nomeBruto.replace(/[^a-zA-Z0-9_-]/g, '');
-            try {
-                await fetch('/api/v1/executar-acao', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ target, acao: 'criar_pasta', parametros: { nome } })
-                });
-                alert(`Pedido de criação de pasta enviado para ${target}!`);
-            } catch (err) { alert('Erro ao disparar comando.'); }
+        async function salvarAlteracoes() {
+            if (!hostAtual) return;
+            const novoSetor = document.getElementById('dt-setor').value;
+            await fetch('/api/v1/definir-setor', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hostname: hostAtual.hostname, setor: novoSetor })
+            });
+            alert('Dados do ativo salvos!');
+            carregarDadosAtivos();
         }
     </script>
 </body>
