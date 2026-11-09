@@ -8,14 +8,14 @@
     <style>
         :root { 
             --bg-base: #ffffff; 
-            --bg-surface: rgba(255, 255, 255, 0.92); 
+            --bg-surface: rgba(255, 255, 255, 0.94); 
             --border-color: #d1fae5; 
             --green-primary: #059669; 
             --green-bright: #10b981; 
             --green-dark: #064e3b; 
             --text-dark: #065f46; 
-            --text-muted: #34d399; 
             --text-body: #111827;
+            --orange-btn: #f59e0b;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
@@ -41,7 +41,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-around;
-            opacity: 0.12;
+            opacity: 0.10;
         }
 
         .marquee-line {
@@ -63,7 +63,6 @@
             100% { transform: translateX(-50%); }
         }
 
-        /* CONTAINER PRINCIPAL */
         .app-container {
             position: relative;
             z-index: 10;
@@ -100,7 +99,7 @@
         .btn-login:hover { background: var(--green-dark); }
         .login-error { color: #dc2626; font-size: 12px; text-align: center; margin-top: 10px; }
 
-        /* NAVEGAÇÃO TOPO (ESTILO GLPI) */
+        /* NAVEGAÇÃO TOPO */
         .top-navbar {
             background: #ffffff;
             border-bottom: 2px solid #e5e7eb;
@@ -113,10 +112,10 @@
         .breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--green-dark); font-weight: 600; }
         .breadcrumb span { color: #9ca3af; }
         .nav-actions { display: flex; align-items: center; gap: 12px; }
-        .btn-add { background: #f59e0b; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-add { background: var(--orange-btn); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .search-input { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 20px; outline: none; width: 200px; }
 
-        /* VISTA 1: TABELA DE ATIVOS (IMAGEM 1) */
+        /* VISTA 1: LISTA COMPLETA DE ATIVOS */
         .content-area { flex: 1; overflow-y: auto; padding: 16px; }
         .table-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
@@ -129,30 +128,42 @@
         .badge-online { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
         .badge-offline { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
 
-        /* VISTA 2: PAINEL DETALHADO DO COMPUTADOR (IMAGEM 2) */
-        #detail-screen { display: none; flex: 1; flex-direction: column; }
-        .detail-header { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .detail-body { display: flex; flex: 1; overflow: hidden; }
+        /* VISTA 2: DETALHES DO COMPUTADOR (SEM BARRA LATERAL) */
+        #detail-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 20px; }
+        .detail-header-bar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .detail-title { font-size: 18px; font-weight: bold; color: var(--green-dark); display: flex; align-items: center; gap: 8px; }
+        .btn-back { background: #6b7280; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-back:hover { background: #4b5563; }
 
-        /* Menu Lateral Esquerdo do Detalhe */
-        .sidebar-menu { width: 220px; background: #ffffff; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; overflow-y: auto; }
-        .sidebar-item { padding: 12px 16px; font-size: 12px; font-weight: 600; color: #4b5563; border-bottom: 1px solid #f3f4f6; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .sidebar-item:hover, .sidebar-item.active { background: #ecfdf5; color: var(--green-primary); border-left: 4px solid var(--green-primary); }
-        .sidebar-badge { background: #e5e7eb; color: #374151; padding: 2px 6px; border-radius: 10px; font-size: 10px; }
+        /* GRÁFICOS DE HARDWARE NO DETALHE */
+        .charts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .chart-box { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .chart-box-title { font-size: 11px; font-weight: bold; text-transform: uppercase; color: var(--green-dark); margin-bottom: 12px; }
+        .chart-canvas-container { width: 110px; height: 110px; position: relative; }
 
-        /* Conteúdo Principal do Detalhe */
-        .main-form-area { flex: 1; padding: 24px; overflow-y: auto; display: flex; gap: 24px; }
-        .form-grid { flex: 3; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-content: start; }
+        /* FORMULÁRIO E QR CODE */
+        .details-main-grid { display: flex; gap: 20px; }
+        .form-grid { flex: 3; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .form-field { display: flex; flex-direction: column; gap: 4px; }
         .form-field label { font-size: 11px; font-weight: bold; color: var(--green-dark); text-transform: uppercase; }
-        .form-field input, .form-field select, .form-field textarea { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; background: #ffffff; outline: none; }
+        .form-field input, .form-field select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; background: #ffffff; outline: none; }
         
-        .qr-card { flex: 1; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; height: fit-content; text-align: center; }
-        .qr-code-placeholder { width: 140px; height: 140px; background: #000; margin: 12px 0; border: 4px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center; }
-        
-        .bottom-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 12px; grid-column: span 2; }
-        .btn-save { background: #f59e0b; color: white; border: none; padding: 10px 24px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-back { background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .qr-card { flex: 1; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; text-align: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .qr-code-placeholder { width: 130px; height: 130px; margin: 12px 0; border: 4px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.08); }
+
+        /* FERRAMENTAS DE AÇÃO INSTANTÂNEA */
+        .actions-section { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .section-title { font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--green-dark); border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 14px; }
+        .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .tool-card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 8px; }
+        .tool-name { font-size: 12px; font-weight: bold; color: var(--green-dark); }
+        .tool-desc { font-size: 11px; color: #6b7280; }
+        .btn-action-trigger { background: var(--orange-btn); color: white; border: none; padding: 7px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn-action-trigger:hover { background: #d97706; }
+
+        /* LOGS AO VIVO DO COMPUTADOR */
+        .logs-section { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .logs-box { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; height: 120px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 11px; color: #34d399; }
     </style>
 </head>
 <body>
@@ -186,7 +197,7 @@
         </div>
     </div>
 
-    <!-- ESTRUTURA DA APLICAÇÃO -->
+    <!-- ESTRUTURA PRINCIPAL -->
     <div class="app-container" id="app-screen" style="display:none;">
         
         <!-- NAVEGAÇÃO TOPO -->
@@ -197,11 +208,11 @@
             <div class="nav-actions">
                 <button class="btn-add">+ Adicionar</button>
                 <input type="text" class="search-input" placeholder="Pesquisar ativo...">
-                <span style="font-weight:bold; color:var(--green-dark);">Técnico TI</span>
+                <span style="font-weight:bold; color:var(--green-dark);" id="lbl-usuario-topo">Técnico TI</span>
             </div>
         </div>
 
-        <!-- VISTA 1: LISTA COMPLETA DE ATIVOS (ESTILO IMAGEM 1) -->
+        <!-- VISTA 1: LISTA DE ATIVOS -->
         <div class="content-area" id="list-screen">
             <div class="table-card">
                 <table class="assets-table">
@@ -228,62 +239,110 @@
             </div>
         </div>
 
-        <!-- VISTA 2: DETALHES DO COMPUTADOR (ESTILO IMAGEM 2) -->
+        <!-- VISTA 2: DETALHES DO COMPUTADOR (SEM BARRA LATERAL) -->
         <div id="detail-screen">
-            <div class="detail-header">
-                <div style="font-size:16px; font-weight:bold; color:var(--green-dark);" id="detalhe-titulo-host">💻 Computador - GC-F23-PC0214</div>
+            
+            <div class="detail-header-bar">
+                <div class="detail-title" id="detalhe-titulo-host">💻 Computador - GC-M08-PC0085</div>
                 <button class="btn-back" onclick="voltarParaLista()">← Voltar à Lista</button>
             </div>
-            <div class="detail-body">
-                
-                <!-- Menu Lateral Esquerdo -->
-                <div class="sidebar-menu">
-                    <div class="sidebar-item active">💻 Computador</div>
-                    <div class="sidebar-item">📊 Análise de impacto</div>
-                    <div class="sidebar-item">⚙️ Sistemas operacionais <span class="sidebar-badge">1</span></div>
-                    <div class="sidebar-item">🧩 Componentes <span class="sidebar-badge">29</span></div>
-                    <div class="sidebar-item">💾 Volumes <span class="sidebar-badge">4</span></div>
-                    <div class="sidebar-item">📦 Softwares</div>
-                    <div class="sidebar-item">⚡ Processos <span class="sidebar-badge">922</span></div>
-                    <div class="sidebar-item">🌐 Conexões <span class="sidebar-badge">2</span></div>
-                    <div class="sidebar-item">🔌 Gerenciamento remoto <span class="sidebar-badge">1</span></div>
-                    <div class="sidebar-item">📄 Documentos</div>
-                    <div class="sidebar-item">🛡️ Antivírus <span class="sidebar-badge">1</span></div>
-                    <div class="sidebar-item">💬 Chamados</div>
+
+            <!-- GRÁFICOS DE TELEMETRIA EM TEMPO REAL -->
+            <div class="charts-row">
+                <div class="chart-box">
+                    <div class="chart-box-title">Consumo de CPU</div>
+                    <div class="chart-canvas-container"><canvas id="chartCpuDetail"></canvas></div>
                 </div>
-
-                <!-- Formulário Principal de Detalhes -->
-                <div class="main-form-area">
-                    <div class="form-grid">
-                        <div class="form-field"><label>Nome</label><input type="text" id="dt-nome" readonly></div>
-                        <div class="form-field"><label>Status</label><select id="dt-status"><option>Em uso</option><option>Manutenção</option></select></div>
-                        <div class="form-field"><label>Localização / Setor</label><input type="text" id="dt-setor"></div>
-                        <div class="form-field"><label>Tipo</label><input type="text" id="dt-tipo" value="Desktop"></div>
-                        <div class="form-field"><label>Técnico Encarregado</label><input type="text" value="Equipe TI CST"></div>
-                        <div class="form-field"><label>Fabricante</label><input type="text" value="Dell Inc."></div>
-                        <div class="form-field"><label>Nome Alternativo do Usuário</label><input type="text" id="dt-usuario" readonly></div>
-                        <div class="form-field"><label>Modelo</label><input type="text" value="Vostro 3470"></div>
-                        <div class="form-field"><label>Endereço IP</label><input type="text" id="dt-ip" readonly></div>
-                        <div class="form-field"><label>Número de Série</label><input type="text" value="43M43T2"></div>
-                        <div class="form-field" style="grid-column: span 2;"><label>Comentários / Logs Recentes</label><textarea id="dt-logs" rows="3" readonly></textarea></div>
-                        
-                        <div class="bottom-actions">
-                            <button class="btn-save" onclick="executarAcaoNoHost('limpar_cache')">🧹 Executar Limpeza</button>
-                            <button class="btn-save" style="background:var(--green-primary);" onclick="salvarAlteracoes()">Salvar Alterações</button>
-                        </div>
-                    </div>
-
-                    <!-- Bloco do QR Code -->
-                    <div class="qr-card">
-                        <span style="font-size:12px; font-weight:bold; color:var(--green-dark);">URL do ativo</span>
-                        <div class="qr-code-placeholder">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=GRUPOCST_RMM" alt="QR Code Ativo">
-                        </div>
-                        <span style="font-size:10px; color:#6b7280;">Identificador único patrimonial do GRUPOCST/TI</span>
-                    </div>
+                <div class="chart-box">
+                    <div class="chart-box-title">Memória RAM</div>
+                    <div class="chart-canvas-container"><canvas id="chartRamDetail"></canvas></div>
                 </div>
-
+                <div class="chart-box">
+                    <div class="chart-box-title">Ocupação Disco (C:)</div>
+                    <div class="chart-canvas-container"><canvas id="chartDiscoDetail"></canvas></div>
+                </div>
             </div>
+
+            <!-- FORMULÁRIO DE DADOS E QR CODE -->
+            <div class="details-main-grid">
+                <div class="form-grid">
+                    <div class="form-field"><label>Nome da Estação</label><input type="text" id="dt-nome" readonly></div>
+                    <div class="form-field"><label>Status do Agente</label><input type="text" id="dt-status" readonly></div>
+                    <div class="form-field"><label>Localização / Setor</label><input type="text" id="dt-setor"></div>
+                    <div class="form-field"><label>Tipo de Ativo</label><input type="text" id="dt-tipo" value="Desktop" readonly></div>
+                    <div class="form-field"><label>Técnico Encarregado</label><input type="text" value="Equipe TI CST" readonly></div>
+                    <div class="form-field"><label>Fabricante / Sistema</label><input type="text" id="dt-so" readonly></div>
+                    <div class="form-field"><label>Nome Alternativo do Usuário</label><input type="text" id="dt-usuario" readonly></div>
+                    <div class="form-field"><label>Modelo / Processador</label><input type="text" id="dt-modelo" readonly></div>
+                    <div class="form-field"><label>Endereço IP</label><input type="text" id="dt-ip" readonly></div>
+                    <div class="form-field"><label>Última Conexão</label><input type="text" id="dt-ultima-conexao" readonly></div>
+                </div>
+
+                <div class="qr-card">
+                    <span style="font-size:12px; font-weight:bold; color:var(--green-dark);">URL do ativo</span>
+                    <div class="qr-code-placeholder">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=122x122&data=GRUPOCST_RMM" alt="QR Code Ativo">
+                    </div>
+                    <span style="font-size:10px; color:#6b7280;">Identificador único patrimonial do GRUPOCST/TI</span>
+                    <button class="btn-action-trigger" style="margin-top:10px; width:100%; background:var(--green-primary);" onclick="salvarSetorHost()">Salvar Alterações</button>
+                </div>
+            </div>
+
+            <!-- CENTRAL DE FERRAMENTAS E MANUTENÇÃO INSTANTÂNEA -->
+            <div class="actions-section">
+                <div class="section-title">🛠️ Ferramentas de Ação Remota Instantânea</div>
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <div>
+                            <div class="tool-name">🧹 Limpar Cache & Temp</div>
+                            <div class="tool-desc">Elimina arquivos temporários da máquina.</div>
+                        </div>
+                        <button class="btn-action-trigger" onclick="executarAcaoNoHost('limpar_cache')">EXECUTAR AGORA</button>
+                    </div>
+                    <div class="tool-card">
+                        <div>
+                            <div class="tool-name">🖨️ Reiniciar Spooler</div>
+                            <div class="tool-desc">Destrava filas de impressão pendentes.</div>
+                        </div>
+                        <button class="btn-action-trigger" onclick="executarAcaoNoHost('destravar_impressora')">REINICIAR SPOOLER</button>
+                    </div>
+                    <div class="tool-card">
+                        <div>
+                            <div class="tool-name">⚡ Otimizar Rede / DNS</div>
+                            <div class="tool-desc">Renova IP e limpa cache de DNS.</div>
+                        </div>
+                        <button class="btn-action-trigger" onclick="executarAcaoNoHost('otimizar_rede')">OTIMIZAR REDE</button>
+                    </div>
+                    <div class="tool-card">
+                        <div>
+                            <div class="tool-name">🔄 Atualizar GPO</div>
+                            <div class="tool-desc">Força aplicação de políticas do Active Directory.</div>
+                        </div>
+                        <button class="btn-action-trigger" onclick="executarAcaoNoHost('atualizar_gpo')">ATUALIZAR GPO</button>
+                    </div>
+                    <div class="tool-card">
+                        <div>
+                            <div class="tool-name">💽 Otimizar Disco C:</div>
+                            <div class="tool-desc">Executa rotina TRIM/Defrag no armazenamento.</div>
+                        </div>
+                        <button class="btn-action-trigger" onclick="executarAcaoNoHost('otimizar_disco')">OTIMIZAR DISCO</button>
+                    </div>
+                    <div class="tool-card">
+                        <div>
+                            <div class="tool-name">📁 Criar Pasta Relatórios</div>
+                            <div class="tool-desc">Cria diretório padrão no Desktop.</div>
+                        </div>
+                        <button class="btn-action-trigger" onclick="criarPastaHost()">CRIAR PASTA</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGS AO VIVO DA MÁQUINA -->
+            <div class="logs-section">
+                <div class="section-title">📋 Histórico de Logs & Auditoria da Estação</div>
+                <div class="logs-box" id="dt-logs-box">Aguardando seleção de máquina...</div>
+            </div>
+
         </div>
 
     </div>
@@ -291,7 +350,14 @@
     <script>
         let estacoesCache = [];
         let hostAtual = null;
-        const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
+        let chartCpu, chartRam, chartDisco;
+
+        function initCharts() {
+            const opts = { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+            chartCpu = new Chart(document.getElementById('chartCpuDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#059669', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
+            chartRam = new Chart(document.getElementById('chartRamDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#f59e0b', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
+            chartDisco = new Chart(document.getElementById('chartDiscoDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#ef4444', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
+        }
 
         function mudarTipo(tipo) {
             document.getElementById('btn-tipo-user').classList.toggle('active', tipo === 'usuario');
@@ -301,11 +367,13 @@
         async function realizarLogin() {
             const user = document.getElementById('input-user').value.trim().toLowerCase();
             const pass = document.getElementById('input-pass').value;
-            if (!user || !pass) return alert('Preencha os dados.');
+            if (!user || !pass) return alert('Preencha os dados de acesso.');
 
+            document.getElementById('lbl-usuario-topo').innerText = user;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'flex';
             
+            initCharts();
             carregarDadosAtivos();
             setInterval(carregarDadosAtivos, 10000);
         }
@@ -342,6 +410,15 @@
                 } else {
                     tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:20px;">Nenhum computador conectado no momento.</td></tr>`;
                 }
+
+                // Atualização em tempo real se o detalhe estiver aberto
+                if (hostAtual) {
+                    const hostAtualizado = estacoesCache.find(e => e.hostname === hostAtual.hostname);
+                    if (hostAtualizado) {
+                        hostAtual = hostAtualizado;
+                        atualizarMetricasDetalhe();
+                    }
+                }
             } catch (err) {}
         }
 
@@ -351,40 +428,77 @@
 
             document.getElementById('detalhe-titulo-host').innerText = `💻 Computador - ${hostAtual.hostname}`;
             document.getElementById('dt-nome').value = hostAtual.hostname;
+            document.getElementById('dt-status').value = hostAtual.status;
             document.getElementById('dt-setor').value = hostAtual.setor || 'Atendimento / Geral';
+            document.getElementById('dt-so').value = hostAtual.so || 'Windows';
             document.getElementById('dt-usuario').value = `${hostAtual.usuario}@CST`;
+            document.getElementById('dt-modelo').value = `AMD / Intel Processor (${hostAtual.cpu}% CPU)`;
             document.getElementById('dt-ip').value = hostAtual.ip;
-            document.getElementById('dt-logs').value = (hostAtual.logs || []).join('\n');
+            document.getElementById('dt-ultima-conexao').value = hostAtual.data_ultima_conexao || hostAtual.visto_ha;
+
+            atualizarMetricasDetalhe();
 
             document.getElementById('list-screen').style.display = 'none';
             document.getElementById('detail-screen').style.display = 'flex';
         }
 
+        function atualizarMetricasDetalhe() {
+            if (!hostAtual) return;
+            if (chartCpu) { chartCpu.data.datasets[0].data = [hostAtual.cpu, 100 - hostAtual.cpu]; chartCpu.update(); }
+            if (chartRam) { chartRam.data.datasets[0].data = [hostAtual.ram, 100 - hostAtual.ram]; chartRam.update(); }
+            if (chartDisco) { chartDisco.data.datasets[0].data = [hostAtual.disco, 100 - hostAtual.disco]; chartDisco.update(); }
+
+            const logsBox = document.getElementById('dt-logs-box');
+            logsBox.innerHTML = (hostAtual.logs && hostAtual.logs.length > 0)
+                ? hostAtual.logs.map(l => `<div>${l}</div>`).join('')
+                : '<div>Nenhum registro recente de auditoria.</div>';
+        }
+
         function voltarParaLista() {
+            hostAtual = null;
             document.getElementById('detail-screen').style.display = 'none';
             document.getElementById('list-screen').style.display = 'block';
         }
 
         async function executarAcaoNoHost(acao) {
-            if (!hostAtual) return;
-            await fetch('/api/v1/executar-acao', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ target: hostAtual.hostname, acao })
-            });
-            alert(`Comando de manutenção enviado para ${hostAtual.hostname}!`);
+            if (!hostAtual) return alert('Selecione uma estação válida.');
+            try {
+                await fetch('/api/v1/executar-acao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: hostAtual.hostname, acao })
+                });
+                alert(`Comando '${acao}' enviado com sucesso para ${hostAtual.hostname}!`);
+            } catch (err) { alert('Falha ao enviar comando.'); }
         }
 
-        async function salvarAlteracoes() {
+        async function criarPastaHost() {
+            if (!hostAtual) return alert('Selecione uma estação válida.');
+            const nomeBruto = prompt("Nome da pasta no Desktop:", "Relatorios_CST");
+            if (!nomeBruto) return;
+            const nome = nomeBruto.replace(/[^a-zA-Z0-9_-]/g, '');
+            try {
+                await fetch('/api/v1/executar-acao', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: hostAtual.hostname, acao: 'criar_pasta', parametros: { nome } })
+                });
+                alert(`Solicitação de criação de pasta enviada para ${hostAtual.hostname}!`);
+            } catch (err) { alert('Falha ao enviar comando.'); }
+        }
+
+        async function salvarSetorHost() {
             if (!hostAtual) return;
-            const novoSetor = document.getElementById('dt-setor').value;
-            await fetch('/api/v1/definir-setor', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ hostname: hostAtual.hostname, setor: novoSetor })
-            });
-            alert('Dados do ativo salvos!');
-            carregarDadosAtivos();
+            const novoSetor = document.getElementById('dt-setor').value.trim();
+            try {
+                await fetch('/api/v1/definir-setor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hostname: hostAtual.hostname, setor: novoSetor })
+                });
+                alert(`Setor do ativo ${hostAtual.hostname} atualizado para '${novoSetor}'!`);
+                carregarDadosAtivos();
+            } catch (err) { alert('Erro ao salvar setor.'); }
         }
     </script>
 </body>
