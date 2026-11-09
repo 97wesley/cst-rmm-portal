@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GRUPOCST/TI | Portal RMM & Telefonia IP net2phone</title>
+    <title>GRUPOCST/TI | Portal RMM, Telefonia & BI</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -16,6 +16,7 @@
             --text-dark: #065f46; 
             --text-body: #111827;
             --orange-btn: #f59e0b;
+            --blue-bi: #2563eb;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
@@ -40,7 +41,6 @@
             color: var(--green-primary); letter-spacing: 8px;
             animation: moveText 25s linear infinite;
         }
-
         .marquee-line:nth-child(even) { animation-direction: reverse; color: var(--green-bright); }
         @keyframes moveText { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
@@ -71,7 +71,7 @@
         .form-group input { width: 100%; padding: 10px; background: #f0fdf4; border: 1px solid var(--border-color); color: var(--text-body); border-radius: 6px; outline: none; }
         .btn-login { width: 100%; padding: 12px; background: var(--green-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* TOPO NAVBAR */
+        /* NAVEGAÇÃO TOPO */
         .top-navbar {
             background: #ffffff; border-bottom: 2px solid #e5e7eb;
             padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;
@@ -80,11 +80,12 @@
         .breadcrumb-link { cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 4px; }
         .breadcrumb-link:hover { color: var(--green-bright); text-decoration: underline; }
         .breadcrumb span { color: #9ca3af; }
-        .nav-actions { display: flex; align-items: center; gap: 12px; }
+        .nav-actions { display: flex; align-items: center; gap: 10px; }
         .btn-add { background: var(--orange-btn); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .search-input { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 20px; outline: none; width: 200px; }
+        .btn-bi { background: var(--blue-bi); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        .search-input { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 20px; outline: none; width: 180px; }
 
-        /* VISTA 1: LISTA RMM */
+        /* VISTAS */
         .content-area { flex: 1; overflow-y: auto; padding: 16px; }
         .table-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         table.assets-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -96,7 +97,6 @@
         .badge-online { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
         .badge-offline { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
 
-        /* VISTA 2: PAINEL DA MÁQUINA */
         #detail-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 20px; }
         .detail-header-bar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
         .detail-title { font-size: 18px; font-weight: bold; color: var(--green-dark); display: flex; align-items: center; gap: 8px; }
@@ -127,7 +127,6 @@
         .logs-section { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; }
         .logs-box { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; height: 140px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 11px; color: #34d399; }
 
-        /* VISTA 3: INVENTÁRIO FOTOGRÁFICO */
         #inventory-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 16px; }
         .inventory-card-row { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         .inventory-row-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
@@ -139,34 +138,19 @@
         .btn-upload-camera { background: var(--green-primary); color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; }
         .hidden-file-input { display: none; }
 
-        /* VISTA 4: TELEFONIA IP NET2PHONE (TEMA ESCURO - GRAFANA / ZABBIX) */
-        #telephony-screen { 
-            display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 16px;
-            background: #0b0f19; color: #f3f4f6; 
-        }
-
-        .tel-header-bar {
-            background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 20px;
-            display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
+        #telephony-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 16px; background: #0b0f19; color: #f3f4f6; }
+        .tel-header-bar { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
         .tel-title { font-size: 18px; font-weight: bold; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
-
         .tel-cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
-        .tel-card-stat {
-            background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px;
-            display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+        .tel-card-stat { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 14px; display: flex; align-items: center; gap: 12px; }
         .tel-icon-circle { width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
         .tel-stat-val { font-size: 24px; font-weight: 900; color: #ffffff; }
         .tel-stat-lbl { font-size: 11px; text-transform: uppercase; color: #94a3b8; font-weight: 600; }
-
         .tel-charts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         .tel-chart-box { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; }
         .tel-box-header { font-size: 12px; font-weight: bold; color: #38bdf8; text-transform: uppercase; margin-bottom: 12px; display: flex; justify-content: space-between; }
-
         .tel-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
         .tel-table-container { background: #111827; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; }
-        
         table.tel-table { width: 100%; border-collapse: collapse; font-size: 12px; color: #e2e8f0; }
         table.tel-table th { background: #1e293b; padding: 10px; text-align: left; color: #94a3b8; font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #334155; }
         table.tel-table td { padding: 10px; border-bottom: 1px solid #1e293b; }
@@ -176,10 +160,19 @@
         .dot-green { background: #10b981; box-shadow: 0 0 8px #10b981; }
         .dot-red { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
         .dot-yellow { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
-
         .ramais-grid-map { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 10px; background: #0f172a; border-radius: 6px; }
         .ramal-dot-item { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; transition: transform 0.2s; }
         .ramal-dot-item:hover { transform: scale(1.3); }
+
+        /* MODAL BI / RELATÓRIOS */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 5000; }
+        .modal-card { background: #ffffff; border-radius: 12px; border: 2px solid var(--blue-bi); width: 550px; padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+        .modal-header { font-size: 16px; font-weight: bold; color: var(--blue-bi); margin-bottom: 16px; display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+        .export-options-list { display: flex; flex-direction: column; gap: 12px; }
+        .export-item-btn { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .export-item-btn:hover { background: #eff6ff; border-color: var(--blue-bi); }
+        .export-btn-title { font-size: 13px; font-weight: bold; color: #1e293b; }
+        .export-btn-desc { font-size: 11px; color: #64748b; }
 
         /* LIGHTBOX */
         .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 4000; padding: 20px; }
@@ -189,6 +182,13 @@
         .lightbox-close-btn { background: #ef4444; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; cursor: pointer; }
         .lightbox-body { display: flex; justify-content: center; align-items: center; padding: 20px; background: #0f172a; flex: 1; overflow: hidden; }
         .lightbox-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+
+        @media print {
+            .top-navbar, .watermark-bg, .btn-back, .nav-actions, .actions-section { display: none !important; }
+            body { overflow: visible !important; background: white !important; }
+            .app-container { height: auto !important; }
+            #detail-screen, #list-screen, #inventory-screen, #telephony-screen { display: block !important; }
+        }
     </style>
 </head>
 <body>
@@ -198,6 +198,46 @@
         <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
         <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
         <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
+    </div>
+
+    <!-- MODAL RELATÓRIOS & MODO BI -->
+    <div class="modal-overlay" id="export-bi-modal" onclick="fecharModalBi(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div>📊 Central de Relatórios & Integração BI</div>
+                <button style="background:none; border:none; font-size:16px; cursor:pointer;" onclick="fecharModalBi()">✕</button>
+            </div>
+            <div class="export-options-list">
+                <div class="export-item-btn" onclick="exportarCsvRmm()">
+                    <div>
+                        <div class="export-btn-title">📄 Exportar CSV (Inventário RMM)</div>
+                        <div class="export-btn-desc">Baixa arquivo .CSV formatado de todos os computadores.</div>
+                    </div>
+                    <span style="font-size:18px;">📥</span>
+                </div>
+                <div class="export-item-btn" onclick="exportarCsvTelefonia()">
+                    <div>
+                        <div class="export-btn-title">📞 Exportar CSV (Telefonia net2phone)</div>
+                        <div class="export-btn-desc">Relatório completo dos ramais, IPs, MACs e registro SIP.</div>
+                    </div>
+                    <span style="font-size:18px;">📥</span>
+                </div>
+                <div class="export-item-btn" onclick="window.print()">
+                    <div>
+                        <div class="export-btn-title">🖨️ Imprimir / Exportar PDF Executivo</div>
+                        <div class="export-btn-desc">Gera PDF limpo da tela atual para apresentação diretoria.</div>
+                    </div>
+                    <span style="font-size:18px;">🖨️</span>
+                </div>
+                <div class="export-item-btn" onclick="copiarUrlBiFeed()">
+                    <div>
+                        <div class="export-btn-title">📈 Conector API Modo BI (Power BI / Grafana)</div>
+                        <div class="export-btn-desc">Copia URL JSON ao vivo para alimentar dashboards no Power BI.</div>
+                    </div>
+                    <span style="font-size:18px;">🔗</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- LIGHTBOX -->
@@ -234,7 +274,7 @@
         </div>
     </div>
 
-    <!-- ESTRUTURA PRINCIPAL -->
+    <!-- APP PRINCIPAL -->
     <div class="app-container" id="app-screen" style="display:none;">
         
         <!-- NAVEGAÇÃO TOPO -->
@@ -249,6 +289,7 @@
                 <div class="breadcrumb-link" onclick="irParaComputadores()">💻 Computador</div>
             </div>
             <div class="nav-actions">
+                <button class="btn-bi" id="btn-modal-bi" onclick="abrirModalBi()">📊 Exportar & BI</button>
                 <button class="btn-add" id="btn-add-ativo" onclick="adicionarAtivoManual()">+ Adicionar Ativo</button>
                 <input type="text" class="search-input" placeholder="Pesquisar ativo...">
                 <span style="font-weight:bold; color:var(--green-dark);" id="lbl-usuario-topo">Utilizador</span>
@@ -363,7 +404,7 @@
             </div>
         </div>
 
-        <!-- VISTA 3: INVENTÁRIO FOTOGRÁFICO (ADMIN) -->
+        <!-- VISTA 3: INVENTÁRIO FOTOGRÁFICO -->
         <div id="inventory-screen">
             <div class="detail-header-bar">
                 <div class="detail-title">📷 Inventário Fotográfico de Ativos & Periféricos (GRUPOCST/TI)</div>
@@ -372,53 +413,36 @@
             <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;"></div>
         </div>
 
-        <!-- VISTA 4: TELEFONIA IP NET2PHONE (EXCLUSIVA ADMIN - GRAFANA DASHBOARD) -->
+        <!-- VISTA 4: TELEFONIA IP NET2PHONE -->
         <div id="telephony-screen">
             <div class="tel-header-bar">
                 <div class="tel-title">📞 Monitoramento de Telefonia IP – net2phone Cloud PABX</div>
                 <div style="font-size:12px; color:#94a3b8;">Status: <span style="color:#10b981; font-weight:bold;">● API Conectada</span></div>
             </div>
 
-            <!-- CARDS DE MÉTRICAS DA TELEFONIA -->
             <div class="tel-cards-grid">
                 <div class="tel-card-stat">
                     <div class="tel-icon-circle" style="background:rgba(56, 189, 248, 0.15); color:#38bdf8;">📞</div>
-                    <div>
-                        <div class="tel-stat-val" id="tel-total-ramais">50</div>
-                        <div class="tel-stat-lbl">Total de Ramais</div>
-                    </div>
+                    <div><div class="tel-stat-val" id="tel-total-ramais">50</div><div class="tel-stat-lbl">Total de Ramais</div></div>
                 </div>
                 <div class="tel-card-stat">
                     <div class="tel-icon-circle" style="background:rgba(16, 185, 129, 0.15); color:#10b981;">✔</div>
-                    <div>
-                        <div class="tel-stat-val" style="color:#10b981;" id="tel-ramais-online">47</div>
-                        <div class="tel-stat-lbl">Ramais Online</div>
-                    </div>
+                    <div><div class="tel-stat-val" style="color:#10b981;" id="tel-ramais-online">47</div><div class="tel-stat-lbl">Ramais Online</div></div>
                 </div>
                 <div class="tel-card-stat">
                     <div class="tel-icon-circle" style="background:rgba(239, 68, 68, 0.15); color:#ef4444;">✖</div>
-                    <div>
-                        <div class="tel-stat-val" style="color:#ef4444;" id="tel-ramais-offline">3</div>
-                        <div class="tel-stat-lbl">Ramais Offline</div>
-                    </div>
+                    <div><div class="tel-stat-val" style="color:#ef4444;" id="tel-ramais-offline">3</div><div class="tel-stat-lbl">Ramais Offline</div></div>
                 </div>
                 <div class="tel-card-stat">
                     <div class="tel-icon-circle" style="background:rgba(245, 158, 11, 0.15); color:#f59e0b;">⚠</div>
-                    <div>
-                        <div class="tel-stat-val" style="color:#f59e0b;" id="tel-sem-sip">1</div>
-                        <div class="tel-stat-lbl">Sem Registro SIP</div>
-                    </div>
+                    <div><div class="tel-stat-val" style="color:#f59e0b;" id="tel-sem-sip">1</div><div class="tel-stat-lbl">Sem Registro SIP</div></div>
                 </div>
                 <div class="tel-card-stat">
                     <div class="tel-icon-circle" style="background:rgba(16, 185, 129, 0.15); color:#10b981;">📈</div>
-                    <div>
-                        <div class="tel-stat-val" style="color:#10b981;" id="tel-disp-geral">94.0%</div>
-                        <div class="tel-stat-lbl">Disponibilidade Geral</div>
-                    </div>
+                    <div><div class="tel-stat-val" style="color:#10b981;" id="tel-disp-geral">94.0%</div><div class="tel-stat-lbl">Disponibilidade Geral</div></div>
                 </div>
             </div>
 
-            <!-- GRÁFICOS DO PAINEL DA TELEFONIA -->
             <div class="tel-charts-row">
                 <div class="tel-chart-box">
                     <div class="tel-box-header">📊 Status dos Ramais</div>
@@ -438,20 +462,13 @@
                 </div>
             </div>
 
-            <!-- TABELA E MAPA DE RAMAIS -->
             <div class="tel-main-grid">
                 <div class="tel-table-container">
                     <div class="tel-box-header">📋 Lista de Ramais IP em Tempo Real</div>
                     <table class="tel-table">
                         <thead>
                             <tr>
-                                <th>RAMAL</th>
-                                <th>NOME / COLABORADOR</th>
-                                <th>IP LOCAL</th>
-                                <th>ENDEREÇO MAC</th>
-                                <th>STATUS</th>
-                                <th>REGISTRO SIP</th>
-                                <th>LATÊNCIA</th>
+                                <th>RAMAL</th><th>NOME / COLABORADOR</th><th>IP LOCAL</th><th>ENDEREÇO MAC</th><th>STATUS</th><th>REGISTRO SIP</th><th>LATÊNCIA</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-ramais">
@@ -469,12 +486,11 @@
                     <div class="tel-table-container">
                         <div class="tel-box-header">⚡ Eventos Recentes de Voz</div>
                         <div style="font-size:11px; display:flex; flex-direction:column; gap:8px;" id="box-eventos-tel">
-                            <div>A carregar registo de chamadas...</div>
+                            <div>A carregar registo...</div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
 
     </div>
@@ -506,22 +522,15 @@
             chartRam = new Chart(document.getElementById('chartRamDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#f59e0b', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
             chartDisco = new Chart(document.getElementById('chartDiscoDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#ef4444', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
 
-            // GRÁFICOS TELEFONIA NET2PHONE
             chartTelStatus = new Chart(document.getElementById('chartTelStatus'), {
                 type: 'doughnut',
-                data: {
-                    labels: ['Online', 'Offline', 'Sem SIP'],
-                    datasets: [{ data: [47, 3, 1], backgroundColor: ['#10b981', '#ef4444', '#f59e0b'], borderWidth: 0 }]
-                },
+                data: { labels: ['Online', 'Offline', 'Sem SIP'], datasets: [{ data: [47, 3, 1], backgroundColor: ['#10b981', '#ef4444', '#f59e0b'], borderWidth: 0 }] },
                 options: opts
             });
 
             chartTelDisp24h = new Chart(document.getElementById('chartTelDisp24h'), {
                 type: 'line',
-                data: {
-                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-                    datasets: [{ data: [98, 97, 95, 94, 96, 94], borderColor: '#38bdf8', tension: 0.4, fill: false }]
-                },
+                data: { labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'], datasets: [{ data: [98, 97, 95, 94, 96, 94], borderColor: '#38bdf8', tension: 0.4, fill: false }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         }
@@ -546,6 +555,7 @@
             if (!isUserAdmin) {
                 document.getElementById('bc-ativos-link').style.display = 'none';
                 document.getElementById('bc-telefonia-link').style.display = 'none';
+                document.getElementById('btn-modal-bi').style.display = 'none';
                 document.getElementById('bc-sep-1').style.display = 'none';
                 document.getElementById('bc-sep-2').style.display = 'none';
                 document.getElementById('btn-add-ativo').style.display = 'none';
@@ -554,7 +564,29 @@
 
             initCharts();
             carregarDadosAtivos();
-            setInterval(carregarDadosAtivos, 10000);
+
+            // ATUALIZAÇÃO AUTOMÁTICA A CADA 5 SEGUNDOS (5000ms)
+            setInterval(() => {
+                carregarDadosAtivos();
+                if (document.getElementById('telephony-screen').style.display === 'flex') {
+                    carregarDadosTelefonia();
+                }
+            }, 5000);
+        }
+
+        function abrirModalBi() { document.getElementById('export-bi-modal').style.display = 'flex'; }
+        function fecharModalBi(e) {
+            if (e && e.target !== document.getElementById('export-bi-modal')) return;
+            document.getElementById('export-bi-modal').style.display = 'none';
+        }
+
+        function exportarCsvRmm() { window.location.href = '/api/v1/export/rmm-csv'; }
+        function exportarCsvTelefonia() { window.location.href = '/api/v1/export/telefonia-csv'; }
+        
+        function copiarUrlBiFeed() {
+            const urlBi = `${window.location.origin}/api/v1/export/bi-json`;
+            navigator.clipboard.writeText(urlBi);
+            alert(`URL de feed do Power BI copiada para a área de transferência!\n\nURL: ${urlBi}`);
         }
 
         function abrirLightbox(src, titulo) {
@@ -630,7 +662,6 @@
                     tbody.appendChild(tr);
                 });
 
-                // Mapa visual
                 const mapaGrid = document.getElementById('mapa-ramais-grid');
                 mapaGrid.innerHTML = '';
                 for (let i = 1; i <= 50; i++) {
@@ -641,7 +672,6 @@
                     mapaGrid.appendChild(d);
                 }
 
-                // Eventos
                 const boxEv = document.getElementById('box-eventos-tel');
                 boxEv.innerHTML = data.eventosRecentes.map(e => `
                     <div style="border-bottom:1px solid #1e293b; padding-bottom:4px;">
