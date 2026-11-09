@@ -1,142 +1,296 @@
-const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const app = express();
-
-const PORT = process.env.PORT || 8000;
-
-// Tokens Secretos de Segurança (Hardening)
-const AGENT_SECRET_TOKEN = 'CST_SECRET_AGENT_TOKEN_2026';
-const ADMIN_SECRET_TOKEN = 'CST_ADMIN_TOKEN_97WESLEY';
-
-app.use(express.json({ limit: '10kb' })); // Limita tamanho de payload para prevenir DoS
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(__dirname));
-
-const estacoesRegistradas = new Map();
-const comandosPendentes = new Map();
-const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
-
-// Whitelist Estrita de Ações Permitidas no Windows (Previne RCE)
-const ACOES_PERMITIDAS = [
-    'limpar_cache',
-    'destravar_impressora',
-    'criar_pasta',
-    'otimizar_rede',
-    'atualizar_gpo',
-    'otimizar_disco'
-];
-
-// Rota Raiz (Interface Web)
-app.get('/', (req, res) => {
-    const publicPath = path.join(__dirname, 'public', 'index.html');
-    const rootPath = path.join(__dirname, 'index.html');
-    
-    if (fs.existsSync(publicPath)) {
-        res.sendFile(publicPath);
-    } else if (fs.existsSync(rootPath)) {
-        res.sendFile(rootPath);
-    } else {
-        res.send('<h2>Servidor RMM Online</h2><p>Ficheiro index.html não foi localizado.</p>');
-    }
-});
-
-// Autenticação de Login Web
-app.post('/api/v1/login', (req, res) => {
-    const { usuario, senha, tipo } = req.body;
-    const cleanUser = (usuario || '').trim().toLowerCase();
-    
-    if (!cleanUser || !senha) {
-        return res.status(400).json({ sucesso: false, mensagem: 'Preencha os dados.' });
-    }
-    if (tipo === 'admin' && !EQUIPE_TI.includes(cleanUser)) {
-        return res.status(403).json({ sucesso: false, mensagem: 'Acesso negado.' });
-    }
-    
-    res.json({ 
-        sucesso: true, 
-        tipo, 
-        usuario: cleanUser,
-        adminToken: tipo === 'admin' ? ADMIN_SECRET_TOKEN : null 
-    });
-});
-
-// Recebimento de Telemetria (Requer Token do Agente)
-app.post('/api/v1/telemetria', (req, res) => {
-    const tokenAgente = req.headers['x-agent-token'];
-    if (tokenAgente !== AGENT_SECRET_TOKEN) {
-        return res.status(401).json({ erro: 'Não autorizado. Token de agente inválido.' });
-    }
-
-    const data = req.body;
-    const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
-    const hostKey = (data.hostname || 'DESCONHECIDO').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
-    
-    estacoesRegistradas.set(hostKey, {
-        hostname: hostKey,
-        usuario: (data.usuario || 'Utilizador').toLowerCase().trim(),
-        ip: data.ip_local || clientIp,
-        cpu: Math.min(100, Math.max(0, parseFloat(data.cpu_uso_percent || 0))),
-        ram: Math.min(100, Math.max(0, parseFloat(data.ram_uso_percent || 0))),
-        disco: Math.min(100, Math.max(0, parseFloat(data.disco_uso_percent || 0))),
-        so: data.sistema_operacional || 'Windows',
-        ultima_atualizacao: Date.now()
-    });
-    
-    res.json({ status: 'ok' });
-});
-
-// Consulta de Métricas para o Dashboard
-app.get('/api/v1/rmm-metrics', (req, res) => {
-    const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
-    const estacoesAtivas = [];
-    
-    for (const info of estacoesRegistradas.values()) {
-        if (Date.now() - info.ultima_atualizacao < 45000) {
-            estacoesAtivas.push(info);
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CST - Medicina do Trabalho | Portal RMM</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { 
+            --bg-body: #0f172a; 
+            --bg-card: #1e293b; 
+            --border-card: #334155; 
+            --text-main: #f8fafc; 
+            --text-muted: #94a3b8; 
+            --accent-blue: #0284c7; 
+            --accent-green: #10b981; 
+            --accent-red: #ef4444; 
         }
-    }
-    
-    res.json({ meu_ip: clientIp, estacoes: estacoesAtivas });
-});
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; }
 
-// Agendamento de Ação Remota (Com Sanitização e Whitelist)
-app.post('/api/v1/executar-acao', (req, res) => {
-    const { target, acao, parametros } = req.body;
-    const hostKey = (target || '').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
+        #login-screen { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+            background: linear-gradient(rgba(15,23,42,0.85), rgba(15,23,42,0.95)), url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover; 
+            display: flex; justify-content: center; align-items: center; z-index: 1000; 
+        }
+        #app-screen { display: none; height: 100vh; flex-direction: column; }
+        .login-card { background: rgba(30, 41, 59, 0.95); border: 1px solid var(--border-card); padding: 32px; border-radius: 12px; width: 420px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); }
+        .login-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+        .login-title span { color: var(--accent-blue); display: block; font-size: 12px; margin-top: 4px; }
+        .tipo-selector { display: flex; gap: 10px; margin-bottom: 16px; }
+        .tipo-btn { flex: 1; padding: 10px; background: #334155; border: 1px solid #475569; color: #fff; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; font-size: 12px; }
+        .tipo-btn.active { background: var(--accent-blue); border-color: var(--accent-blue); }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; background: #0f172a; border: 1px solid var(--border-card); color: #fff; border-radius: 6px; outline: none; }
+        .btn-login { width: 100%; padding: 12px; background: var(--accent-green); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .login-error { color: var(--accent-red); font-size: 12px; text-align: center; margin-top: 10px; }
 
-    // Validação na Whitelist
-    if (!ACOES_PERMITIDAS.includes(acao)) {
-        return res.status(400).json({ status: 'erro', mensagem: 'Ação não permitida por política de segurança.' });
-    }
+        .header { background: #141e33; border-bottom: 1px solid var(--border-card); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-size: 16px; font-weight: 700; color: #fff; }
+        .brand span { color: var(--accent-blue); font-size: 12px; margin-left: 8px; border: 1px solid var(--accent-blue); padding: 2px 6px; border-radius: 4px; }
+        .user-info { display: flex; align-items: center; gap: 15px; font-size: 13px; }
+        .btn-logout { background: #ef4444; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; }
+        .content { padding: 20px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; flex: 1; }
 
-    // Sanitização de Parâmetros
-    const paramsSanitizados = {};
-    if (parametros && parametros.nome) {
-        paramsSanitizados.nome = String(parametros.nome).replace(/[^a-zA-Z0-9_-]/g, '');
-    }
+        .topo-metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .metric-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+        .metric-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+        .chart-container { width: 120px; height: 120px; position: relative; }
 
-    if (!comandosPendentes.has(hostKey)) {
-        comandosPendentes.set(hostKey, []);
-    }
-    
-    comandosPendentes.get(hostKey).push({ acao, parametros: paramsSanitizados });
-    res.json({ status: 'sucesso', mensagem: 'Comando enfileirado com segurança.' });
-});
+        .reparos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .reparo-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; }
+        .reparo-title { font-size: 12px; font-weight: bold; color: #fff; margin-bottom: 4px; }
+        .reparo-desc { font-size: 10px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.3; }
+        .btn-reparar { background: #334155; color: white; border: 1px solid #475569; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; text-align: center; transition: 0.2s; }
+        .btn-reparar:hover { background: var(--accent-blue); }
 
-// Pendências para o Agente PowerShell (Requer Token do Agente)
-app.get('/api/v1/pendencias/:hostname', (req, res) => {
-    const tokenAgente = req.headers['x-agent-token'];
-    if (tokenAgente !== AGENT_SECRET_TOKEN) {
-        return res.status(401).json({ erro: 'Não autorizado.' });
-    }
+        .panel { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; padding: 16px; }
+        .panel-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-card); padding-bottom: 8px; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { text-align: left; padding: 8px; color: var(--text-muted); border-bottom: 1px solid var(--border-card); font-size: 11px; }
+        td { padding: 10px 8px; border-bottom: 1px solid #2d3d54; }
 
-    const hostKey = req.params.hostname.toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
-    const tarefas = comandosPendentes.get(hostKey) || [];
-    comandosPendentes.delete(hostKey);
-    res.json({ tarefas });
-});
+        .interactive-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15,23,42,0.85); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 3000; }
+        .interactive-box { background: var(--bg-card); border: 1px solid var(--border-card); width: 340px; border-radius: 16px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
+        .interactive-icon { font-size: 65px; margin-bottom: 16px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.4)); }
+        .spin { animation: spinGear 2s cubic-bezier(0.4, 0, 0.2, 1) infinite; display: inline-block; transform-origin: center; }
+        @keyframes spinGear { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
+        .pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        .interactive-title { font-size: 17px; font-weight: bold; color: #fff; margin-bottom: 8px; }
+        .interactive-message { font-size: 12px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.5; }
+        .interactive-btn { background: var(--accent-blue); color: white; border: none; padding: 10px 30px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; display: none; }
+        .interactive-btn:hover { background: #026aa7; }
+        .interactive-btn.btn-error { background: var(--accent-red); }
+    </style>
+</head>
+<body>
 
-app.listen(PORT, () => {
-    console.log(`[CST TI] Servidor RMM Seguro rodando na porta ${PORT}`);
-});
+    <div class="interactive-overlay" id="interactive-modal">
+        <div class="interactive-box">
+            <div class="interactive-icon" id="interactive-icon">⚙️</div>
+            <div class="interactive-title" id="interactive-title">A Processar...</div>
+            <div class="interactive-message" id="interactive-message">Aguarde um momento.</div>
+            <button class="interactive-btn" id="interactive-btn" onclick="fecharInteractiveModal()">OK</button>
+        </div>
+    </div>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <div class="login-title">CST - Medicina do Trabalho<span>PORTAL DE SUPORTE E RMM TI</span></div>
+            <div class="tipo-selector">
+                <div class="tipo-btn active" id="btn-tipo-user" onclick="mudarTipo('usuario')">Funcionário</div>
+                <div class="tipo-btn" id="btn-tipo-admin" onclick="mudarTipo('admin')">Administrador (TI)</div>
+            </div>
+            <div class="form-group">
+                <label id="label-user">Utilizador Active Directory (ex: edenilza.paixao)</label>
+                <input type="text" id="input-user" placeholder="Digite seu login...">
+            </div>
+            <div class="form-group">
+                <label>Senha do Windows / AD</label>
+                <input type="password" id="input-pass" placeholder="••••••••••••" onkeypress="if(event.key==='Enter') realizarLogin()">
+            </div>
+            <button class="btn-login" onclick="realizarLogin()">ACESSAR SISTEMA</button>
+            <div class="login-error" id="login-error"></div>
+        </div>
+    </div>
+
+    <div id="app-screen">
+        <div class="header">
+            <div class="brand">CST - Medicina do Trabalho <span id="painel-tipo-label">PORTAL DO FUNCIONÁRIO</span></div>
+            <div class="user-info">
+                <span>👤 Logado: <strong id="lbl-usuario-logado" style="color:var(--accent-green)"></strong></span>
+                <button class="btn-logout" onclick="fazerLogout()">Sair</button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panel" id="secao-graficos-topo">
+                <div class="panel-title">📊 Monitoramento em Tempo Real da sua Estação</div>
+                <div class="topo-metrics-grid">
+                    <div class="metric-card"><div class="metric-title">Uso de CPU</div><div class="chart-container"><canvas id="chartCpuTopo"></canvas></div></div>
+                    <div class="metric-card"><div class="metric-title">Uso de Memória RAM</div><div class="chart-container"><canvas id="chartRamTopo"></canvas></div></div>
+                    <div class="metric-card"><div class="metric-title">Ocupação Disco (C:)</div><div class="chart-container"><canvas id="chartDiscoTopo"></canvas></div></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">🛠️ Central de Manutenção e Autoatendimento</div>
+                <div class="reparos-grid">
+                    <div class="reparo-card">
+                        <div><div class="reparo-title">🧹 Limpar Cache & Temp</div><div class="reparo-desc">Remove ficheiros temporários para acelerar o sistema.</div></div>
+                        <button class="btn-reparar" onclick="executarReparo('limpar_cache')">LIMPAR</button>
+                    </div>
+                    <div class="reparo-card">
+                        <div><div class="reparo-title">🖨️ Reiniciar Spooler</div><div class="reparo-desc">Destrava a fila de impressão da impressora padrão.</div></div>
+                        <button class="btn-reparar" onclick="executarReparo('destravar_impressora')">REINICIAR</button>
+                    </div>
+                    <div class="reparo-card">
+                        <div><div class="reparo-title">📁 Criar Pasta Relatórios</div><div class="reparo-desc">Cria a pasta padrão na Área de Trabalho.</div></div>
+                        <button class="btn-reparar" onclick="criarPastaDesktop()">CRIAR PASTA</button>
+                    </div>
+                    <div class="reparo-card">
+                        <div><div class="reparo-title">⚡ Otimizar Rede / DNS</div><div class="reparo-desc">Limpa o cache DNS e renova o IP local.</div></div>
+                        <button class="btn-reparar" onclick="executarReparo('otimizar_rede')">OTIMIZAR REDE</button>
+                    </div>
+                    <div class="reparo-card">
+                        <div><div class="reparo-title">🔄 Atualizar GPO</div><div class="reparo-desc">Força sincronização com Active Directory da CST.</div></div>
+                        <button class="btn-reparar" onclick="executarReparo('atualizar_gpo')">SINCRONIZAR</button>
+                    </div>
+                    <div class="reparo-card">
+                        <div><div class="reparo-title">💽 Otimizar Disco</div><div class="reparo-desc">Executa TRIM/Defrag na partição C:.</div></div>
+                        <button class="btn-reparar" onclick="executarReparo('otimizar_disco')">OTIMIZAR DISCO</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title" id="titulo-tabela">Dispositivos Conectados na Rede</div>
+                <table>
+                    <thead><tr><th>ESTAÇÃO</th><th>USUÁRIO LOGADO</th><th>IP LOCAL</th><th>CPU</th><th>RAM</th><th>DISCO C:</th></tr></thead>
+                    <tbody id="tabela-estacoes">
+                        <tr><td colspan="6" style="text-align:center; color:var(--text-muted)">Aguardando inicialização do Plugin CST Assist...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tipoLogin = 'usuario';
+        let usuarioAtual = '';
+        let meuHostname = '';
+        let chartCpu, chartRam, chartDisco;
+
+        const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
+
+        function initCharts() {
+            const opts = { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
+            chartCpu = new Chart(document.getElementById('chartCpuTopo'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#0284c7', '#334155'], borderWidth: 0 }] }, options: opts });
+            chartRam = new Chart(document.getElementById('chartRamTopo'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#f59e0b', '#334155'], borderWidth: 0 }] }, options: opts });
+            chartDisco = new Chart(document.getElementById('chartDiscoTopo'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#ef4444', '#334155'], borderWidth: 0 }] }, options: opts });
+        }
+
+        function mudarTipo(tipo) {
+            tipoLogin = tipo;
+            document.getElementById('btn-tipo-user').classList.toggle('active', tipo === 'usuario');
+            document.getElementById('btn-tipo-admin').classList.toggle('active', tipo === 'admin');
+        }
+
+        async function realizarLogin() {
+            const usuario = document.getElementById('input-user').value.trim().toLowerCase();
+            const senha = document.getElementById('input-pass').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.innerText = '';
+            
+            if (!usuario || !senha) return errorDiv.innerText = 'Preencha o utilizador e a senha.';
+            if (tipoLogin === 'admin' && !EQUIPE_TI.includes(usuario)) return errorDiv.innerText = 'Acesso negado. Apenas TI.';
+
+            usuarioAtual = usuario;
+            document.getElementById('lbl-usuario-logado').innerText = usuarioAtual;
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app-screen').style.display = 'flex';
+            document.getElementById('painel-tipo-label').innerText = tipoLogin === 'admin' ? 'PAINEL ADMINISTRATIVO' : 'PORTAL DO FUNCIONÁRIO';
+            initCharts();
+            iniciarMonitoramento();
+        }
+
+        function fazerLogout() { location.reload(); }
+
+        function mostrarAnimacao(tipo, titulo, mensagem) {
+            const modal = document.getElementById('interactive-modal');
+            const icon = document.getElementById('interactive-icon');
+            const btn = document.getElementById('interactive-btn');
+            modal.style.display = 'flex';
+            document.getElementById('interactive-title').innerText = titulo;
+            document.getElementById('interactive-message').innerText = mensagem;
+            btn.style.display = 'none';
+            btn.className = 'interactive-btn';
+
+            if (tipo === 'loading') { icon.innerHTML = '⚙️'; icon.className = 'interactive-icon spin'; } 
+            else if (tipo === 'success') { icon.innerHTML = '✅'; icon.className = 'interactive-icon pop'; btn.style.display = 'block'; } 
+            else if (tipo === 'error') { icon.innerHTML = '❌'; icon.className = 'interactive-icon pop'; btn.classList.add('btn-error'); btn.style.display = 'block'; btn.innerText = 'FECHAR'; }
+        }
+        function fecharInteractiveModal() { document.getElementById('interactive-modal').style.display = 'none'; }
+
+        async function executarReparo(acao) {
+            const nomes = { 'limpar_cache': 'Limpeza de Cache', 'destravar_impressora': 'Reiniciar Spooler', 'otimizar_rede': 'Otimização de Rede', 'atualizar_gpo': 'Atualização de Políticas', 'otimizar_disco': 'Otimização de Disco' };
+            if (!meuHostname) return mostrarAnimacao('error', 'Plugin Ausente', 'O CST Assist não foi detetado nesta máquina.');
+            mostrarAnimacao('loading', `A executar ${nomes[acao] || acao}...`, `Comunicando com a máquina ${meuHostname}...`);
+            try {
+                await fetch('/api/v1/executar-acao', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ target: meuHostname, acao }) 
+                });
+                setTimeout(() => mostrarAnimacao('success', 'Operação Concluída!', `A tarefa foi enviada e será aplicada no Windows.`), 1800);
+            } catch (err) { mostrarAnimacao('error', 'Falha na Comunicação', 'Erro ao processar o pedido.'); }
+        }
+
+        async function criarPastaDesktop() {
+            if (!meuHostname) return mostrarAnimacao('error', 'Plugin Ausente', 'O CST Assist não foi detetado nesta máquina.');
+            const nomeBruto = prompt("Nome da pasta:", "Relatorios_CST");
+            if (!nomeBruto) return;
+            const nome = nomeBruto.replace(/[^a-zA-Z0-9_-]/g, '');
+            mostrarAnimacao('loading', `A criar '${nome}'...`, `A sincronizar com a Área de Trabalho.`);
+            try {
+                await fetch('/api/v1/executar-acao', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ target: meuHostname, acao: 'criar_pasta', parametros: { nome } }) 
+                });
+                setTimeout(() => mostrarAnimacao('success', 'Pasta Criada!', `Verifique a sua Área de Trabalho.`), 1500);
+            } catch (err) { mostrarAnimacao('error', 'Erro', 'Falha ao criar pasta.'); }
+        }
+
+        async function iniciarMonitoramento() {
+            setInterval(async () => {
+                try {
+                    const res = await fetch('/api/v1/rmm-metrics');
+                    const data = await res.json();
+                    const tbody = document.getElementById('tabela-estacoes');
+                    tbody.innerHTML = '';
+                    
+                    const meuIpNavegador = data.meu_ip;
+                    let estacoes = data.estacoes || [];
+                    let minhaMaquina = estacoes.find(e => e.ip === meuIpNavegador || e.usuario === usuarioAtual);
+
+                    if (tipoLogin === 'usuario') {
+                        if (minhaMaquina) estacoes = [minhaMaquina];
+                        else estacoes = [];
+                    }
+
+                    if (estacoes.length > 0) {
+                        estacoes.forEach(e => {
+                            if (!meuHostname && (e === minhaMaquina || tipoLogin === 'admin')) meuHostname = e.hostname;
+                            
+                            if (e.hostname === meuHostname && chartCpu) {
+                                chartCpu.data.datasets[0].data = [e.cpu, 100 - e.cpu]; chartCpu.update();
+                                chartRam.data.datasets[0].data = [e.ram, 100 - e.ram]; chartRam.update();
+                                chartDisco.data.datasets[0].data = [e.disco, 100 - e.disco]; chartDisco.update();
+                            }
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `<td style="font-weight:bold; color:var(--accent-blue)">💻 ${e.hostname}</td><td style="color:var(--accent-green)">👤 ${e.usuario}</td><td>${e.ip}</td><td>${e.cpu}%</td><td>${e.ram}%</td><td>${e.disco}% usado</td>`;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted)">Aguardando inicialização do Plugin CST Assist...</td></tr>`;
+                    }
+                } catch (err) {}
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
