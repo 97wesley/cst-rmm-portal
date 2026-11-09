@@ -6,16 +6,15 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 const AGENT_SECRET_TOKEN = 'CST_SECRET_AGENT_TOKEN_2026';
 const ADMIN_SECRET_TOKEN = 'CST_ADMIN_TOKEN_97WESLEY';
+const TIMEZONE_BR = 'America/Sao_Paulo';
 
 app.use(express.json({ limit: '50kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
-// Base de dados em memória para manter máquinas mesmo offline
 const estacoesRegistradas = new Map();
 const comandosPendentes = new Map();
 
-// Equipe de TI com privilégios administrativos
 const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
 
 const ACOES_PERMITIDAS = [
@@ -35,7 +34,7 @@ app.get('/', (req, res) => {
     else res.send('<h2>Servidor RMM CST Online</h2>');
 });
 
-// Autenticação de Login com checagem de privilégios TI
+// Autenticação de Login
 app.post('/api/v1/login', (req, res) => {
     const { usuario, senha, tipo } = req.body;
     const cleanUser = (usuario || '').trim().toLowerCase();
@@ -58,7 +57,7 @@ app.post('/api/v1/login', (req, res) => {
     });
 });
 
-// Recebimento de Telemetria (Preserva registro histórico)
+// Recebimento de Telemetria com Fuso Horário de Brasília
 app.post('/api/v1/telemetria', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -70,7 +69,11 @@ app.post('/api/v1/telemetria', (req, res) => {
     const hostKey = (data.hostname || 'DESCONHECIDO').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
     
     const estacaoAnterior = estacoesRegistradas.get(hostKey) || {};
-    const logHora = new Date().toLocaleTimeString('pt-BR');
+    
+    // Formatação de data e hora no fuso horário de Brasília (UTC-3)
+    const logHora = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
+    const dataHoraConexao = new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR });
+    
     const logsAnteriores = estacaoAnterior.logs || [];
     const novoLog = `[${logHora}] Sinais de telemetria recebidos com sucesso.`;
     const logsAtualizados = [novoLog, ...logsAnteriores].slice(0, 20);
@@ -86,14 +89,14 @@ app.post('/api/v1/telemetria', (req, res) => {
         so: data.sistema_operacional || 'Windows',
         uptime: data.uptime || 'Sincronizado',
         ultima_atualizacao: Date.now(),
-        data_ultima_conexao: new Date().toLocaleString('pt-BR'),
+        data_ultima_conexao: dataHoraConexao,
         logs: logsAtualizados
     });
     
     res.json({ status: 'ok' });
 });
 
-// Retorna todas as estações (Online e Offline) para administradores
+// Métricas para o Dashboard
 app.get('/api/v1/rmm-metrics', (req, res) => {
     const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
     const todasEstacoes = [];
@@ -101,7 +104,7 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     
     for (const info of estacoesRegistradas.values()) {
         const decorridoSegundos = Math.floor((agora - info.ultima_atualizacao) / 1000);
-        const isOnline = decorridoSegundos < 45; // Considera offline se não responde há 45s
+        const isOnline = decorridoSegundos < 45;
         
         todasEstacoes.push({
             ...info,
@@ -113,7 +116,7 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     res.json({ meu_ip: clientIp, estacoes: todasEstacoes });
 });
 
-// Atualização de Setor/Departamento do Computador
+// Atualização de Setor
 app.post('/api/v1/definir-setor', (req, res) => {
     const { hostname, setor } = req.body;
     const hostKey = (hostname || '').toUpperCase().trim();
@@ -126,7 +129,7 @@ app.post('/api/v1/definir-setor', (req, res) => {
     res.status(404).json({ status: 'erro', mensagem: 'Estação não encontrada.' });
 });
 
-// Disparo de Ação Remota
+// Execução de Comandos
 app.post('/api/v1/executar-acao', (req, res) => {
     const { target, acao, parametros } = req.body;
     const hostKey = (target || '').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
@@ -148,14 +151,15 @@ app.post('/api/v1/executar-acao', (req, res) => {
     
     if (estacoesRegistradas.has(hostKey)) {
         const est = estacoesRegistradas.get(hostKey);
-        const logAcao = `[${new Date().toLocaleTimeString('pt-BR')}] Comando agendado: ${acao.toUpperCase()}`;
+        const horaAcao = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
+        const logAcao = `[${horaAcao}] Comando agendado: ${acao.toUpperCase()}`;
         est.logs = [logAcao, ...(est.logs || [])].slice(0, 20);
     }
 
     res.json({ status: 'sucesso', mensagem: 'Comando enfileirado com sucesso.' });
 });
 
-// Consulta do Agente PowerShell
+// Pendências para o Agente
 app.get('/api/v1/pendencias/:hostname', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
