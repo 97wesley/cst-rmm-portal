@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GRUPOCST/TI | Portal RMM & Inventário Fotográfico</title>
+    <title>GRUPOCST/TI | Portal RMM & Suporte Técnico</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
@@ -30,8 +30,7 @@
 
         /* ANIMAÇÃO DE FUNDO EM MOVIMENTO (GRUPOCST/TI) */
         .watermark-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             pointer-events: none; z-index: 0; overflow: hidden;
             display: flex; flex-direction: column; justify-content: space-around;
             opacity: 0.10;
@@ -88,7 +87,7 @@
         .btn-add { background: var(--orange-btn); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .search-input { padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 20px; outline: none; width: 200px; }
 
-        /* VISTA 1: LISTA COMPLETA DE ATIVOS */
+        /* VISTA 1: LISTA COMPLETA DE ATIVOS (EXCLUSIVA ADMIN) */
         .content-area { flex: 1; overflow-y: auto; padding: 16px; }
         .table-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
@@ -101,12 +100,11 @@
         .badge-online { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
         .badge-offline { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
 
-        /* VISTA 2: DETALHES DO COMPUTADOR */
+        /* VISTA 2: PAINEL DO COMPUTADOR */
         #detail-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 20px; }
         .detail-header-bar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         .detail-title { font-size: 18px; font-weight: bold; color: var(--green-dark); display: flex; align-items: center; gap: 8px; }
         .btn-back { background: #6b7280; color: white; border: none; padding: 8px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-back:hover { background: #4b5563; }
 
         .charts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         .chart-box { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
@@ -132,72 +130,34 @@
         .btn-action-trigger:hover { background: #d97706; }
 
         .logs-section { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .logs-box { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; height: 120px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 11px; color: #34d399; }
+        .logs-box { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; height: 140px; overflow-y: auto; font-family: 'Consolas', monospace; font-size: 11px; color: #34d399; }
 
-        /* VISTA 3: INVENTÁRIO FOTOGRÁFICO DE ATIVOS E PERIFÉRICOS */
+        /* VISTA 3: INVENTÁRIO FOTOGRÁFICO DE ATIVOS */
         #inventory-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 16px; }
-        .inventory-card-row { 
-            background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; 
-            display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); 
-        }
+        .inventory-card-row { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         .inventory-row-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f3f4f6; padding-bottom: 8px; }
         .inventory-host-title { font-size: 15px; font-weight: bold; color: var(--green-dark); }
 
         .photo-cols-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-        .photo-slot { 
-            background: #f9fafb; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px; height: 165px;
-        }
+        .photo-slot { background: #f9fafb; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; gap: 8px; height: 165px; }
         .photo-slot-title { font-size: 11px; font-weight: bold; color: var(--green-dark); text-transform: uppercase; }
-        .photo-thumb { 
-            width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; 
-            cursor: zoom-in; transition: transform 0.2s, box-shadow 0.2s; 
-        }
-        .photo-thumb:hover { transform: scale(1.03); box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25); }
-        .btn-upload-camera { 
-            background: var(--green-primary); color: white; border: none; padding: 5px 8px; 
-            border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; width: 100%; text-align: center;
-        }
-        .btn-upload-camera:hover { background: var(--green-dark); }
+        .photo-thumb { width: 100%; height: 90px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; cursor: zoom-in; }
+        .btn-upload-camera { background: var(--green-primary); color: white; border: none; padding: 5px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; width: 100%; text-align: center; }
         .hidden-file-input { display: none; }
 
-        /* MODAL PADRONIZADO E GRANDE PARA AMPLIAÇÃO DE FOTO */
-        .lightbox-overlay {
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);
-            display: none; justify-content: center; align-items: center; z-index: 4000;
-            padding: 20px;
-        }
-        .lightbox-container {
-            background: #ffffff; border-radius: 12px; border: 2px solid var(--green-primary);
-            width: 85vw; height: 85vh; display: flex; flex-direction: column;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); overflow: hidden; position: relative;
-        }
-        .lightbox-header {
-            background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 20px;
-            display: flex; justify-content: space-between; align-items: center; height: 50px;
-        }
+        /* LIGHTBOX DE FOTO AMPLIAÇÃO */
+        .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 4000; padding: 20px; }
+        .lightbox-container { background: #ffffff; border-radius: 12px; border: 2px solid var(--green-primary); width: 85vw; height: 85vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        .lightbox-header { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; height: 50px; }
         .lightbox-title { font-size: 14px; font-weight: bold; color: var(--green-dark); }
-        .lightbox-close-btn {
-            background: #ef4444; color: white; border: none; width: 28px; height: 28px;
-            border-radius: 50%; font-weight: bold; cursor: pointer; display: flex;
-            justify-content: center; align-items: center; font-size: 14px; transition: 0.2s;
-        }
-        .lightbox-close-btn:hover { background: #dc2626; transform: scale(1.1); }
-        .lightbox-body {
-            display: flex; justify-content: center; align-items: center;
-            padding: 20px; background: #0f172a; flex: 1; width: 100%; height: calc(100% - 50px);
-            overflow: hidden;
-        }
-        .lightbox-img {
-            max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); image-rendering: -webkit-optimize-contrast;
-        }
+        .lightbox-close-btn { background: #ef4444; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; font-weight: bold; cursor: pointer; }
+        .lightbox-body { display: flex; justify-content: center; align-items: center; padding: 20px; background: #0f172a; flex: 1; overflow: hidden; }
+        .lightbox-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
     </style>
 </head>
 <body>
 
-    <!-- ANIMAÇÃO DE FUNDO "GRUPOCST/TI" -->
+    <!-- ANIMAÇÃO DE FUNDO -->
     <div class="watermark-bg">
         <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
         <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
@@ -205,7 +165,7 @@
         <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
     </div>
 
-    <!-- MODAL LIGHTBOX PARA AMPLIAR FOTO (TAMANHO GRANDE PADRONIZADO) -->
+    <!-- MODAL LIGHTBOX -->
     <div class="lightbox-overlay" id="lightbox-modal" onclick="fecharLightbox(event)">
         <div class="lightbox-container" onclick="event.stopPropagation()">
             <div class="lightbox-header">
@@ -246,19 +206,19 @@
         <div class="top-navbar">
             <div class="breadcrumb">
                 <div class="breadcrumb-link" onclick="irParaHome()">🏠 Home</div> 
+                <span id="bc-sep-1">/</span> 
+                <div class="breadcrumb-link" id="bc-ativos-link" onclick="irParaInventarioAtivos()">📁 Ativos</div> 
                 <span>/</span> 
-                <div class="breadcrumb-link" onclick="irParaInventarioAtivos()">📁 Ativos</div> 
-                <span>/</span> 
-                <div class="breadcrumb-link" onclick="irParaComputadores()">💻 Computadores</div>
+                <div class="breadcrumb-link" onclick="irParaComputadores()">💻 Computador</div>
             </div>
             <div class="nav-actions">
-                <button class="btn-add" onclick="adicionarAtivoManual()">+ Adicionar Ativo</button>
+                <button class="btn-add" id="btn-add-ativo" onclick="adicionarAtivoManual()">+ Adicionar Ativo</button>
                 <input type="text" class="search-input" placeholder="Pesquisar ativo...">
-                <span style="font-weight:bold; color:var(--green-dark);" id="lbl-usuario-topo">Técnico TI</span>
+                <span style="font-weight:bold; color:var(--green-dark);" id="lbl-usuario-topo">Utilizador</span>
             </div>
         </div>
 
-        <!-- VISTA 1: LISTA COMPLETA DE ATIVOS -->
+        <!-- VISTA 1: LISTA COMPLETA DE ATIVOS (EXCLUSIVA ADMIN) -->
         <div class="content-area" id="list-screen">
             <div class="table-card">
                 <table class="assets-table">
@@ -279,18 +239,18 @@
                         </tr>
                     </thead>
                     <tbody id="tabela-ativos">
-                        <tr><td colspan="12" style="text-align:center; padding:20px;">Carregando frota de computadores CST...</td></tr>
+                        <tr><td colspan="12" style="text-align:center; padding:20px;">Carregando computadores...</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- VISTA 2: DETALHES DO COMPUTADOR -->
+        <!-- VISTA 2: DETALHES DO COMPUTADOR (VISTA DO FUNCIONÁRIO E ADMIN) -->
         <div id="detail-screen">
             
             <div class="detail-header-bar">
-                <div class="detail-title" id="detalhe-titulo-host">💻 Computador - GC-M08-PC0085</div>
-                <button class="btn-back" onclick="voltarParaLista()">← Voltar à Lista</button>
+                <div class="detail-title" id="detalhe-titulo-host">💻 Computador</div>
+                <button class="btn-back" id="btn-voltar-lista" onclick="voltarParaLista()">← Voltar à Lista</button>
             </div>
 
             <!-- GRÁFICOS DE TELEMETRIA -->
@@ -330,7 +290,7 @@
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=122x122&data=GRUPOCST_RMM" alt="QR Code Ativo">
                     </div>
                     <span style="font-size:10px; color:#6b7280;">Identificador único patrimonial do GRUPOCST/TI</span>
-                    <button class="btn-action-trigger" style="margin-top:10px; width:100%; background:var(--green-primary);" onclick="salvarSetorHost()">Salvar Alterações</button>
+                    <button class="btn-action-trigger" id="btn-salvar-setor" style="margin-top:10px; width:100%; background:var(--green-primary);" onclick="salvarSetorHost()">Salvar Alterações</button>
                 </div>
             </div>
 
@@ -385,21 +345,19 @@
 
             <!-- LOGS AO VIVO DA MÁQUINA -->
             <div class="logs-section">
-                <div class="section-title">📋 Histórico de Logs & Auditoria da Estação</div>
-                <div class="logs-box" id="dt-logs-box">Aguardando seleção de máquina...</div>
+                <div class="section-title">📋 Histórico de Logs, Requisições & Aplicativos Ativos</div>
+                <div class="logs-box" id="dt-logs-box">Aguardando telemetria...</div>
             </div>
 
         </div>
 
-        <!-- VISTA 3: INVENTÁRIO FOTOGRÁFICO DE ATIVOS E PERIFÉRICOS -->
+        <!-- VISTA 3: INVENTÁRIO FOTOGRÁFICO DE ATIVOS (EXCLUSIVA ADMIN) -->
         <div id="inventory-screen">
             <div class="detail-header-bar">
                 <div class="detail-title">📷 Inventário Fotográfico de Ativos & Periféricos (GRUPOCST/TI)</div>
                 <button class="btn-add" onclick="adicionarAtivoManual()">+ Cadastrar Switch / Nobreak / PC</button>
             </div>
-            <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;">
-                <!-- As linhas do inventário fotográfico são geradas via JS -->
-            </div>
+            <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;"></div>
         </div>
 
     </div>
@@ -412,7 +370,11 @@
             { hostname: 'NB-MEDICINA-10kVA', tipo: 'Nobreak', setor: 'Exames', usuario: 'ti.infra' }
         ];
         let hostAtual = null;
+        let usuarioLogado = '';
+        let isUserAdmin = false;
         let chartCpu, chartRam, chartDisco;
+
+        const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
 
         const DEFAULT_PHOTOS = {
             gabinete: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1200&auto=format&fit=crop&q=80',
@@ -438,21 +400,30 @@
             const pass = document.getElementById('input-pass').value;
             if (!user || !pass) return alert('Preencha os dados de acesso.');
 
-            document.getElementById('lbl-usuario-topo').innerText = user;
+            usuarioLogado = user;
+            isUserAdmin = EQUIPE_TI.includes(user);
+
+            document.getElementById('lbl-usuario-topo').innerText = isUserAdmin ? `${user} (TI)` : user;
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'flex';
             
+            // Controle de visibilidade da aba 'Ativos'
+            if (!isUserAdmin) {
+                document.getElementById('bc-ativos-link').style.display = 'none';
+                document.getElementById('bc-sep-1').style.display = 'none';
+                document.getElementById('btn-add-ativo').style.display = 'none';
+                document.getElementById('btn-voltar-lista').style.display = 'none';
+            }
+
             initCharts();
             carregarDadosAtivos();
             setInterval(carregarDadosAtivos, 10000);
         }
 
-        /* LIGHTBOX DE AMPLIAÇÃO COM LARGURA PADRONIZADA */
         function abrirLightbox(src, titulo) {
             const modal = document.getElementById('lightbox-modal');
             const img = document.getElementById('lightbox-img-element');
             const title = document.getElementById('lightbox-title-text');
-            
             img.src = src;
             title.innerText = titulo || '📷 Ampliação de Imagem do Ativo';
             modal.style.display = 'flex';
@@ -463,8 +434,12 @@
             document.getElementById('lightbox-modal').style.display = 'none';
         }
 
-        /* NAVEGAÇÃO BREADCRUMB */
         function irParaHome() {
+            if (!isUserAdmin) {
+                // Se for funcionário comum, o Home leva direto para o painel da própria máquina
+                if (hostAtual) abrirDetalhesHost(hostAtual.hostname);
+                return;
+            }
             document.getElementById('detail-screen').style.display = 'none';
             document.getElementById('inventory-screen').style.display = 'none';
             document.getElementById('list-screen').style.display = 'block';
@@ -473,6 +448,7 @@
         function irParaComputadores() { irParaHome(); }
 
         function irParaInventarioAtivos() {
+            if (!isUserAdmin) return alert('Acesso restrito à equipe de TI.');
             document.getElementById('list-screen').style.display = 'none';
             document.getElementById('detail-screen').style.display = 'none';
             document.getElementById('inventory-screen').style.display = 'flex';
@@ -488,28 +464,36 @@
                 const tbody = document.getElementById('tabela-ativos');
                 tbody.innerHTML = '';
 
-                if (estacoesCache.length > 0) {
-                    estacoesCache.forEach(e => {
-                        const tr = document.createElement('tr');
-                        tr.onclick = () => abrirDetalhesHost(e.hostname);
-                        tr.innerHTML = `
-                            <td style="font-weight:bold; color:var(--green-dark);">💻 ${e.hostname}</td>
-                            <td>Entidade raiz > CST</td>
-                            <td><span class="badge-status ${e.status === 'Online' ? 'badge-online' : 'badge-offline'}">${e.status}</span></td>
-                            <td>Desktop</td>
-                            <td>${e.usuario}@CST</td>
-                            <td>rustdesk</td>
-                            <td>AMD / Intel Processor</td>
-                            <td>${e.ram}% usado</td>
-                            <td>1382626814</td>
-                            <td>1.21</td>
-                            <td>${e.ip}</td>
-                            <td>${e.data_ultima_conexao || e.visto_ha}</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
+                // Encontra a máquina correspondente ao usuário logado ou IP
+                let minhaMaquina = estacoesCache.find(e => e.usuario === usuarioLogado || e.ip === data.meu_ip);
+
+                if (isUserAdmin) {
+                    if (estacoesCache.length > 0) {
+                        estacoesCache.forEach(e => {
+                            const tr = document.createElement('tr');
+                            tr.onclick = () => abrirDetalhesHost(e.hostname);
+                            tr.innerHTML = `
+                                <td style="font-weight:bold; color:var(--green-dark);">💻 ${e.hostname}</td>
+                                <td>Entidade raiz > CST</td>
+                                <td><span class="badge-status ${e.status === 'Online' ? 'badge-online' : 'badge-offline'}">${e.status}</span></td>
+                                <td>Desktop</td>
+                                <td>${e.usuario}@CST</td>
+                                <td>rustdesk</td>
+                                <td>AMD / Intel Processor</td>
+                                <td>${e.ram}% usado</td>
+                                <td>1382626814</td>
+                                <td>1.21</td>
+                                <td>${e.ip}</td>
+                                <td>${e.data_ultima_conexao || e.visto_ha}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    }
                 } else {
-                    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center; padding:20px;">Nenhum computador conectado no momento.</td></tr>`;
+                    // SE FOR FUNCIONÁRIO COMUM: Abre direto o painel da própria máquina (Sem lista de terceiros)
+                    if (minhaMaquina && (!hostAtual || hostAtual.hostname !== minhaMaquina.hostname)) {
+                        abrirDetalhesHost(minhaMaquina.hostname);
+                    }
                 }
 
                 if (hostAtual) {
@@ -522,17 +506,12 @@
             } catch (err) {}
         }
 
-        /* RENDERIZAÇÃO DO INVENTÁRIO FOTOGRÁFICO COM ZOOM DE IMAGEM */
         function renderizarInventarioFotografico() {
+            if (!isUserAdmin) return;
             const container = document.getElementById('inventory-items-container');
             container.innerHTML = '';
 
             const todosOsAtivos = [...estacoesCache, ...ativosManuais];
-
-            if (todosOsAtivos.length === 0) {
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:#6b7280;">Nenhum ativo disponível para exibição no inventário.</div>`;
-                return;
-            }
 
             todosOsAtivos.forEach((item) => {
                 const host = item.hostname;
@@ -602,17 +581,6 @@
             reader.readAsDataURL(file);
         }
 
-        function adicionarAtivoManual() {
-            const nomeHost = prompt("Nome do Novo Ativo (ex: SW-FINANCEIRO-01 ou GC-M09-PC0099):");
-            if (!nomeHost) return;
-            const tipo = prompt("Tipo do Ativo (ex: Switch, Nobreak, Roteador, Servidor, Desktop):", "Switch");
-            const setor = prompt("Setor / Localização:", "TI / Redes");
-            
-            ativosManuais.push({ hostname: nomeHost.toUpperCase(), tipo, setor, usuario: 'ti.infra' });
-            alert(`Ativo ${nomeHost.toUpperCase()} adicionado ao inventário!`);
-            irParaInventarioAtivos();
-        }
-
         function abrirDetalhesHost(hostname) {
             hostAtual = estacoesCache.find(e => e.hostname === hostname);
             if (!hostAtual) return;
@@ -643,28 +611,29 @@
             const logsBox = document.getElementById('dt-logs-box');
             logsBox.innerHTML = (hostAtual.logs && hostAtual.logs.length > 0)
                 ? hostAtual.logs.map(l => `<div>${l}</div>`).join('')
-                : '<div>Nenhum registro recente de auditoria.</div>';
+                : '<div>Aguardando sinais da estação...</div>';
         }
 
         function voltarParaLista() {
+            if (!isUserAdmin) return;
             hostAtual = null;
             irParaHome();
         }
 
         async function executarAcaoNoHost(acao) {
-            if (!hostAtual) return alert('Selecione uma estação válida.');
+            if (!hostAtual) return alert('Estação não identificada.');
             try {
                 await fetch('/api/v1/executar-acao', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ target: hostAtual.hostname, acao })
                 });
-                alert(`Comando '${acao}' enviado com sucesso para ${hostAtual.hostname}!`);
-            } catch (err) { alert('Falha ao enviar comando.'); }
+                alert(`Solicitação de '${acao}' enviada para a estação ${hostAtual.hostname}!`);
+            } catch (err) { alert('Erro ao enviar.'); }
         }
 
         async function criarPastaHost() {
-            if (!hostAtual) return alert('Selecione uma estação válida.');
+            if (!hostAtual) return alert('Estação não identificada.');
             const nomeBruto = prompt("Nome da pasta no Desktop:", "Relatorios_CST");
             if (!nomeBruto) return;
             const nome = nomeBruto.replace(/[^a-zA-Z0-9_-]/g, '');
@@ -674,8 +643,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ target: hostAtual.hostname, acao: 'criar_pasta', parametros: { nome } })
                 });
-                alert(`Solicitação de criação de pasta enviada para ${hostAtual.hostname}!`);
-            } catch (err) { alert('Falha ao enviar comando.'); }
+                alert(`Comando enviado para a máquina ${hostAtual.hostname}!`);
+            } catch (err) { alert('Erro ao enviar.'); }
         }
 
         async function salvarSetorHost() {
@@ -687,9 +656,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ hostname: hostAtual.hostname, setor: novoSetor })
                 });
-                alert(`Setor do ativo ${hostAtual.hostname} atualizado para '${novoSetor}'!`);
+                alert(`Setor atualizado para '${novoSetor}'!`);
                 carregarDadosAtivos();
-            } catch (err) { alert('Erro ao salvar setor.'); }
+            } catch (err) { alert('Erro ao salvar.'); }
         }
     </script>
 </body>
