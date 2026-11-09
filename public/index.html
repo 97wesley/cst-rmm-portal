@@ -53,7 +53,7 @@
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(255, 255, 255, 0.95);
-            display: flex; justify-content: center; align-items: center; z-index: 2000;
+            display: none; justify-content: center; align-items: center; z-index: 2000;
         }
         .login-card {
             background: #ffffff; border: 2px solid var(--green-primary);
@@ -521,7 +521,7 @@
             headset: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=1200&auto=format&fit=crop&q=80'
         };
 
-        // EXECUÇÃO IMEDIATA ANTI-FLICKER NO CARREGAMENTO DA PÁGINA (GARANTE O F5)
+        // CHECAGEM IMEDIATA DE SESSÃO (EVITA QUE A TELA DE LOGIN APAREÇA AO APERTAR F5)
         (function checarSessaoImediata() {
             const sessao = localStorage.getItem('cst_user_session');
             if (sessao) {
@@ -873,7 +873,6 @@
             document.getElementById('dt-ip').value = hostAtual.ip;
             document.getElementById('dt-ultima-conexao').value = hostAtual.data_ultima_conexao || hostAtual.visto_ha;
 
-            // Busca o Ramal vinculado ao Usuário AD da máquina
             const ramalObj = ramaisCache.find(r => r.usuario_ad === hostAtual.usuario);
             document.getElementById('dt-ramal-user').value = ramalObj ? `Ramal ${ramalObj.ramal} (${ramalObj.nome})` : 'Ramal Não Vinculado';
 
