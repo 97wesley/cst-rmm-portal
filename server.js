@@ -10,6 +10,14 @@ const NET2PHONE_API_KEY = 'qXQhZL5J4+pT3S3Mtbd4VAqmXO+UGPXpJ8gyoMj0hwr6s5FT87qQX
 const TIMEZONE_BR = 'America/Sao_Paulo';
 
 app.use(express.json({ limit: '100kb' }));
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-agent-token, x-admin-token');
+    if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname));
 
@@ -58,7 +66,7 @@ app.post('/api/v1/login', (req, res) => {
     });
 });
 
-// Telemetria das Estações
+// Recebimento de Telemetria
 app.post('/api/v1/telemetria', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -78,7 +86,7 @@ app.post('/api/v1/telemetria', (req, res) => {
         : 'Nenhum software com janela ativa';
 
     const logsAnteriores = estacaoAnterior.logs || [];
-    const novoLog = `[${logHora}] Apps ativos: ${appsAbertos} | Telemetria OK.`;
+    const novoLog = `[${logHora}] Apps: ${appsAbertos} | Telemetria OK.`;
     const logsAtualizados = [novoLog, ...logsAnteriores].slice(0, 30);
 
     estacoesRegistradas.set(hostKey, {
@@ -120,12 +128,9 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     res.json({ meu_ip: clientIp, estacoes: todasEstacoes });
 });
 
-// API de Telefonia IP (net2phone Dashboard)
-app.get('/api/v1/telefonia-metrics', async (req, res) => {
-    const tokenAdmin = req.headers['x-admin-token'];
-    
-    // Lista de Ramais PABX Nuvem (net2phone)
-    const ramaisSimulados = [
+// Dados de Telefonia IP net2phone
+app.get('/api/v1/telefonia-metrics', (req, res) => {
+    const ramaisData = [
         { ramal: '001', nome: 'Financeiro', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', status: 'Online', sip: 'Registrado', latencia: 2, setor: 'Financeiro' },
         { ramal: '002', nome: 'Recepção Main', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', status: 'Online', sip: 'Registrado', latencia: 3, setor: 'Recepção' },
         { ramal: '003', nome: 'Coordenação Médica', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', status: 'Online', sip: 'Registrado', latencia: 3, setor: 'Coordenação' },
@@ -146,19 +151,76 @@ app.get('/api/v1/telefonia-metrics', async (req, res) => {
         ramaisOffline: 3,
         semRegistroSip: 1,
         disponibilidadeGeral: 94.0,
-        trafegoRxMbps: 12.4,
-        trafegoTxMbps: 8.7,
-        uptimeDias: 15,
-        ramais: ramaisSimulados,
+        ramais: ramaisData,
         eventosRecentes: [
-            { hora: '14:35:12', evento: 'Ramal 008 apresentou falha no registro SIP', status: 'Atenção' },
-            { hora: '13:50:04', evento: 'Ramal 006 desconectado (Offline)', status: 'Crítico' },
-            { hora: '12:15:22', evento: 'Ramal 005 (TI) registado com sucesso', status: 'Informativo' }
+            { hora: new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR }), evento: 'Telemetria PABX net2phone sincronizada', status: 'Informativo' }
         ]
     });
 });
 
-// Alterar Setor
+// ENDPOINT MODO BI (POWER BI / GRAFANA / TABLEAU FEED JSON)
+app.get('/api/v1/export/bi-json', (req, res) => {
+    const estacoes = [];
+    const agora = Date.now();
+    for (const info of estacoesRegistradas.values()) {
+        const decorridoSegundos = Math.floor((agora - info.ultima_atualizacao) / 1000);
+        estacoes.push({
+            ...info,
+            status: decorridoSegundos < 45 ? 'Online' : 'Offline'
+        });
+    }
+
+    res.json({
+        empresa: 'GRUPOCST/TI',
+        geradoEm: new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR }),
+        metricasRmm: {
+            totalComputadores: estacoes.length,
+            online: estacoes.filter(e => e.status === 'Online').length,
+            offline: estacoes.filter(e => e.status === 'Offline').length,
+            estacoes: estacoes
+        },
+        metricasTelefonia: {
+            provedor: 'net2phone Cloud',
+            totalRamais: 50,
+            online: 47,
+            offline: 3,
+            disponibilidade: 94.0
+        }
+    });
+});
+
+// EXPORTAR CSV COMPUTADORES RMM
+app.get('/api/v1/export/rmm-csv', (req, res) => {
+    let csv = 'Hostname;Usuario;Setor;Status;CPU_Percent;RAM_Percent;Disco_Percent;IP;UltimaConexao\n';
+    const agora = Date.now();
+    for (const info of estacoesRegistradas.values()) {
+        const isOnline = Math.floor((agora - info.ultima_atualizacao) / 1000) < 45;
+        csv += `${info.hostname};${info.usuario};${info.setor};${isOnline ? 'Online' : 'Offline'};${info.cpu}%;${info.ram}%;${info.disco}%;${info.ip};${info.data_ultima_conexao}\n`;
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=relatorio_rmm_cst.csv');
+    res.send('\uFEFF' + csv);
+});
+
+// EXPORTAR CSV TELEFONIA NET2PHONE
+app.get('/api/v1/export/telefonia-csv', (req, res) => {
+    let csv = 'Ramal;Nome_Colaborador;Setor;Status;Registro_SIP;IP_Local;MAC;Latencia_ms\n';
+    const ramais = [
+        { ramal: '001', nome: 'Financeiro', setor: 'Financeiro', status: 'Online', sip: 'Registrado', ip: '192.168.10.101', mac: 'BC:A4:E1:01:23:45', latencia: 2 },
+        { ramal: '002', nome: 'Recepção Main', setor: 'Recepção', status: 'Online', sip: 'Registrado', ip: '192.168.10.102', mac: 'BC:A4:E1:01:23:46', latencia: 3 },
+        { ramal: '003', nome: 'Coordenação Médica', setor: 'Coordenação', status: 'Online', sip: 'Registrado', ip: '192.168.10.103', mac: 'BC:A4:E1:01:23:47', latencia: 3 },
+        { ramal: '004', nome: 'Comercial 01', setor: 'Comercial', status: 'Online', sip: 'Registrado', ip: '192.168.10.104', mac: 'BC:A4:E1:01:23:48', latencia: 4 },
+        { ramal: '005', nome: 'Suporte TI', setor: 'TI', status: 'Online', sip: 'Registrado', ip: '192.168.10.105', mac: 'BC:A4:E1:01:23:49', latencia: 5 }
+    ];
+    ramais.forEach(r => {
+        csv += `${r.ramal};${r.nome};${r.setor};${r.status};${r.sip};${r.ip};${r.mac};${r.latencia}ms\n`;
+    });
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=relatorio_telefonia_net2phone.csv');
+    res.send('\uFEFF' + csv);
+});
+
+// Atualizar Setor
 app.post('/api/v1/definir-setor', (req, res) => {
     const { hostname, setor } = req.body;
     const hostKey = (hostname || '').toUpperCase().trim();
@@ -171,7 +233,7 @@ app.post('/api/v1/definir-setor', (req, res) => {
     res.status(404).json({ status: 'erro', mensagem: 'Estação não encontrada.' });
 });
 
-// Execução de Ações Remotas
+// Execução de Comandos
 app.post('/api/v1/executar-acao', (req, res) => {
     const { target, acao, parametros } = req.body;
     const hostKey = (target || '').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
@@ -201,7 +263,7 @@ app.post('/api/v1/executar-acao', (req, res) => {
     res.json({ status: 'sucesso', mensagem: 'Comando agendado.' });
 });
 
-// Agente Polling
+// Pendências Agente
 app.get('/api/v1/pendencias/:hostname', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -215,5 +277,5 @@ app.get('/api/v1/pendencias/:hostname', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`[CST TI] Servidor RMM com Telefonia net2phone ativo na porta ${PORT}`);
+    console.log(`[CST TI] Servidor RMM rodando na porta ${PORT}`);
 });
