@@ -161,7 +161,7 @@
         .btn-upload-camera:hover { background: var(--green-dark); }
         .hidden-file-input { display: none; }
 
-        /* MODAL DE AMPLIAÇÃO / LIGHTBOX DE FOTO EM ALTA RESOLUÇÃO */
+        /* MODAL PADRONIZADO E GRANDE PARA AMPLIAÇÃO DE FOTO */
         .lightbox-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);
@@ -170,12 +170,12 @@
         }
         .lightbox-container {
             background: #ffffff; border-radius: 12px; border: 2px solid var(--green-primary);
-            max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;
+            width: 85vw; height: 85vh; display: flex; flex-direction: column;
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); overflow: hidden; position: relative;
         }
         .lightbox-header {
             background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 20px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: space-between; align-items: center; height: 50px;
         }
         .lightbox-title { font-size: 14px; font-weight: bold; color: var(--green-dark); }
         .lightbox-close-btn {
@@ -186,10 +186,11 @@
         .lightbox-close-btn:hover { background: #dc2626; transform: scale(1.1); }
         .lightbox-body {
             display: flex; justify-content: center; align-items: center;
-            padding: 16px; background: #0f172a; overflow: hidden; max-height: 80vh;
+            padding: 20px; background: #0f172a; flex: 1; width: 100%; height: calc(100% - 50px);
+            overflow: hidden;
         }
         .lightbox-img {
-            max-width: 100%; max-height: 75vh; object-fit: contain; border-radius: 6px;
+            max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); image-rendering: -webkit-optimize-contrast;
         }
     </style>
@@ -204,7 +205,7 @@
         <div class="marquee-line">GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI &nbsp;&nbsp;&nbsp; GRUPOCST/TI</div>
     </div>
 
-    <!-- MODAL LIGHTBOX PARA AMPLIAR FOTO -->
+    <!-- MODAL LIGHTBOX PARA AMPLIAR FOTO (TAMANHO GRANDE PADRONIZADO) -->
     <div class="lightbox-overlay" id="lightbox-modal" onclick="fecharLightbox(event)">
         <div class="lightbox-container" onclick="event.stopPropagation()">
             <div class="lightbox-header">
@@ -446,7 +447,7 @@
             setInterval(carregarDadosAtivos, 10000);
         }
 
-        /* LIGHTBOX DE AMPLIAÇÃO */
+        /* LIGHTBOX DE AMPLIAÇÃO COM LARGURA PADRONIZADA */
         function abrirLightbox(src, titulo) {
             const modal = document.getElementById('lightbox-modal');
             const img = document.getElementById('lightbox-img-element');
@@ -554,25 +555,25 @@
                     <div class="photo-cols-grid">
                         <div class="photo-slot">
                             <span class="photo-slot-title">🖥️ GABINETE / PC</span>
-                            <img src="${fotoGabinete}" id="img_${host}_gabinete" class="photo-thumb" alt="Gabinete" title="Clique para ampliar" onclick="abrirLightbox('${fotoGabinete}', '${host} - GABINETE / PC')">
+                            <img src="${fotoGabinete}" id="img_${host}_gabinete" class="photo-thumb" alt="Gabinete" title="Clique para ampliar" onclick="abrirLightbox(this.src, '${host} - GABINETE / PC')">
                             <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'gabinete')">📷 Tirar Foto / Mudar</button>
                             <input type="file" accept="image/*" capture="environment" id="file_${host}_gabinete" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'gabinete')">
                         </div>
                         <div class="photo-slot">
                             <span class="photo-slot-title">🖥️ MONITOR</span>
-                            <img src="${fotoMonitor}" id="img_${host}_monitor" class="photo-thumb" alt="Monitor" title="Clique para ampliar" onclick="abrirLightbox('${fotoMonitor}', '${host} - MONITOR')">
+                            <img src="${fotoMonitor}" id="img_${host}_monitor" class="photo-thumb" alt="Monitor" title="Clique para ampliar" onclick="abrirLightbox(this.src, '${host} - MONITOR')">
                             <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'monitor')">📷 Tirar Foto / Mudar</button>
                             <input type="file" accept="image/*" capture="environment" id="file_${host}_monitor" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'monitor')">
                         </div>
                         <div class="photo-slot">
                             <span class="photo-slot-title">⌨️ TECLADO / MOUSE</span>
-                            <img src="${fotoTeclado}" id="img_${host}_teclado" class="photo-thumb" alt="Teclado/Mouse" title="Clique para ampliar" onclick="abrirLightbox('${fotoTeclado}', '${host} - TECLADO / MOUSE')">
+                            <img src="${fotoTeclado}" id="img_${host}_teclado" class="photo-thumb" alt="Teclado/Mouse" title="Clique para ampliar" onclick="abrirLightbox(this.src, '${host} - TECLADO / MOUSE')">
                             <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'teclado')">📷 Tirar Foto / Mudar</button>
                             <input type="file" accept="image/*" capture="environment" id="file_${host}_teclado" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'teclado')">
                         </div>
                         <div class="photo-slot">
                             <span class="photo-slot-title">🎧 HEADSET / SOM</span>
-                            <img src="${fotoHeadset}" id="img_${host}_headset" class="photo-thumb" alt="Headset" title="Clique para ampliar" onclick="abrirLightbox('${fotoHeadset}', '${host} - HEADSET / SOM')">
+                            <img src="${fotoHeadset}" id="img_${host}_headset" class="photo-thumb" alt="Headset" title="Clique para ampliar" onclick="abrirLightbox(this.src, '${host} - HEADSET / SOM')">
                             <button class="btn-upload-camera" onclick="triggerFileInput('${host}', 'headset')">📷 Tirar Foto / Mudar</button>
                             <input type="file" accept="image/*" capture="environment" id="file_${host}_headset" class="hidden-file-input" onchange="salvarFotoUpload(event, '${host}', 'headset')">
                         </div>
