@@ -49,7 +49,7 @@
             backdrop-filter: blur(4px);
         }
 
-        /* LOGIN */
+        /* TELA LOGIN */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(255, 255, 255, 0.95);
@@ -215,7 +215,7 @@
                 <div class="export-item-btn" onclick="exportarCsvTelefonia()">
                     <div>
                         <div class="export-btn-title">📞 Exportar CSV (Telefonia net2phone)</div>
-                        <div class="export-btn-desc">Relatório completo dos ramais, IPs, MACs e registro SIP.</div>
+                        <div class="export-btn-desc">Relatório completo dos ramais por Usuário AD, IPs, MACs e SIP.</div>
                     </div>
                     <span>📥</span>
                 </div>
@@ -320,7 +320,7 @@
             </div>
         </div>
 
-        <!-- VISTA 2: PAINEL DA MÁQUINA -->
+        <!-- VISTA 2: PAINEL DA MÁQUINA E RAMAL -->
         <div id="detail-screen">
             <div class="detail-header-bar">
                 <div class="detail-title" id="detalhe-titulo-host">💻 Computador</div>
@@ -346,7 +346,7 @@
                     <div class="form-field"><label>Nome da Estação</label><input type="text" id="dt-nome" readonly></div>
                     <div class="form-field"><label>Status do Agente</label><input type="text" id="dt-status" readonly></div>
                     <div class="form-field"><label>Localização / Setor</label><input type="text" id="dt-setor"></div>
-                    <div class="form-field"><label>Tipo de Ativo</label><input type="text" id="dt-tipo" value="Desktop" readonly></div>
+                    <div class="form-field"><label>Ramal net2phone Vinculado</label><input type="text" id="dt-ramal-user" style="color:var(--blue-bi); font-weight:bold;" readonly></div>
                     <div class="form-field"><label>Técnico Encarregado</label><input type="text" value="Equipe TI CST" readonly></div>
                     <div class="form-field"><label>Fabricante / Sistema</label><input type="text" id="dt-so" readonly></div>
                     <div class="form-field"><label>Nome Alternativo do Usuário</label><input type="text" id="dt-usuario" readonly></div>
@@ -410,7 +410,7 @@
             <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;"></div>
         </div>
 
-        <!-- VISTA 4: TELEFONIA IP NET2PHONE -->
+        <!-- VISTA 4: TELEFONIA IP NET2PHONE COM RAMAIS POR USUÁRIO -->
         <div id="telephony-screen">
             <div class="tel-header-bar">
                 <div class="tel-title">📞 Monitoramento de Telefonia IP – net2phone Cloud PABX</div>
@@ -461,15 +461,22 @@
 
             <div class="tel-main-grid">
                 <div class="tel-table-container">
-                    <div class="tel-box-header">📋 Lista de Ramais IP em Tempo Real</div>
+                    <div class="tel-box-header">📋 Ramais net2phone Vinculados a Usuários AD</div>
                     <table class="tel-table">
                         <thead>
                             <tr>
-                                <th>RAMAL</th><th>NOME / COLABORADOR</th><th>IP LOCAL</th><th>ENDEREÇO MAC</th><th>STATUS</th><th>REGISTRO SIP</th><th>LATÊNCIA</th>
+                                <th>RAMAL</th>
+                                <th>USUÁRIO AD</th>
+                                <th>NOME / COLABORADOR</th>
+                                <th>IP LOCAL</th>
+                                <th>STATUS</th>
+                                <th>CHAMADAS HOJE</th>
+                                <th>TEMPO FALA</th>
+                                <th>LATÊNCIA</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-ramais">
-                            <tr><td colspan="7" style="text-align:center;">Carregando PABX net2phone...</td></tr>
+                            <tr><td colspan="8" style="text-align:center;">Carregando PABX net2phone...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -494,6 +501,7 @@
 
     <script>
         let estacoesCache = [];
+        let ramaisCache = [];
         let ativosManuais = [
             { hostname: 'SW-MATRIZ-CORE', tipo: 'Switch', setor: 'Servidores / TI', usuario: 'ti.infra' },
             { hostname: 'SW-RECEPCAO-01', tipo: 'Switch', setor: 'Recepção', usuario: 'ti.infra' },
@@ -513,36 +521,46 @@
             headset: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=1200&auto=format&fit=crop&q=80'
         };
 
-        // AUTO-LOGIN AO PRESSIONAR F5
-        window.addEventListener('DOMContentLoaded', () => {
+        // EXECUÇÃO IMEDIATA ANTI-FLICKER NO CARREGAMENTO DA PÁGINA (GARANTE O F5)
+        (function checarSessaoImediata() {
             const sessao = localStorage.getItem('cst_user_session');
             if (sessao) {
                 try {
                     const dados = JSON.parse(sessao);
                     usuarioLogado = dados.usuario;
                     isUserAdmin = dados.isTI;
-                    iniciarPainelComSessao();
-                } catch(e) { localStorage.removeItem('cst_user_session'); }
+                } catch(e) {}
+            }
+        })();
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (usuarioLogado) {
+                iniciarPainelComSessao();
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-screen').style.display = 'none';
             }
         });
 
         function initCharts() {
             const opts = { cutout: '75%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
-            chartCpu = new Chart(document.getElementById('chartCpuDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#059669', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
-            chartRam = new Chart(document.getElementById('chartRamDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#f59e0b', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
-            chartDisco = new Chart(document.getElementById('chartDiscoDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#ef4444', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
+            if (!chartCpu) {
+                chartCpu = new Chart(document.getElementById('chartCpuDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#059669', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
+                chartRam = new Chart(document.getElementById('chartRamDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#f59e0b', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
+                chartDisco = new Chart(document.getElementById('chartDiscoDetail'), { type: 'doughnut', data: { datasets: [{ data: [0, 100], backgroundColor: ['#ef4444', '#e5e7eb'], borderWidth: 0 }] }, options: opts });
 
-            chartTelStatus = new Chart(document.getElementById('chartTelStatus'), {
-                type: 'doughnut',
-                data: { labels: ['Online', 'Offline', 'Sem SIP'], datasets: [{ data: [47, 3, 1], backgroundColor: ['#10b981', '#ef4444', '#f59e0b'], borderWidth: 0 }] },
-                options: opts
-            });
+                chartTelStatus = new Chart(document.getElementById('chartTelStatus'), {
+                    type: 'doughnut',
+                    data: { labels: ['Online', 'Offline', 'Sem SIP'], datasets: [{ data: [47, 3, 1], backgroundColor: ['#10b981', '#ef4444', '#f59e0b'], borderWidth: 0 }] },
+                    options: opts
+                });
 
-            chartTelDisp24h = new Chart(document.getElementById('chartTelDisp24h'), {
-                type: 'line',
-                data: { labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'], datasets: [{ data: [98, 97, 95, 94, 96, 94], borderColor: '#38bdf8', tension: 0.4, fill: false }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
-            });
+                chartTelDisp24h = new Chart(document.getElementById('chartTelDisp24h'), {
+                    type: 'line',
+                    data: { labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'], datasets: [{ data: [98, 97, 95, 94, 96, 94], borderColor: '#38bdf8', tension: 0.4, fill: false }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
         }
 
         function mudarTipo(tipo) {
@@ -558,7 +576,6 @@
             usuarioLogado = user;
             isUserAdmin = EQUIPE_TI.includes(user);
 
-            // SALVA SESSÃO NO NAVEGADOR
             localStorage.setItem('cst_user_session', JSON.stringify({ usuario: user, isTI: isUserAdmin }));
             iniciarPainelComSessao();
         }
@@ -585,8 +602,8 @@
 
             initCharts();
             carregarDadosAtivos();
+            carregarDadosTelefonia();
 
-            // LOOP DE 5 SEGUNDOS COM ATUALIZAÇÃO VISUAL DE PULSO
             setInterval(() => {
                 carregarDadosAtivos();
                 if (document.getElementById('telephony-screen').style.display === 'flex') {
@@ -665,6 +682,7 @@
             try {
                 const res = await fetch('/api/v1/telefonia-metrics');
                 const data = await res.json();
+                ramaisCache = data.ramais || [];
                 
                 document.getElementById('tel-total-ramais').innerText = data.totalRamais;
                 document.getElementById('tel-ramais-online').innerText = data.ramaisOnline;
@@ -672,7 +690,6 @@
                 document.getElementById('tel-sem-sip').innerText = data.semRegistroSip;
                 document.getElementById('tel-disp-geral').innerText = `${data.disponibilidadeGeral}%`;
                 
-                // Oscilação em tempo real de RX/TX no painel
                 if (data.trafegoRxMbps) document.getElementById('txt-rx-mbps').innerText = `${data.trafegoRxMbps} Mbps`;
                 if (data.trafegoTxMbps) document.getElementById('txt-tx-mbps').innerText = `${data.trafegoTxMbps} Mbps`;
 
@@ -680,16 +697,17 @@
 
                 const tbody = document.getElementById('tbody-ramais');
                 tbody.innerHTML = '';
-                data.ramais.forEach(r => {
+                ramaisCache.forEach(r => {
                     const dot = r.status === 'Online' ? 'dot-green' : (r.status === 'Offline' ? 'dot-red' : 'dot-yellow');
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td style="font-weight:bold; color:#38bdf8;">${r.ramal}</td>
+                        <td style="font-weight:bold; color:#e2e8f0;">${r.usuario_ad}</td>
                         <td>${r.nome}</td>
                         <td>${r.ip}</td>
-                        <td style="font-family:monospace; color:#94a3b8;">${r.mac}</td>
                         <td><span class="status-dot ${dot}"></span>${r.status}</td>
-                        <td>${r.sip}</td>
+                        <td style="font-weight:bold; color:#10b981;">${r.chamadasDia}</td>
+                        <td style="color:#94a3b8;">${r.tempoFala}</td>
                         <td style="color:#38bdf8; font-weight:bold;">${r.latencia > 0 ? r.latencia + ' ms' : '-'}</td>
                     `;
                     tbody.appendChild(tr);
@@ -854,6 +872,10 @@
             document.getElementById('dt-modelo').value = `AMD / Intel Processor (${hostAtual.cpu}% CPU)`;
             document.getElementById('dt-ip').value = hostAtual.ip;
             document.getElementById('dt-ultima-conexao').value = hostAtual.data_ultima_conexao || hostAtual.visto_ha;
+
+            // Busca o Ramal vinculado ao Usuário AD da máquina
+            const ramalObj = ramaisCache.find(r => r.usuario_ad === hostAtual.usuario);
+            document.getElementById('dt-ramal-user').value = ramalObj ? `Ramal ${ramalObj.ramal} (${ramalObj.nome})` : 'Ramal Não Vinculado';
 
             atualizarMetricasDetalhe();
 
