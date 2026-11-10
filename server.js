@@ -23,6 +23,8 @@ app.use(express.static(__dirname));
 
 const estacoesRegistradas = new Map();
 const comandosPendentes = new Map();
+let chamadasEmTempoReal = []; // Armazena chamadas reais em memória
+
 const EQUIPE_TI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista'];
 
 const ACOES_PERMITIDAS = [
@@ -45,7 +47,6 @@ function carregarBanco() {
         console.error('Erro ao ler DB:', e);
     }
 
-    // Cadastro inicial com os dados exatamente fiéis ao msinfo32 / Imagem do Windows
     const estacoesIniciais = [
         { 
             hostname: 'GC-M08-PC0085', 
@@ -72,19 +73,6 @@ function carregarBanco() {
             disco: 45, 
             id_remoto: '1211199845', 
             so: 'Windows 10 Pro' 
-        },
-        { 
-            hostname: 'GC-FIN-PC0001', 
-            usuario: 'ana.costa', 
-            setor: 'Financeiro', 
-            ip: '192.168.10.101', 
-            processador: 'Intel(R) Core(TM) i5-9400 CPU @ 2.90GHz', 
-            ram_total: '8 GB', 
-            ram: 50, 
-            cpu: 10, 
-            disco: 58, 
-            id_remoto: '1492048123', 
-            so: 'Windows 10 Pro' 
         }
     ];
 
@@ -94,8 +82,8 @@ function carregarBanco() {
                 ...e,
                 status: 'Offline',
                 ultima_atualizacao: 0,
-                data_ultima_conexao: '09/11/2026, 06:59:38',
-                logs: ['[SISTEMA] Estação registrada com dados de hardware atualizados.']
+                data_ultima_conexao: 'Aguardando telemetria...',
+                logs: ['[SISTEMA] Estação cadastrada no inventário CST.']
             });
         }
     });
@@ -146,7 +134,7 @@ app.post('/api/v1/login', (req, res) => {
     });
 });
 
-// Recebimento de Telemetria do Agente PowerShell
+// Telemetria PowerShell RMM
 app.post('/api/v1/telemetria', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -216,27 +204,35 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     });
 });
 
-// Feed de Telefonia net2phone Instantâneo (Últimas 10 Chamadas Ativas / Recentes)
+// Registro de Ligações Reais via Webhook/PABX
+app.post('/api/v1/registrar-chamada', (req, res) => {
+    const { ramal, colaborador, usuario, ip, destino, status_chamada, duracao, tipo } = req.body;
+    
+    if (!ramal || !colaborador) {
+        return res.status(400).json({ erro: 'Dados da chamada incompletos.' });
+    }
+
+    const novaChamada = {
+        id: Date.now(),
+        ramal: String(ramal),
+        colaborador: colaborador,
+        usuario: usuario || colaborador.toLowerCase().replace(/\s+/g, '.'),
+        ip: ip || '192.168.10.100',
+        numero_destino: destino || 'Interno',
+        status_chamada: status_chamada || 'Em Chamada',
+        duracao: duracao || '00s',
+        tipo: tipo || 'Saindo',
+        hora: new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR })
+    };
+
+    chamadasEmTempoReal = [novaChamada, ...chamadasEmTempoReal].slice(0, 10);
+    res.json({ status: 'sucesso', chamada: novaChamada });
+});
+
+// Feed de Telefonia net2phone em Tempo Real (Apenas chamadas registradas)
 app.get('/api/v1/telefonia-metrics', (req, res) => {
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
-    
-    const rxVar = (11.5 + Math.random() * 2.5).toFixed(1);
-    const txVar = (7.8 + Math.random() * 2.2).toFixed(1);
-
-    // Gera lista dinâmica das últimas 10 chamadas em tempo real com atualizações a cada 5s
-    const segs = new Date().getSeconds();
-    const chamadasInstantaneas = [
-        { id: 1, ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', ip: '192.168.111.86', numero_destino: '(31) 98412-5501', status_chamada: 'Em Chamada', duracao: `${Math.floor(segs + 45)}s`, tipo: 'Saindo' },
-        { id: 2, ramal: '001', usuario: 'ana.costa', colaborador: 'Ana Costa', ip: '192.168.10.101', numero_destino: '(31) 3214-9088', status_chamada: 'Em Chamada', duracao: `${Math.floor(segs + 12)}s`, tipo: 'Entrando' },
-        { id: 3, ramal: '005', usuario: 'wesley.lima', colaborador: 'Wesley Lima (TI)', ip: '192.168.10.105', numero_destino: 'Suporte Net2phone', status_chamada: 'Concluída', duracao: '04m 12s', tipo: 'Saindo' },
-        { id: 4, ramal: '004', usuario: 'joao.pereira', colaborador: 'João Pereira', ip: '192.168.10.104', numero_destino: '(11) 97102-4411', status_chamada: 'Concluída', duracao: '02m 45s', tipo: 'Saindo' },
-        { id: 5, ramal: '009', usuario: 'camila.alves', colaborador: 'Camila Alves', ip: '192.168.10.109', numero_destino: '(31) 99182-3300', status_chamada: 'Concluída', duracao: '01m 18s', tipo: 'Entrando' },
-        { id: 6, ramal: '007', usuario: 'rafael.silva', colaborador: 'Rafael Silva (TI)', ip: '192.168.10.107', numero_destino: 'Ramal 002 (Pamela)', status_chamada: 'Concluída', duracao: '00m 52s', tipo: 'Interna' },
-        { id: 7, ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', ip: '192.168.111.86', numero_destino: '(31) 3451-0099', status_chamada: 'Concluída', duracao: '05m 10s', tipo: 'Entrando' },
-        { id: 8, ramal: '003', usuario: 'dr.carlos', colaborador: 'Dr. Carlos Santos', ip: '192.168.10.103', numero_destino: '(31) 98822-1144', status_chamada: 'Concluída', duracao: '03m 05s', tipo: 'Saindo' },
-        { id: 9, ramal: '001', usuario: 'ana.costa', colaborador: 'Ana Costa', ip: '192.168.10.101', numero_destino: '(31) 3211-7788', status_chamada: 'Concluída', duracao: '01m 40s', tipo: 'Entrando' },
-        { id: 10, ramal: '008', usuario: 'romulo.evangelista', colaborador: 'Rômulo Evangelista', ip: '192.168.10.108', numero_destino: 'Ramal 005 (Wesley)', status_chamada: 'Não Atendida', duracao: '00m 00s', tipo: 'Interna' }
-    ];
+    const ramaisEmChamadaCount = chamadasEmTempoReal.filter(c => c.status_chamada === 'Em Chamada').length;
 
     res.json({
         provedor: 'net2phone Cloud PABX',
@@ -245,16 +241,14 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
         ramaisOffline: 3,
         semRegistroSip: 1,
         disponibilidadeGeral: 94.0,
-        trafegoRxMbps: rxVar,
-        trafegoTxMbps: txVar,
+        trafegoRxMbps: '12.4',
+        trafegoTxMbps: '8.7',
         uptimeDias: 15,
         horaAtualizacao: horaAtual,
-        chamadas: chamadasInstantaneas,
-        eventosRecentes: [
-            { hora: horaAtual, evento: `Chamada ativa: Pamela Araujo (002) -> (31) 98412-5501`, status: 'Informativo' },
-            { hora: horaAtual, evento: `Chamada ativa: Ana Costa (001) <- (31) 3214-9088`, status: 'Informativo' },
-            { hora: '06:58:10', evento: 'Ramal 008 (romulo.evangelista) registrou tentativa de chamada', status: 'Atenção' }
-        ]
+        chamadas: chamadasEmTempoReal,
+        eventosRecentes: chamadasEmTempoReal.length > 0 
+            ? chamadasEmTempoReal.map(c => ({ hora: c.hora || horaAtual, evento: `Ramal ${c.ramal} (${c.colaborador}): ${c.status_chamada} -> ${c.numero_destino}`, status: 'Informativo' }))
+            : [{ hora: horaAtual, evento: 'Central PABX net2phone pronta. Nenhuma ligação ativa no momento.', status: 'Informativo' }]
     });
 });
 
@@ -270,7 +264,7 @@ app.get('/api/v1/export/bi-json', (req, res) => {
         empresa: 'GRUPOCST/TI',
         geradoEm: new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR }),
         metricasRmm: { totalComputadores: estacoes.length, estacoes },
-        metricasTelefonia: { provedor: 'net2phone Cloud', totalRamais: 50, online: 47, offline: 3 }
+        metricasTelefonia: { provedor: 'net2phone Cloud', totalRamais: 50, chamadasRecentes: chamadasEmTempoReal }
     });
 });
 
@@ -288,11 +282,7 @@ app.get('/api/v1/export/rmm-csv', (req, res) => {
 
 app.get('/api/v1/export/telefonia-csv', (req, res) => {
     let csv = 'Ramal;Usuario_AD;Nome_Colaborador;Destino;Status_Chamada;Tipo;Duracao\n';
-    const chamadas = [
-        { ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', destino: '(31) 98412-5501', status: 'Em Chamada', tipo: 'Saindo', duracao: '1m 20s' },
-        { ramal: '001', usuario: 'ana.costa', colaborador: 'Ana Costa', destino: '(31) 3214-9088', status: 'Em Chamada', tipo: 'Entrando', duracao: '0m 45s' }
-    ];
-    chamadas.forEach(c => { csv += `${c.ramal};${c.usuario};${c.colaborador};${c.destino};${c.status};${c.tipo};${c.duracao}\n`; });
+    chamadasEmTempoReal.forEach(c => { csv += `${c.ramal};${c.usuario};${c.colaborador};${c.numero_destino};${c.status_chamada};${c.tipo};${c.duracao}\n`; });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio_telefonia_net2phone.csv');
     res.send('\uFEFF' + csv);
@@ -340,4 +330,4 @@ app.get('/api/v1/pendencias/:hostname', (req, res) => {
     res.json({ tarefas });
 });
 
-app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com Telefonia em Tempo Real na porta ${PORT}`));
+app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com Feed de Telefonia Limpo na porta ${PORT}`));
