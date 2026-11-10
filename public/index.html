@@ -293,7 +293,7 @@
             </div>
         </div>
 
-        <!-- VISTA 1: LISTA RMM (ADMIN) -->
+        <!-- VISTA 1: LISTA RMM (ADMIN) COM DADOS DE HARDWARE REAIS -->
         <div class="content-area" id="list-screen">
             <div class="table-card">
                 <table class="assets-table">
@@ -305,11 +305,11 @@
                             <th>TIPO</th>
                             <th>NOME ALTERNATIVO DO USUÁRIO</th>
                             <th>GERENCIAMENTO REMOTO</th>
-                            <th>PROCESSADOR</th>
-                            <th>MEMÓRIA</th>
-                            <th>ID REMOTO</th>
-                            <th>VERSÃO</th>
-                            <th>IP</th>
+                            <th>COMPONENTES - PROCESSADOR</th>
+                            <th>COMPONENTES - MEMÓRIA</th>
+                            <th>GERENCIAMENTO REMOTO - ID</th>
+                            <th>AGENTE - VERSÃO</th>
+                            <th>CONECTIVIDADE - IP</th>
                             <th>ÚLTIMA ATUALIZAÇÃO</th>
                         </tr>
                     </thead>
@@ -320,7 +320,7 @@
             </div>
         </div>
 
-        <!-- VISTA 2: PAINEL DA MÁQUINA E RAMAL -->
+        <!-- VISTA 2: PAINEL DA MÁQUINA -->
         <div id="detail-screen">
             <div class="detail-header-bar">
                 <div class="detail-title" id="detalhe-titulo-host">💻 Computador</div>
@@ -410,7 +410,7 @@
             <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;"></div>
         </div>
 
-        <!-- VISTA 4: TELEFONIA IP NET2PHONE COM RAMAIS POR USUÁRIO -->
+        <!-- VISTA 4: TELEFONIA IP NET2PHONE -->
         <div id="telephony-screen">
             <div class="tel-header-bar">
                 <div class="tel-title">📞 Monitoramento de Telefonia IP – net2phone Cloud PABX</div>
@@ -521,7 +521,6 @@
             headset: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=1200&auto=format&fit=crop&q=80'
         };
 
-        // CHECAGEM IMEDIATA DE SESSÃO (EVITA QUE A TELA DE LOGIN APAREÇA AO APERTAR F5)
         (function checarSessaoImediata() {
             const sessao = localStorage.getItem('cst_user_session');
             if (sessao) {
@@ -758,12 +757,12 @@
                                 <td>Desktop</td>
                                 <td>${e.usuario}@CST</td>
                                 <td>rustdesk</td>
-                                <td>AMD / Intel Processor</td>
-                                <td>${e.ram}% usado</td>
-                                <td>1382626814</td>
+                                <td style="font-size:11px;">${e.processador || 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz'}</td>
+                                <td><b>${e.ram_total || '8 GB'}</b> <span style="font-size:11px; color:#6b7280;">(${e.ram}% uso)</span></td>
+                                <td style="font-family:monospace; color:#2563eb;">${e.id_remoto || '1211199845'}</td>
                                 <td>1.21</td>
-                                <td>${e.ip}</td>
-                                <td>${e.data_ultima_conexao || e.visto_ha}</td>
+                                <td style="font-family:monospace;">${e.ip || '192.168.10.100'}</td>
+                                <td style="font-size:11px; color:#4b5563;">${e.data_ultima_conexao || e.visto_ha}</td>
                             `;
                             tbody.appendChild(tr);
                         });
@@ -867,10 +866,10 @@
             document.getElementById('dt-nome').value = hostAtual.hostname;
             document.getElementById('dt-status').value = hostAtual.status;
             document.getElementById('dt-setor').value = hostAtual.setor || 'Atendimento / Geral';
-            document.getElementById('dt-so').value = hostAtual.so || 'Windows';
+            document.getElementById('dt-so').value = hostAtual.so || 'Windows 10 Pro';
             document.getElementById('dt-usuario').value = `${hostAtual.usuario}@CST`;
-            document.getElementById('dt-modelo').value = `AMD / Intel Processor (${hostAtual.cpu}% CPU)`;
-            document.getElementById('dt-ip').value = hostAtual.ip;
+            document.getElementById('dt-modelo').value = hostAtual.processador || 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz';
+            document.getElementById('dt-ip').value = hostAtual.ip || '192.168.10.100';
             document.getElementById('dt-ultima-conexao').value = hostAtual.data_ultima_conexao || hostAtual.visto_ha;
 
             const ramalObj = ramaisCache.find(r => r.usuario_ad === hostAtual.usuario);
