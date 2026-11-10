@@ -53,12 +53,13 @@ function carregarBanco() {
             usuario: 'wesley.lima', 
             setor: 'TI / Matriz', 
             ip: 'Cloud-Connected', 
+            iso: 'Windows 11 Enterprise',
             processador: 'AMD Ryzen 3 3200G with Radeon Vega Graphics, 3600 Mhz, 4 Núcleos', 
             ram_total: '16 GB', 
             ram: 87.9, 
-            cpu: 18, 
+            disco_c: '256 GB SSD (65% uso)',
             disco: 65, 
-            id_remoto: '1382626814', 
+            licenca_m365: 'Microsoft 365 Business Premium',
             so: 'Microsoft Windows 11 Enterprise' 
         },
         { 
@@ -66,12 +67,27 @@ function carregarBanco() {
             usuario: 'pamela.araujo', 
             setor: 'Atendimento / CST', 
             ip: '192.168.111.86', 
+            iso: 'Windows 10 Pro',
             processador: 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz', 
             ram_total: '8 GB', 
             ram: 38, 
-            cpu: 12, 
-            disco: 45, 
-            id_remoto: '1211199845', 
+            disco_c: '480 GB SSD (38% uso)',
+            disco: 38, 
+            licenca_m365: 'Microsoft 365 Business Standard',
+            so: 'Windows 10 Pro' 
+        },
+        { 
+            hostname: 'GC-FIN-PC0001', 
+            usuario: 'ana.costa', 
+            setor: 'Financeiro', 
+            ip: '192.168.10.101', 
+            iso: 'Windows 10 Pro',
+            processador: 'Intel(R) Core(TM) i5-9400 CPU @ 2.90GHz', 
+            ram_total: '8 GB', 
+            ram: 50, 
+            disco_c: '240 GB SSD (58% uso)',
+            disco: 58, 
+            licenca_m365: 'Microsoft 365 Business Basic',
             so: 'Windows 10 Pro' 
         }
     ];
@@ -111,7 +127,7 @@ app.get('/', (req, res) => {
     else res.send('<h2>Servidor RMM CST Online</h2>');
 });
 
-// Login
+// Autenticação de Login
 app.post('/api/v1/login', (req, res) => {
     const { usuario, senha, tipo } = req.body;
     const cleanUser = (usuario || '').trim().toLowerCase();
@@ -134,7 +150,7 @@ app.post('/api/v1/login', (req, res) => {
     });
 });
 
-// Telemetria PowerShell RMM
+// Telemetria PowerShell RMM via GPO
 app.post('/api/v1/telemetria', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -157,17 +173,21 @@ app.post('/api/v1/telemetria', (req, res) => {
     const novoLog = `[${logHora}] Apps: ${appsAbertos} | Telemetria OK.`;
     const logsAtualizados = [novoLog, ...logsAnteriores].slice(0, 30);
 
+    const usoDiscoPercent = Math.min(100, Math.max(0, parseFloat(data.disco_uso_percent || 0)));
+
     estacoesRegistradas.set(hostKey, {
         hostname: hostKey,
         usuario: (data.usuario || estacaoAnterior.usuario || 'Utilizador').toLowerCase().trim(),
         setor: data.setor || estacaoAnterior.setor || 'Atendimento / Geral',
         ip: data.ip_local || clientIp || estacaoAnterior.ip,
+        iso: data.iso || data.sistema_operacional || estacaoAnterior.iso || 'Windows 11 Enterprise',
         processador: data.processador || estacaoAnterior.processador || 'AMD Ryzen 3 3200G with Radeon Vega Graphics, 3600 Mhz, 4 Núcleos',
         ram_total: data.ram_total || estacaoAnterior.ram_total || '16 GB',
         cpu: Math.min(100, Math.max(0, parseFloat(data.cpu_uso_percent || 0))),
         ram: Math.min(100, Math.max(0, parseFloat(data.ram_uso_percent || 0))),
-        disco: Math.min(100, Math.max(0, parseFloat(data.disco_uso_percent || 0))),
-        id_remoto: data.id_remoto || estacaoAnterior.id_remoto || '1382626814',
+        disco: usoDiscoPercent,
+        disco_c: data.disco_c || `${data.disco_total_gb || '256'} GB SSD (${usoDiscoPercent}% uso)`,
+        licenca_m365: data.licenca_m365 || estacaoAnterior.licenca_m365 || 'Microsoft 365 Business Premium',
         so: data.sistema_operacional || estacaoAnterior.so || 'Windows 11 Enterprise',
         uptime: data.uptime || 'Sincronizado',
         aplicativos_ativos: data.aplicativos_ativos || [],
@@ -204,7 +224,7 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     });
 });
 
-// Endpoint Webhook para integração direta do PABX/net2phone
+// Webhook Telefonia
 app.post('/api/v1/registrar-chamada', (req, res) => {
     const { ramal, colaborador, usuario, ip, destino, status_chamada, duracao, tipo } = req.body;
     if (!ramal || !colaborador) return res.status(400).json({ erro: 'Dados incompletos.' });
@@ -226,7 +246,7 @@ app.post('/api/v1/registrar-chamada', (req, res) => {
     res.json({ status: 'sucesso', chamada: novaChamada });
 });
 
-// Telemetria net2phone - Feed de Chamadas Ativas e Histórico em Tempo Real (Atualização 5s)
+// Telemetria net2phone
 app.get('/api/v1/telefonia-metrics', (req, res) => {
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
     const agoraSegs = Math.floor(Date.now() / 1000);
@@ -248,19 +268,9 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
         });
     }
 
-    // Feed dinâmico de tráfego do PABX em tempo real
-    const segsAtiva1 = (agoraSegs % 85) + 14;
-    const segsAtiva2 = (agoraSegs % 42) + 8;
-    const numDinamico1 = '(31) 9' + (8000 + (agoraSegs % 900)) + '-' + (1000 + (agoraSegs % 8999));
-    const numDinamico2 = '(31) 3' + (2000 + (agoraSegs % 400)) + '-' + (4000 + (agoraSegs % 4999));
-
     const feedLivePabx = [
-        { id: 1, ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', ip: '192.168.111.86', numero_destino: numDinamico1, status_chamada: 'Em Chamada', duracao: `${segsAtiva1}s`, tipo: 'Saindo' },
-        { id: 2, ramal: '004', usuario: 'joao.pereira', colaborador: 'João Pereira', ip: '192.168.10.104', numero_destino: numDinamico2, status_chamada: 'Em Chamada', duracao: `${segsAtiva2}s`, tipo: 'Entrando' },
-        { id: 3, ramal: '001', usuario: 'ana.costa', colaborador: 'Ana Costa', ip: '192.168.10.101', numero_destino: '(31) 3214-9088', status_chamada: 'Concluída', duracao: '03m 15s', tipo: 'Entrando' },
-        { id: 4, ramal: '005', usuario: 'wesley.lima', colaborador: 'Wesley Lima (TI)', ip: '192.168.10.105', numero_destino: 'Suporte Net2phone', status_chamada: 'Concluída', duracao: '01m 42s', tipo: 'Saindo' },
-        { id: 5, ramal: '009', usuario: 'camila.alves', colaborador: 'Camila Alves', ip: '192.168.10.109', numero_destino: '(31) 99182-3300', status_chamada: 'Concluída', duracao: '02m 10s', tipo: 'Saindo' },
-        { id: 6, ramal: '007', usuario: 'rafael.silva', colaborador: 'Rafael Silva (TI)', ip: '192.168.10.107', numero_destino: 'Ramal 002 (Pamela)', status_chamada: 'Concluída', duracao: '00m 45s', tipo: 'Interna' }
+        { id: 1, ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', ip: '192.168.111.86', numero_destino: '(31) 98798-2288', status_chamada: 'Concluída', duracao: '02m 40s', tipo: 'Saindo' },
+        { id: 2, ramal: '004', usuario: 'joao.pereira', colaborador: 'João Pereira', ip: '192.168.10.104', numero_destino: '(31) 32298-4832', status_chamada: 'Concluída', duracao: '01m 12s', tipo: 'Entrando' }
     ];
 
     res.json({
@@ -270,15 +280,13 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
         ramaisOffline: 3,
         semRegistroSip: 1,
         disponibilidadeGeral: 98.5,
-        trafegoRxMbps: (11.8 + (agoraSegs % 3)).toFixed(1),
-        trafegoTxMbps: (8.1 + (agoraSegs % 2)).toFixed(1),
+        trafegoRxMbps: '12.1',
+        trafegoTxMbps: '8.4',
         uptimeDias: 15,
         horaAtualizacao: horaAtual,
         chamadas: feedLivePabx,
         eventosRecentes: [
-            { hora: horaAtual, evento: `Chamada ativa no PABX: Pamela Araujo (Ramal 002) -> ${numDinamico1}`, status: 'Informativo' },
-            { hora: horaAtual, evento: `Chamada ativa no PABX: João Pereira (Ramal 004) <- ${numDinamico2}`, status: 'Informativo' },
-            { hora: '08:48:10', evento: 'Chamada encerrada com sucesso no Ramal 001 (Ana Costa)', status: 'Informativo' }
+            { hora: horaAtual, evento: 'Central PABX net2phone sincronizada.', status: 'Informativo' }
         ]
     });
 });
@@ -300,11 +308,11 @@ app.get('/api/v1/export/bi-json', (req, res) => {
 });
 
 app.get('/api/v1/export/rmm-csv', (req, res) => {
-    let csv = 'Hostname;Usuario;Setor;Status;Processador;Memoria_Total;RAM_Uso_Percent;Disco_Percent;IP;ID_Remoto;UltimaConexao\n';
+    let csv = 'Hostname;Usuario;Setor;Status;Sistema_Operacional_ISO;Processador;Memoria_Total;RAM_Uso_Percent;Disco_C;Licenca_M365;IP;UltimaConexao\n';
     const agora = Date.now();
     for (const info of estacoesRegistradas.values()) {
         const isOnline = info.ultima_atualizacao > 0 && Math.floor((agora - info.ultima_atualizacao) / 1000) < 45;
-        csv += `${info.hostname};${info.usuario};${info.setor};${isOnline ? 'Online' : 'Offline'};${info.processador};${info.ram_total};${info.ram}%;${info.disco}%;${info.ip};${info.id_remoto};${info.data_ultima_conexao}\n`;
+        csv += `${info.hostname};${info.usuario};${info.setor};${isOnline ? 'Online' : 'Offline'};${info.iso};${info.processador};${info.ram_total};${info.ram}%;${info.disco_c};${info.licenca_m365};${info.ip};${info.data_ultima_conexao}\n`;
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio_rmm_cst.csv');
@@ -313,12 +321,7 @@ app.get('/api/v1/export/rmm-csv', (req, res) => {
 
 app.get('/api/v1/export/telefonia-csv', (req, res) => {
     let csv = 'Ramal;Usuario_AD;Nome_Colaborador;Destino;Status_Chamada;Tipo;Duracao\n';
-    const agoraSegs = Math.floor(Date.now() / 1000);
-    const feed = chamadasWebhooksReais.length > 0 ? chamadasWebhooksReais : [
-        { ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', numero_destino: '(31) 98412-5501', status_chamada: 'Em Chamada', tipo: 'Saindo', duracao: `${(agoraSegs % 85) + 14}s` },
-        { ramal: '004', usuario: 'joao.pereira', colaborador: 'João Pereira', numero_destino: '(31) 3214-9088', status_chamada: 'Em Chamada', tipo: 'Entrando', duracao: `${(agoraSegs % 42) + 8}s` }
-    ];
-    feed.forEach(c => { csv += `${c.ramal};${c.usuario};${c.colaborador};${c.numero_destino};${c.status_chamada};${c.tipo};${c.duracao}\n`; });
+    chamadasWebhooksReais.forEach(c => { csv += `${c.ramal};${c.usuario};${c.colaborador};${c.numero_destino};${c.status_chamada};${c.tipo};${c.duracao}\n`; });
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio_telefonia_net2phone.csv');
     res.send('\uFEFF' + csv);
@@ -366,4 +369,4 @@ app.get('/api/v1/pendencias/:hostname', (req, res) => {
     res.json({ tarefas });
 });
 
-app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com Feed de Telefonia Ativo na porta ${PORT}`));
+app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com colunas atualizadas na porta ${PORT}`));
