@@ -84,7 +84,6 @@
         .btn-bi { background: var(--blue-bi); color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; }
         .btn-logout { background: #ef4444; color: #ffffff; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        /* PISCADEIRA E RELÓGIO DE 5S */
         .sync-pulse { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 8px; border-radius: 12px; color: #047857; font-weight: bold; }
         .pulse-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; animation: blink 1s infinite alternate; }
         @keyframes blink { from { opacity: 0.3; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
@@ -161,15 +160,10 @@
         table.tel-table td { padding: 10px; border-bottom: 1px solid #1e293b; }
         table.tel-table tr:hover { background: #1e293b; }
 
-        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-        .dot-green { background: #10b981; box-shadow: 0 0 8px #10b981; }
-        .dot-red { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
-        .dot-yellow { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
         .ramais-grid-map { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; padding: 10px; background: #0f172a; border-radius: 6px; }
         .ramal-dot-item { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; transition: transform 0.2s; }
         .ramal-dot-item:hover { transform: scale(1.3); }
 
-        /* MODAL BI */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 5000; }
         .modal-card { background: #ffffff; border-radius: 12px; border: 2px solid var(--blue-bi); width: 550px; padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
         .modal-header { font-size: 16px; font-weight: bold; color: var(--blue-bi); margin-bottom: 16px; display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
@@ -179,7 +173,6 @@
         .export-btn-title { font-size: 13px; font-weight: bold; color: #1e293b; }
         .export-btn-desc { font-size: 11px; color: #64748b; }
 
-        /* LIGHTBOX */
         .lightbox-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 4000; padding: 20px; }
         .lightbox-container { background: #ffffff; border-radius: 12px; border: 2px solid var(--green-primary); width: 85vw; height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
         .lightbox-header { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; height: 50px; }
@@ -411,10 +404,10 @@
             <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;"></div>
         </div>
 
-        <!-- VISTA 4: TELEFONIA IP NET2PHONE - FEED INSTANTÂNEO 10 ÚLTIMAS CHAMADAS -->
+        <!-- VISTA 4: TELEFONIA IP NET2PHONE - FEED INSTANTÂNEO DE LIGAÇÕES REAIS -->
         <div id="telephony-screen">
             <div class="tel-header-bar">
-                <div class="tel-title">📞 Telemetria net2phone – Feed Instantâneo das ÚLTIMAS 10 CHAMADAS</div>
+                <div class="tel-title">📞 Telemetria net2phone – Feed de LIGAÇÕES REAIS em Tempo Real</div>
                 <div style="font-size:12px; color:#94a3b8;">Sincronização: <span style="color:#10b981; font-weight:bold;">● Live (5 em 5 Segundos)</span></div>
             </div>
 
@@ -462,7 +455,7 @@
 
             <div class="tel-main-grid">
                 <div class="tel-table-container">
-                    <div class="tel-box-header">🔥 Feed Instantâneo: ÚLTIMAS 10 CHAMADAS (Atualizando a cada 5s)</div>
+                    <div class="tel-box-header">🔥 Feed Instantâneo: Chamadas Reais do PABX</div>
                     <table class="tel-table">
                         <thead>
                             <tr>
@@ -476,7 +469,7 @@
                             </tr>
                         </thead>
                         <tbody id="tbody-chamadas">
-                            <tr><td colspan="7" style="text-align:center;">Carregando histórico em tempo real...</td></tr>
+                            <tr><td colspan="7" style="text-align:center;">Carregando histórico...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -696,30 +689,35 @@
 
                 const tbody = document.getElementById('tbody-chamadas');
                 tbody.innerHTML = '';
-                chamadasCache.forEach(c => {
-                    const isEmChamada = c.status_chamada === 'Em Chamada';
-                    const badgeClass = isEmChamada ? 'badge-status badge-talking' : (c.status_chamada === 'Não Atendida' ? 'badge-status badge-offline' : 'badge-status badge-online');
-                    
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="font-weight:bold; color:#38bdf8;">Ramal ${c.ramal}</td>
-                        <td style="font-weight:bold; color:#e2e8f0;">${c.colaborador} <span style="font-size:10px; color:#94a3b8;">(${c.usuario})</span></td>
-                        <td style="font-family:monospace; color:#cbd5e1;">${c.ip}</td>
-                        <td style="font-weight:bold; color:#ffffff;">${c.numero_destino}</td>
-                        <td style="font-size:11px; color:#94a3b8;">${c.tipo}</td>
-                        <td><span class="${badgeClass}">${isEmChamada ? '📞 EM CHAMADA' : c.status_chamada}</span></td>
-                        <td style="color:#38bdf8; font-weight:bold;">${c.duracao}</td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+
+                if (chamadasCache.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:18px; color:#94a3b8;">Nenhuma chamada em andamento ou recente no momento.</td></tr>`;
+                } else {
+                    chamadasCache.forEach(c => {
+                        const isEmChamada = c.status_chamada === 'Em Chamada';
+                        const badgeClass = isEmChamada ? 'badge-status badge-talking' : (c.status_chamada === 'Não Atendida' ? 'badge-status badge-offline' : 'badge-status badge-online');
+                        
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td style="font-weight:bold; color:#38bdf8;">Ramal ${c.ramal}</td>
+                            <td style="font-weight:bold; color:#e2e8f0;">${c.colaborador} <span style="font-size:10px; color:#94a3b8;">(${c.usuario})</span></td>
+                            <td style="font-family:monospace; color:#cbd5e1;">${c.ip}</td>
+                            <td style="font-weight:bold; color:#ffffff;">${c.numero_destino}</td>
+                            <td style="font-size:11px; color:#94a3b8;">${c.tipo}</td>
+                            <td><span class="${badgeClass}">${isEmChamada ? '📞 EM CHAMADA' : c.status_chamada}</span></td>
+                            <td style="color:#38bdf8; font-weight:bold;">${c.duracao}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
 
                 const mapaGrid = document.getElementById('mapa-ramais-grid');
                 mapaGrid.innerHTML = '';
                 for (let i = 1; i <= 50; i++) {
                     const d = document.createElement('div');
                     d.className = 'ramal-dot-item';
-                    d.style.background = (i === 1 || i === 2) ? '#ef4444' : (i === 8 ? '#f59e0b' : '#10b981');
-                    d.title = (i === 1 || i === 2) ? `Ramal 00${i} - Em Chamada` : `Ramal 0${i}`;
+                    d.style.background = '#10b981';
+                    d.title = `Ramal 0${i} - Disponível`;
                     mapaGrid.appendChild(d);
                 }
 
