@@ -49,7 +49,6 @@
             backdrop-filter: blur(4px);
         }
 
-        /* TELA LOGIN */
         #login-screen {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: rgba(255, 255, 255, 0.95);
@@ -70,7 +69,6 @@
         .form-group input { width: 100%; padding: 10px; background: #f0fdf4; border: 1px solid var(--border-color); color: var(--text-body); border-radius: 6px; outline: none; }
         .btn-login { width: 100%; padding: 12px; background: var(--green-primary); color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* TOPO NAVBAR */
         .top-navbar {
             background: #ffffff; border-bottom: 2px solid #e5e7eb;
             padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 13px;
@@ -88,7 +86,6 @@
         .pulse-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; animation: blink 1s infinite alternate; }
         @keyframes blink { from { opacity: 0.3; transform: scale(0.9); } to { opacity: 1; transform: scale(1.1); } }
 
-        /* VISTAS */
         .content-area { flex: 1; overflow-y: auto; padding: 16px; }
         .table-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         table.assets-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -99,7 +96,8 @@
         .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block; }
         .badge-online { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
         .badge-offline { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
-        .badge-talking { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; animation: blink 1s infinite alternate; }
+        .badge-iso { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+        .badge-m365 { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
 
         #detail-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 20px; }
         .detail-header-bar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -287,7 +285,7 @@
             </div>
         </div>
 
-        <!-- VISTA 1: LISTA RMM (ADMIN) COM DADOS DE HARDWARE REAIS -->
+        <!-- VISTA 1: LISTA RMM (ADMIN) COM COLUNAS ATUALIZADAS -->
         <div class="content-area" id="list-screen">
             <div class="table-card">
                 <table class="assets-table">
@@ -298,11 +296,11 @@
                             <th>STATUS</th>
                             <th>TIPO</th>
                             <th>NOME ALTERNATIVO DO USUÁRIO</th>
-                            <th>GERENCIAMENTO REMOTO</th>
+                            <th>SISTEMA OPERACIONAL / ISO</th>
                             <th>COMPONENTES - PROCESSADOR</th>
                             <th>COMPONENTES - MEMÓRIA</th>
-                            <th>GERENCIAMENTO REMOTO - ID</th>
-                            <th>AGENTE - VERSÃO</th>
+                            <th>DISCO LOCAL (C:)</th>
+                            <th>LICENÇA MICROSOFT 365</th>
                             <th>CONECTIVIDADE - IP</th>
                             <th>ÚLTIMA ATUALIZAÇÃO</th>
                         </tr>
@@ -340,13 +338,13 @@
                     <div class="form-field"><label>Nome da Estação</label><input type="text" id="dt-nome" readonly></div>
                     <div class="form-field"><label>Status do Agente</label><input type="text" id="dt-status" readonly></div>
                     <div class="form-field"><label>Localização / Setor</label><input type="text" id="dt-setor"></div>
-                    <div class="form-field"><label>Ramal net2phone Vinculado</label><input type="text" id="dt-ramal-user" style="color:var(--blue-bi); font-weight:bold;" readonly></div>
+                    <div class="form-field"><label>Licença Microsoft 365</label><input type="text" id="dt-licenca-m365" style="color:var(--blue-bi); font-weight:bold;" readonly></div>
                     <div class="form-field"><label>Técnico Encarregado</label><input type="text" value="Equipe TI CST" readonly></div>
-                    <div class="form-field"><label>Fabricante / Sistema</label><input type="text" id="dt-so" readonly></div>
+                    <div class="form-field"><label>Sistema Operacional / ISO</label><input type="text" id="dt-iso" readonly></div>
                     <div class="form-field"><label>Nome Alternativo do Usuário</label><input type="text" id="dt-usuario" readonly></div>
                     <div class="form-field"><label>Modelo / Processador</label><input type="text" id="dt-modelo" readonly></div>
+                    <div class="form-field"><label>Armazenamento (Disco C:)</label><input type="text" id="dt-disco-c" readonly></div>
                     <div class="form-field"><label>Endereço IP</label><input type="text" id="dt-ip" readonly></div>
-                    <div class="form-field"><label>Última Conexão</label><input type="text" id="dt-ultima-conexao" readonly></div>
                 </div>
 
                 <div class="qr-card">
@@ -404,7 +402,7 @@
             <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;"></div>
         </div>
 
-        <!-- VISTA 4: TELEFONIA IP NET2PHONE - FEED INSTANTÂNEO DE LIGAÇÕES REAIS -->
+        <!-- VISTA 4: TELEFONIA IP NET2PHONE -->
         <div id="telephony-screen">
             <div class="tel-header-bar">
                 <div class="tel-title">📞 Telemetria net2phone – Feed de LIGAÇÕES REAIS em Tempo Real</div>
@@ -430,7 +428,7 @@
                 </div>
                 <div class="tel-card-stat">
                     <div class="tel-icon-circle" style="background:rgba(16, 185, 129, 0.15); color:#10b981;">📈</div>
-                    <div><div class="tel-stat-val" style="color:#10b981;" id="tel-disp-geral">94.0%</div><div class="tel-stat-lbl">Disponibilidade Geral</div></div>
+                    <div><div class="tel-stat-val" style="color:#10b981;" id="tel-disp-geral">98.5%</div><div class="tel-stat-lbl">Disponibilidade Geral</div></div>
                 </div>
             </div>
 
@@ -442,8 +440,8 @@
                 <div class="tel-chart-box">
                     <div class="tel-box-header">🌐 Central net2phone <span>IP: Nuvem / AWS</span></div>
                     <div style="font-size:13px; color:#cbd5e1; display:flex; flex-direction:column; gap:8px; margin-top:10px;">
-                        <div>Tráfego RX: <b style="color:#38bdf8;" id="txt-rx-mbps">12.4 Mbps</b></div>
-                        <div>Tráfego TX: <b style="color:#38bdf8;" id="txt-tx-mbps">8.7 Mbps</b></div>
+                        <div>Tráfego RX: <b style="color:#38bdf8;" id="txt-rx-mbps">12.1 Mbps</b></div>
+                        <div>Tráfego TX: <b style="color:#38bdf8;" id="txt-tx-mbps">8.4 Mbps</b></div>
                         <div>Uptime PABX: <b style="color:#10b981;">15 dias contínuos</b></div>
                     </div>
                 </div>
@@ -755,11 +753,11 @@
                                 <td><span class="badge-status ${e.status === 'Online' ? 'badge-online' : 'badge-offline'}">${e.status}</span></td>
                                 <td>Desktop</td>
                                 <td>${e.usuario}@CST</td>
-                                <td>rustdesk</td>
-                                <td style="font-size:11px;">${e.processador || 'AMD Ryzen 3 3200G with Radeon Vega Graphics, 3600 Mhz, 4 Núcleos'}</td>
+                                <td><span class="badge-status badge-iso">${e.iso || 'Windows 11 Enterprise'}</span></td>
+                                <td style="font-size:11px;">${e.processador || 'AMD Ryzen 3 3200G'}</td>
                                 <td><b>${e.ram_total || '16 GB'}</b> <span style="font-size:11px; color:#6b7280;">(${e.ram}% uso)</span></td>
-                                <td style="font-family:monospace; color:#2563eb;">${e.id_remoto || '1382626814'}</td>
-                                <td>1.21</td>
+                                <td style="font-weight:bold; color:#0f766e;">${e.disco_c || '256 GB SSD (65% uso)'}</td>
+                                <td><span class="badge-status badge-m365">${e.licenca_m365 || 'Microsoft 365 Business Premium'}</span></td>
                                 <td style="font-family:monospace;">${e.ip || 'Cloud-Connected'}</td>
                                 <td style="font-size:11px; color:#4b5563;">${e.data_ultima_conexao || e.visto_ha}</td>
                             `;
@@ -865,14 +863,12 @@
             document.getElementById('dt-nome').value = hostAtual.hostname;
             document.getElementById('dt-status').value = hostAtual.status;
             document.getElementById('dt-setor').value = hostAtual.setor || 'Atendimento / Geral';
-            document.getElementById('dt-so').value = hostAtual.so || 'Windows 11 Enterprise';
+            document.getElementById('dt-licenca-m365').value = hostAtual.licenca_m365 || 'Microsoft 365 Business Premium';
+            document.getElementById('dt-iso').value = hostAtual.iso || 'Windows 11 Enterprise';
             document.getElementById('dt-usuario').value = `${hostAtual.usuario}@CST`;
-            document.getElementById('dt-modelo').value = hostAtual.processador || 'AMD Ryzen 3 3200G with Radeon Vega Graphics, 3600 Mhz, 4 Núcleos';
+            document.getElementById('dt-modelo').value = hostAtual.processador || 'AMD Ryzen 3 3200G';
+            document.getElementById('dt-disco-c').value = hostAtual.disco_c || '256 GB SSD (65% uso)';
             document.getElementById('dt-ip').value = hostAtual.ip || 'Cloud-Connected';
-            document.getElementById('dt-ultima-conexao').value = hostAtual.data_ultima_conexao || hostAtual.visto_ha;
-
-            const chamadaObj = chamadasCache.find(c => c.usuario === hostAtual.usuario);
-            document.getElementById('dt-ramal-user').value = chamadaObj ? `Ramal ${chamadaObj.ramal} (${chamadaObj.colaborador})` : 'Ramal Livre';
 
             atualizarMetricasDetalhe();
 
