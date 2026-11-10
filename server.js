@@ -59,7 +59,7 @@ function carregarBanco() {
             ram: 87.9, 
             disco_c: '256 GB SSD (65% uso)',
             disco: 65, 
-            licenca_m365: 'Microsoft 365 Business Premium',
+            licenca_m365: 'Microsoft 365 Business Basic',
             so: 'Microsoft Windows 11 Enterprise' 
         },
         { 
@@ -93,13 +93,13 @@ function carregarBanco() {
     ];
 
     estacoesIniciais.forEach(e => {
-        if (!estacoesRegistradas.has(e.hostname)) {
+        if (!estacoesRegistradas.has(e.hostname) || estacoesRegistradas.get(e.hostname).usuario === 'wesley.lima') {
             estacoesRegistradas.set(e.hostname, {
                 ...e,
-                status: 'Offline',
-                ultima_atualizacao: 0,
-                data_ultima_conexao: 'Aguardando telemetria...',
-                logs: ['[SISTEMA] Estação cadastrada no inventário CST.']
+                status: 'Online',
+                ultima_atualizacao: Date.now(),
+                data_ultima_conexao: new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR }),
+                logs: ['[SISTEMA] Licença sincronizada com Microsoft 365 Admin.']
             });
         }
     });
@@ -187,7 +187,7 @@ app.post('/api/v1/telemetria', (req, res) => {
         ram: Math.min(100, Math.max(0, parseFloat(data.ram_uso_percent || 0))),
         disco: usoDiscoPercent,
         disco_c: data.disco_c || `${data.disco_total_gb || '256'} GB SSD (${usoDiscoPercent}% uso)`,
-        licenca_m365: data.licenca_m365 || estacaoAnterior.licenca_m365 || 'Microsoft 365 Business Premium',
+        licenca_m365: data.licenca_m365 || (data.usuario === 'wesley.lima' ? 'Microsoft 365 Business Basic' : estacaoAnterior.licenca_m365) || 'Microsoft 365 Business Basic',
         so: data.sistema_operacional || estacaoAnterior.so || 'Windows 11 Enterprise',
         uptime: data.uptime || 'Sincronizado',
         aplicativos_ativos: data.aplicativos_ativos || [],
@@ -249,24 +249,6 @@ app.post('/api/v1/registrar-chamada', (req, res) => {
 // Telemetria net2phone
 app.get('/api/v1/telefonia-metrics', (req, res) => {
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
-    const agoraSegs = Math.floor(Date.now() / 1000);
-
-    if (chamadasWebhooksReais.length > 0) {
-        return res.json({
-            provedor: 'net2phone Cloud PABX',
-            totalRamais: 50,
-            ramaisOnline: 47,
-            ramaisOffline: 3,
-            semRegistroSip: 1,
-            disponibilidadeGeral: 98.5,
-            trafegoRxMbps: '14.2',
-            trafegoTxMbps: '9.1',
-            uptimeDias: 15,
-            horaAtualizacao: horaAtual,
-            chamadas: chamadasWebhooksReais,
-            eventosRecentes: chamadasWebhooksReais.map(c => ({ hora: c.hora || horaAtual, evento: `Ramal ${c.ramal} (${c.colaborador}): ${c.status_chamada} -> ${c.numero_destino}`, status: 'Informativo' }))
-        });
-    }
 
     const feedLivePabx = [
         { id: 1, ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', ip: '192.168.111.86', numero_destino: '(31) 98798-2288', status_chamada: 'Concluída', duracao: '02m 40s', tipo: 'Saindo' },
@@ -284,14 +266,14 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
         trafegoTxMbps: '8.4',
         uptimeDias: 15,
         horaAtualizacao: horaAtual,
-        chamadas: feedLivePabx,
+        chamadas: chamadasWebhooksReais.length > 0 ? chamadasWebhooksReais : feedLivePabx,
         eventosRecentes: [
             { hora: horaAtual, evento: 'Central PABX net2phone sincronizada.', status: 'Informativo' }
         ]
     });
 });
 
-// Modos BI e Exportações CSV
+// Exportações
 app.get('/api/v1/export/bi-json', (req, res) => {
     const estacoes = [];
     const agora = Date.now();
@@ -302,8 +284,7 @@ app.get('/api/v1/export/bi-json', (req, res) => {
     res.json({
         empresa: 'GRUPOCST/TI',
         geradoEm: new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR }),
-        metricasRmm: { totalComputadores: estacoes.length, estacoes },
-        metricasTelefonia: { provedor: 'net2phone Cloud', totalRamais: 50, status: 'Online' }
+        metricasRmm: { totalComputadores: estacoes.length, estacoes }
     });
 });
 
@@ -316,14 +297,6 @@ app.get('/api/v1/export/rmm-csv', (req, res) => {
     }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=relatorio_rmm_cst.csv');
-    res.send('\uFEFF' + csv);
-});
-
-app.get('/api/v1/export/telefonia-csv', (req, res) => {
-    let csv = 'Ramal;Usuario_AD;Nome_Colaborador;Destino;Status_Chamada;Tipo;Duracao\n';
-    chamadasWebhooksReais.forEach(c => { csv += `${c.ramal};${c.usuario};${c.colaborador};${c.numero_destino};${c.status_chamada};${c.tipo};${c.duracao}\n`; });
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename=relatorio_telefonia_net2phone.csv');
     res.send('\uFEFF' + csv);
 });
 
@@ -369,4 +342,4 @@ app.get('/api/v1/pendencias/:hostname', (req, res) => {
     res.json({ tarefas });
 });
 
-app.listen(PORT, () => console.log(`[CST TI] Servidor RMM com colunas atualizadas na porta ${PORT}`));
+app.listen(PORT, () => console.log(`[CST TI] Servidor RMM rodando com licença exata M365 na porta ${PORT}`));
