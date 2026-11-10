@@ -71,8 +71,8 @@ function carregarBanco() {
             processador: 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz', 
             ram_total: '8 GB', 
             ram: 38, 
-            disco_c: '480 GB SSD (38% uso)',
-            disco: 38, 
+            disco_c: '118 GB SSD (78.8% uso)',
+            disco: 78.8, 
             licenca_m365: 'Microsoft 365 Business Standard',
             so: 'Windows 10 Pro' 
         },
@@ -93,13 +93,13 @@ function carregarBanco() {
     ];
 
     estacoesIniciais.forEach(e => {
-        if (!estacoesRegistradas.has(e.hostname) || estacoesRegistradas.get(e.hostname).usuario === 'wesley.lima') {
+        if (!estacoesRegistradas.has(e.hostname) || e.hostname === 'CS-M02-PC0025') {
             estacoesRegistradas.set(e.hostname, {
                 ...e,
                 status: 'Online',
                 ultima_atualizacao: Date.now(),
                 data_ultima_conexao: new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR }),
-                logs: ['[SISTEMA] Licença sincronizada com Microsoft 365 Admin.']
+                logs: e.logs || ['[SISTEMA] Estação sincronizada.']
             });
         }
     });
@@ -127,7 +127,7 @@ app.get('/', (req, res) => {
     else res.send('<h2>Servidor RMM CST Online</h2>');
 });
 
-// Autenticação de Login
+// Autenticação
 app.post('/api/v1/login', (req, res) => {
     const { usuario, senha, tipo } = req.body;
     const cleanUser = (usuario || '').trim().toLowerCase();
@@ -150,7 +150,7 @@ app.post('/api/v1/login', (req, res) => {
     });
 });
 
-// Telemetria PowerShell RMM via GPO
+// Recebimento de Telemetria do Agente PowerShell
 app.post('/api/v1/telemetria', (req, res) => {
     const tokenAgente = req.headers['x-agent-token'];
     if (tokenAgente !== AGENT_SECRET_TOKEN) {
@@ -165,13 +165,22 @@ app.post('/api/v1/telemetria', (req, res) => {
     const logHora = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
     const dataHoraConexao = new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR });
     
-    const appsAbertos = Array.isArray(data.aplicativos_ativos) && data.aplicativos_ativos.length > 0
-        ? data.aplicativos_ativos.join(', ')
-        : 'Nenhum software com janela ativa';
+    // Captura o nome exato da Janela Ativa ou App enviado pelo PowerShell
+    let appEmUso = 'Nenhum software com janela ativa';
+    if (Array.isArray(data.aplicativos_ativos) && data.aplicativos_ativos.length > 0 && data.aplicativos_ativos[0]) {
+        appEmUso = data.aplicativos_ativos[0];
+    } else if (typeof data.aplicativos_ativos === 'string' && data.aplicativos_ativos.trim() !== '') {
+        appEmUso = data.aplicativos_ativos;
+    }
 
     const logsAnteriores = estacaoAnterior.logs || [];
-    const novoLog = `[${logHora}] Apps: ${appsAbertos} | Telemetria OK.`;
-    const logsAtualizados = [novoLog, ...logsAnteriores].slice(0, 30);
+    const novoLog = `[${logHora}] Apps: ${appEmUso} | Telemetria OK.`;
+    
+    // Evita duplicar logs idênticos seguidos
+    let logsAtualizados = logsAnteriores;
+    if (logsAnteriores.length === 0 || logsAnteriores[0] !== novoLog) {
+        logsAtualizados = [novoLog, ...logsAnteriores].slice(0, 30);
+    }
 
     const usoDiscoPercent = Math.min(100, Math.max(0, parseFloat(data.disco_uso_percent || 0)));
 
@@ -180,17 +189,17 @@ app.post('/api/v1/telemetria', (req, res) => {
         usuario: (data.usuario || estacaoAnterior.usuario || 'Utilizador').toLowerCase().trim(),
         setor: data.setor || estacaoAnterior.setor || 'Atendimento / Geral',
         ip: data.ip_local || clientIp || estacaoAnterior.ip,
-        iso: data.iso || data.sistema_operacional || estacaoAnterior.iso || 'Windows 11 Enterprise',
-        processador: data.processador || estacaoAnterior.processador || 'AMD Ryzen 3 3200G with Radeon Vega Graphics, 3600 Mhz, 4 Núcleos',
-        ram_total: data.ram_total || estacaoAnterior.ram_total || '16 GB',
+        iso: data.iso || data.sistema_operacional || estacaoAnterior.iso || 'Windows 10 Pro',
+        processador: data.processador || estacaoAnterior.processador || 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz',
+        ram_total: data.ram_total || estacaoAnterior.ram_total || '8 GB',
         cpu: Math.min(100, Math.max(0, parseFloat(data.cpu_uso_percent || 0))),
         ram: Math.min(100, Math.max(0, parseFloat(data.ram_uso_percent || 0))),
         disco: usoDiscoPercent,
-        disco_c: data.disco_c || `${data.disco_total_gb || '256'} GB SSD (${usoDiscoPercent}% uso)`,
-        licenca_m365: data.licenca_m365 || (data.usuario === 'wesley.lima' ? 'Microsoft 365 Business Basic' : estacaoAnterior.licenca_m365) || 'Microsoft 365 Business Basic',
-        so: data.sistema_operacional || estacaoAnterior.so || 'Windows 11 Enterprise',
+        disco_c: data.disco_c || `${data.disco_total_gb || '118'} GB SSD (${usoDiscoPercent}% uso)`,
+        licenca_m365: data.licenca_m365 || (data.usuario === 'wesley.lima' ? 'Microsoft 365 Business Basic' : 'Microsoft 365 Business Standard'),
+        so: data.sistema_operacional || estacaoAnterior.so || 'Windows 10 Pro',
         uptime: data.uptime || 'Sincronizado',
-        aplicativos_ativos: data.aplicativos_ativos || [],
+        aplicativos_ativos: [appEmUso],
         ultima_atualizacao: Date.now(),
         data_ultima_conexao: dataHoraConexao,
         logs: logsAtualizados
@@ -224,7 +233,6 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
     });
 });
 
-// Webhook Telefonia
 app.post('/api/v1/registrar-chamada', (req, res) => {
     const { ramal, colaborador, usuario, ip, destino, status_chamada, duracao, tipo } = req.body;
     if (!ramal || !colaborador) return res.status(400).json({ erro: 'Dados incompletos.' });
@@ -246,13 +254,10 @@ app.post('/api/v1/registrar-chamada', (req, res) => {
     res.json({ status: 'sucesso', chamada: novaChamada });
 });
 
-// Telemetria net2phone
 app.get('/api/v1/telefonia-metrics', (req, res) => {
     const horaAtual = new Date().toLocaleTimeString('pt-BR', { timeZone: TIMEZONE_BR });
-
     const feedLivePabx = [
-        { id: 1, ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', ip: '192.168.111.86', numero_destino: '(31) 98798-2288', status_chamada: 'Concluída', duracao: '02m 40s', tipo: 'Saindo' },
-        { id: 2, ramal: '004', usuario: 'joao.pereira', colaborador: 'João Pereira', ip: '192.168.10.104', numero_destino: '(31) 32298-4832', status_chamada: 'Concluída', duracao: '01m 12s', tipo: 'Entrando' }
+        { id: 1, ramal: '002', usuario: 'pamela.araujo', colaborador: 'Pamela Araujo', ip: '192.168.111.86', numero_destino: '(31) 98798-2288', status_chamada: 'Concluída', duracao: '02m 40s', tipo: 'Saindo' }
     ];
 
     res.json({
@@ -267,13 +272,10 @@ app.get('/api/v1/telefonia-metrics', (req, res) => {
         uptimeDias: 15,
         horaAtualizacao: horaAtual,
         chamadas: chamadasWebhooksReais.length > 0 ? chamadasWebhooksReais : feedLivePabx,
-        eventosRecentes: [
-            { hora: horaAtual, evento: 'Central PABX net2phone sincronizada.', status: 'Informativo' }
-        ]
+        eventosRecentes: [{ hora: horaAtual, evento: 'Central PABX net2phone sincronizada.', status: 'Informativo' }]
     });
 });
 
-// Exportações
 app.get('/api/v1/export/bi-json', (req, res) => {
     const estacoes = [];
     const agora = Date.now();
@@ -281,11 +283,7 @@ app.get('/api/v1/export/bi-json', (req, res) => {
         const decorridoSegundos = Math.floor((agora - (info.ultima_atualizacao || 0)) / 1000);
         estacoes.push({ ...info, status: (info.ultima_atualizacao > 0 && decorridoSegundos < 45) ? 'Online' : 'Offline' });
     }
-    res.json({
-        empresa: 'GRUPOCST/TI',
-        geradoEm: new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR }),
-        metricasRmm: { totalComputadores: estacoes.length, estacoes }
-    });
+    res.json({ empresa: 'GRUPOCST/TI', geradoEm: new Date().toLocaleString('pt-BR', { timeZone: TIMEZONE_BR }), metricasRmm: { totalComputadores: estacoes.length, estacoes } });
 });
 
 app.get('/api/v1/export/rmm-csv', (req, res) => {
@@ -342,4 +340,4 @@ app.get('/api/v1/pendencias/:hostname', (req, res) => {
     res.json({ tarefas });
 });
 
-app.listen(PORT, () => console.log(`[CST TI] Servidor RMM rodando com licença exata M365 na porta ${PORT}`));
+app.listen(PORT, () => console.log(`[CST TI] Servidor RMM rodando na porta ${PORT}`));
