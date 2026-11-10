@@ -100,6 +100,7 @@
         .badge-status { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; display: inline-block; }
         .badge-online { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
         .badge-offline { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+        .badge-talking { background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; animation: blink 1s infinite alternate; }
 
         #detail-screen { display: none; flex: 1; flex-direction: column; overflow-y: auto; padding: 20px; gap: 20px; }
         .detail-header-bar { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -215,7 +216,7 @@
                 <div class="export-item-btn" onclick="exportarCsvTelefonia()">
                     <div>
                         <div class="export-btn-title">📞 Exportar CSV (Telefonia net2phone)</div>
-                        <div class="export-btn-desc">Relatório completo dos ramais por Usuário AD, IPs, MACs e SIP.</div>
+                        <div class="export-btn-desc">Relatório de chamadas recentes e ativas em tempo real.</div>
                     </div>
                     <span>📥</span>
                 </div>
@@ -410,11 +411,11 @@
             <div id="inventory-items-container" style="display:flex; flex-direction:column; gap:16px;"></div>
         </div>
 
-        <!-- VISTA 4: TELEFONIA IP NET2PHONE -->
+        <!-- VISTA 4: TELEFONIA IP NET2PHONE - FEED INSTANTÂNEO 10 ÚLTIMAS CHAMADAS -->
         <div id="telephony-screen">
             <div class="tel-header-bar">
-                <div class="tel-title">📞 Monitoramento de Telefonia IP – net2phone Cloud PABX</div>
-                <div style="font-size:12px; color:#94a3b8;">Status: <span style="color:#10b981; font-weight:bold;">● API Conectada</span></div>
+                <div class="tel-title">📞 Telemetria net2phone – Feed Instantâneo das ÚLTIMAS 10 CHAMADAS</div>
+                <div style="font-size:12px; color:#94a3b8;">Sincronização: <span style="color:#10b981; font-weight:bold;">● Live (5 em 5 Segundos)</span></div>
             </div>
 
             <div class="tel-cards-grid">
@@ -461,34 +462,33 @@
 
             <div class="tel-main-grid">
                 <div class="tel-table-container">
-                    <div class="tel-box-header">📋 Ramais net2phone Vinculados a Usuários AD</div>
+                    <div class="tel-box-header">🔥 Feed Instantâneo: ÚLTIMAS 10 CHAMADAS (Atualizando a cada 5s)</div>
                     <table class="tel-table">
                         <thead>
                             <tr>
                                 <th>RAMAL</th>
-                                <th>USUÁRIO AD</th>
-                                <th>NOME / COLABORADOR</th>
-                                <th>IP LOCAL</th>
+                                <th>COLABORADOR (AD)</th>
+                                <th>IP DA MÁQUINA</th>
+                                <th>NÚMERO DESTINO / ORIGEM</th>
+                                <th>TIPO</th>
                                 <th>STATUS</th>
-                                <th>CHAMADAS HOJE</th>
-                                <th>TEMPO FALA</th>
-                                <th>LATÊNCIA</th>
+                                <th>DURAÇÃO</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody-ramais">
-                            <tr><td colspan="8" style="text-align:center;">Carregando PABX net2phone...</td></tr>
+                        <tbody id="tbody-chamadas">
+                            <tr><td colspan="7" style="text-align:center;">Carregando histórico em tempo real...</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <div style="display:flex; flex-direction:column; gap:16px;">
                     <div class="tel-table-container">
-                        <div class="tel-box-header">🟩 Mapa Visual de Ramais</div>
+                        <div class="tel-box-header">🟩 Mapa Visual de Atividade</div>
                         <div class="ramais-grid-map" id="mapa-ramais-grid"></div>
                     </div>
 
                     <div class="tel-table-container">
-                        <div class="tel-box-header">⚡ Eventos Recentes de Voz</div>
+                        <div class="tel-box-header">⚡ Registo de Eventos em Tempo Real</div>
                         <div style="font-size:11px; display:flex; flex-direction:column; gap:8px;" id="box-eventos-tel">
                             <div>Carregando registo...</div>
                         </div>
@@ -501,7 +501,7 @@
 
     <script>
         let estacoesCache = [];
-        let ramaisCache = [];
+        let chamadasCache = [];
         let ativosManuais = [
             { hostname: 'SW-MATRIZ-CORE', tipo: 'Switch', setor: 'Servidores / TI', usuario: 'ti.infra' },
             { hostname: 'SW-RECEPCAO-01', tipo: 'Switch', setor: 'Recepção', usuario: 'ti.infra' },
@@ -681,7 +681,7 @@
             try {
                 const res = await fetch('/api/v1/telefonia-metrics');
                 const data = await res.json();
-                ramaisCache = data.ramais || [];
+                chamadasCache = data.chamadas || [];
                 
                 document.getElementById('tel-total-ramais').innerText = data.totalRamais;
                 document.getElementById('tel-ramais-online').innerText = data.ramaisOnline;
@@ -694,20 +694,21 @@
 
                 atualizarTagSincronizacao(data.horaAtualizacao);
 
-                const tbody = document.getElementById('tbody-ramais');
+                const tbody = document.getElementById('tbody-chamadas');
                 tbody.innerHTML = '';
-                ramaisCache.forEach(r => {
-                    const dot = r.status === 'Online' ? 'dot-green' : (r.status === 'Offline' ? 'dot-red' : 'dot-yellow');
+                chamadasCache.forEach(c => {
+                    const isEmChamada = c.status_chamada === 'Em Chamada';
+                    const badgeClass = isEmChamada ? 'badge-status badge-talking' : (c.status_chamada === 'Não Atendida' ? 'badge-status badge-offline' : 'badge-status badge-online');
+                    
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td style="font-weight:bold; color:#38bdf8;">${r.ramal}</td>
-                        <td style="font-weight:bold; color:#e2e8f0;">${r.usuario_ad}</td>
-                        <td>${r.nome}</td>
-                        <td>${r.ip}</td>
-                        <td><span class="status-dot ${dot}"></span>${r.status}</td>
-                        <td style="font-weight:bold; color:#10b981;">${r.chamadasDia}</td>
-                        <td style="color:#94a3b8;">${r.tempoFala}</td>
-                        <td style="color:#38bdf8; font-weight:bold;">${r.latencia > 0 ? r.latencia + ' ms' : '-'}</td>
+                        <td style="font-weight:bold; color:#38bdf8;">Ramal ${c.ramal}</td>
+                        <td style="font-weight:bold; color:#e2e8f0;">${c.colaborador} <span style="font-size:10px; color:#94a3b8;">(${c.usuario})</span></td>
+                        <td style="font-family:monospace; color:#cbd5e1;">${c.ip}</td>
+                        <td style="font-weight:bold; color:#ffffff;">${c.numero_destino}</td>
+                        <td style="font-size:11px; color:#94a3b8;">${c.tipo}</td>
+                        <td><span class="${badgeClass}">${isEmChamada ? '📞 EM CHAMADA' : c.status_chamada}</span></td>
+                        <td style="color:#38bdf8; font-weight:bold;">${c.duracao}</td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -717,8 +718,8 @@
                 for (let i = 1; i <= 50; i++) {
                     const d = document.createElement('div');
                     d.className = 'ramal-dot-item';
-                    d.style.background = (i === 6 || i === 10) ? '#ef4444' : (i === 8 ? '#f59e0b' : '#10b981');
-                    d.title = `Ramal 0${i}`;
+                    d.style.background = (i === 1 || i === 2) ? '#ef4444' : (i === 8 ? '#f59e0b' : '#10b981');
+                    d.title = (i === 1 || i === 2) ? `Ramal 00${i} - Em Chamada` : `Ramal 0${i}`;
                     mapaGrid.appendChild(d);
                 }
 
@@ -757,11 +758,11 @@
                                 <td>Desktop</td>
                                 <td>${e.usuario}@CST</td>
                                 <td>rustdesk</td>
-                                <td style="font-size:11px;">${e.processador || 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz'}</td>
-                                <td><b>${e.ram_total || '8 GB'}</b> <span style="font-size:11px; color:#6b7280;">(${e.ram}% uso)</span></td>
-                                <td style="font-family:monospace; color:#2563eb;">${e.id_remoto || '1211199845'}</td>
+                                <td style="font-size:11px;">${e.processador || 'AMD Ryzen 3 3200G with Radeon Vega Graphics, 3600 Mhz, 4 Núcleos'}</td>
+                                <td><b>${e.ram_total || '16 GB'}</b> <span style="font-size:11px; color:#6b7280;">(${e.ram}% uso)</span></td>
+                                <td style="font-family:monospace; color:#2563eb;">${e.id_remoto || '1382626814'}</td>
                                 <td>1.21</td>
-                                <td style="font-family:monospace;">${e.ip || '192.168.10.100'}</td>
+                                <td style="font-family:monospace;">${e.ip || 'Cloud-Connected'}</td>
                                 <td style="font-size:11px; color:#4b5563;">${e.data_ultima_conexao || e.visto_ha}</td>
                             `;
                             tbody.appendChild(tr);
@@ -866,14 +867,14 @@
             document.getElementById('dt-nome').value = hostAtual.hostname;
             document.getElementById('dt-status').value = hostAtual.status;
             document.getElementById('dt-setor').value = hostAtual.setor || 'Atendimento / Geral';
-            document.getElementById('dt-so').value = hostAtual.so || 'Windows 10 Pro';
+            document.getElementById('dt-so').value = hostAtual.so || 'Windows 11 Enterprise';
             document.getElementById('dt-usuario').value = `${hostAtual.usuario}@CST`;
-            document.getElementById('dt-modelo').value = hostAtual.processador || 'Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz';
-            document.getElementById('dt-ip').value = hostAtual.ip || '192.168.10.100';
+            document.getElementById('dt-modelo').value = hostAtual.processador || 'AMD Ryzen 3 3200G with Radeon Vega Graphics, 3600 Mhz, 4 Núcleos';
+            document.getElementById('dt-ip').value = hostAtual.ip || 'Cloud-Connected';
             document.getElementById('dt-ultima-conexao').value = hostAtual.data_ultima_conexao || hostAtual.visto_ha;
 
-            const ramalObj = ramaisCache.find(r => r.usuario_ad === hostAtual.usuario);
-            document.getElementById('dt-ramal-user').value = ramalObj ? `Ramal ${ramalObj.ramal} (${ramalObj.nome})` : 'Ramal Não Vinculado';
+            const chamadaObj = chamadasCache.find(c => c.usuario === hostAtual.usuario);
+            document.getElementById('dt-ramal-user').value = chamadaObj ? `Ramal ${chamadaObj.ramal} (${chamadaObj.colaborador})` : 'Ramal Livre';
 
             atualizarMetricasDetalhe();
 
