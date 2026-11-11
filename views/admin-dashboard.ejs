@@ -4,45 +4,88 @@
     <meta charset="UTF-8">
     <title>Painel RMM Administrador - CST</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f8fafc; color: #1e293b; }
 
-        /* Top Header Administrador */
+        /* Navigation Header */
         .admin-header { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .breadcrumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #64748b; }
-        .breadcrumbs span.active { color: #0284c7; }
-        .breadcrumbs i { font-size: 11px; color: #94a3b8; }
+        .nav-tabs { display: flex; align-items: center; gap: 15px; font-size: 13px; font-weight: 700; color: #64748b; }
+        .tab-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 6px; cursor: pointer; text-decoration: none; color: #475569; transition: 0.2s; }
+        .tab-btn:hover, .tab-btn.active { background: #f1f5f9; color: #0284c7; }
+        .tab-btn.active { border-bottom: 2px solid #0284c7; }
 
         .header-actions { display: flex; align-items: center; gap: 12px; }
         .timer-badge { background: #e0f2fe; color: #0369a1; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-        .btn-bi { background: #3b82f6; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .btn-add { background: #f59e0b; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .btn-bi { background: #3b82f6; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-add { background: #f59e0b; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .user-tag { font-size: 13px; font-weight: 700; color: #334155; margin: 0 10px; }
         .btn-sair { background: #ef4444; color: white; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; }
 
-        /* Tabela RMM */
         .container { padding: 25px; }
-        .card-table { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
-        table { width: 100%; border-collapse: collapse; text-align: left; }
+
+        /* Tabela RMM 12 Colunas */
+        .card-table { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
         th { background: #ffffff; color: #0f172a; font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; letter-spacing: 0.5px; }
         td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; }
         tr:hover { background-color: #f8fafc; }
 
         .badge-online { background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
         .badge-offline { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
-        .host-name { font-weight: 700; color: #0284c7; display: flex; align-items: center; gap: 8px; }
+        
+        .host-link { font-weight: 700; color: #0284c7; text-decoration: none; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .host-link:hover { text-decoration: underline; color: #0369a1; }
+
+        /* Modal de Detalhes do Computador */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); display: none; justify-content: center; align-items: center; z-index: 10000; }
+        .modal-card { background: #ffffff; width: 90%; max-width: 1050px; max-height: 90vh; border-radius: 10px; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); }
+        .modal-header { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .modal-header h3 { font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 10px; }
+        .close-btn { font-size: 20px; color: #64748b; cursor: pointer; border: none; background: none; }
+        
+        .modal-body { padding: 25px; }
+
+        /* Tabs Dentro da Modal */
+        .modal-subtabs { display: flex; gap: 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 20px; }
+        .subtab { padding: 10px 20px; font-size: 14px; font-weight: 700; color: #64748b; cursor: pointer; border-bottom: 3px solid transparent; }
+        .subtab.active { color: #0284c7; border-bottom-color: #0284c7; }
+
+        /* Grid de Informações do Ativo (Estilo Imagem dd9ba3) */
+        .info-grid-wrapper { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px; }
+        .form-control { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #f8fafc; color: #1e293b; }
+        
+        .qrcode-box { border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; text-align: center; }
+        .qrcode-box p { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 12px; }
+
+        /* Tabela de Discos / Partições (Estilo Imagem dd98bf) */
+        .progress-bar-bg { background: #e2e8f0; border-radius: 10px; height: 16px; width: 100%; overflow: hidden; position: relative; }
+        .progress-bar-fill { height: 100%; background: #3b82f6; border-radius: 10px; text-align: center; color: #fff; font-size: 10px; font-weight: bold; line-height: 16px; }
+
+        /* Esconder seções inativas */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body>
 
-    <!-- Header do Administrador -->
+    <!-- Header do Administrador com Navegação Completa -->
     <header class="admin-header">
-        <div class="breadcrumbs">
-            <span><i class="fa-solid fa-house"></i> Home</span> <i class="fa-solid fa-chevron-right"></i>
-            <span><i class="fa-solid fa-folder"></i> Ativos</span> <i class="fa-solid fa-chevron-right"></i>
-            <span><i class="fa-solid fa-phone"></i> Telefonia IP</span> <i class="fa-solid fa-chevron-right"></i>
-            <span class="active"><i class="fa-solid fa-desktop"></i> Computador</span>
+        <div class="nav-tabs">
+            <a href="#" class="tab-btn active" onclick="trocarSecao('sec-computadores', this)">
+                <i class="fa-solid fa-desktop" style="color: #0284c7;"></i> 💻 Computador (RMM)
+            </a>
+            <a href="#" class="tab-btn" onclick="trocarSecao('sec-ativos', this)">
+                <i class="fa-solid fa-folder" style="color: #f59e0b;"></i> 📁 Ativos & Inventário
+            </a>
+            <a href="#" class="tab-btn" onclick="trocarSecao('sec-telefonia', this)">
+                <i class="fa-solid fa-phone" style="color: #10b981;"></i> 📞 Telefonia IP (Net2Phone)
+            </a>
         </div>
 
         <div class="header-actions">
@@ -57,90 +100,260 @@
         </div>
     </header>
 
-    <!-- Tabela Principal de Ativos -->
     <div class="container">
-        <div class="card-table">
-            <table>
-                <thead>
-                    <tr>
-                        <th>NOME</th>
-                        <th>ENTIDADE</th>
-                        <th>STATUS</th>
-                        <th>TIPO</th>
-                        <th>NOME ALTERNATIVO DO USUÁRIO</th>
-                        <th>GERENCIAMENTO REMOTO</th>
-                        <th>PROCESSADOR / MEMÓRIA</th>
-                        <th>ID REMOTO</th>
-                        <th>IP REAL</th>
-                        <th>ÚLTIMA ATUALIZAÇÃO</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaAtivos">
-                    <% if (estacoes.length === 0) { %>
+        
+        <!-- SEÇÃO 1: COMPUTADORES RMM (TABELA PRINCIPAL) -->
+        <div id="sec-computadores" class="tab-content active">
+            <div class="card-table">
+                <table>
+                    <thead>
                         <tr>
-                            <td colspan="10" style="text-align: center; color: #94a3b8; padding: 30px;">
-                                Nenhuma estação de trabalho conectada no momento.
-                            </td>
+                            <th>NOME</th>
+                            <th>ENTIDADE</th>
+                            <th>STATUS</th>
+                            <th>TIPO</th>
+                            <th>NOME ALTERNATIVO DO USUÁRIO</th>
+                            <th>GERENCIAMENTO REMOTO</th>
+                            <th>COMPONENTES - PROCESSADOR</th>
+                            <th>COMPONENTES - MEMÓRIA</th>
+                            <th>GERENCIAMENTO REMOTO - ID</th>
+                            <th>AGENTE - VERSÃO</th>
+                            <th>CONECTIVIDADE - IP</th>
+                            <th>ÚLTIMA ATUALIZAÇÃO</th>
                         </tr>
-                    <% } %>
-                    <% estacoes.forEach(function(maq) { %>
+                    </thead>
+                    <tbody id="tabelaAtivos">
+                        <% estacoes.forEach(function(maq) { 
+                            const isOnline = (new Date() - new Date(maq.ultimaVez)) < 30000;
+                        %>
+                            <tr>
+                                <td>
+                                    <a class="host-link" onclick="abrirModalDetalhes('<%= maq.hostname %>')">
+                                        💻 <%= maq.hostname %>
+                                    </a>
+                                </td>
+                                <td><%= maq.entidade || 'Entidade raiz > CST' %></td>
+                                <td>
+                                    <% if (isOnline) { %>
+                                        <span class="badge-online">Online</span>
+                                    <% } else { %>
+                                        <span class="badge-offline">Offline</span>
+                                    <% } %>
+                                </td>
+                                <td><%= maq.tipo || 'Desktop' %></td>
+                                <td><%= maq.usuario %></td>
+                                <td><span style="color: #0284c7; font-weight: 600;"><%= maq.remoto || 'rustdesk' %></span></td>
+                                <td><%= maq.processador %></td>
+                                <td><strong><%= maq.ram_total %></strong> (<%= maq.ram %>% uso)</td>
+                                <td style="color: #0284c7; font-weight: 700;"><%= maq.rustdesk_id %></td>
+                                <td><%= maq.versao_agente || '1.21' %></td>
+                                <td><strong><%= maq.ip %></strong></td>
+                                <td style="color: #64748b;"><%= new Date(maq.ultimaVez).toLocaleString('pt-BR') %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 2: INVENTÁRIO DE ATIVOS -->
+        <div id="sec-ativos" class="tab-content">
+            <div style="background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 style="color: #0f172a; margin-bottom: 15px;"><i class="fa-solid fa-folder-open"></i> Inventário Geral de Ativos CST</h3>
+                <p style="color: #64748b; margin-bottom: 20px;">Gerenciamento completo de Computadores, Monitores, Periféricos, Switches e Nobreaks.</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="padding: 15px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <h4 style="color: #0284c7;">🖥️ Computadores</h4>
+                        <p style="font-size: 22px; font-weight: bold; margin-top: 5px;"><%= estacoes.length %></p>
+                    </div>
+                    <div style="padding: 15px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <h4 style="color: #f59e0b;">🖥️ Monitores</h4>
+                        <p style="font-size: 22px; font-weight: bold; margin-top: 5px;">42 Cadastrados</p>
+                    </div>
+                    <div style="padding: 15px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <h4 style="color: #10b981;">🔌 Switches & Nobreaks</h4>
+                        <p style="font-size: 22px; font-weight: bold; margin-top: 5px;">12 Ativos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEÇÃO 3: TELEFONIA IP -->
+        <div id="sec-telefonia" class="tab-content">
+            <div style="background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <h3 style="color: #0f172a; margin-bottom: 15px;"><i class="fa-solid fa-headset"></i> Monitoramento PABX Net2Phone</h3>
+                <p style="color: #64748b; margin-bottom: 20px;">Status dos ramais da equipe e atendimento telefônico em tempo real.</p>
+                <table style="width: 100%;">
+                    <thead>
                         <tr>
-                            <td class="host-name"><i class="fa-solid fa-desktop"></i> <%= maq.hostname %></td>
-                            <td>Entidade raiz > CST</td>
-                            <td><span class="badge-online">Online</span></td>
-                            <td>Desktop</td>
-                            <td><%= maq.usuario %></td>
-                            <td><span style="color: #0284c7; font-weight: 600;">rustdesk</span></td>
-                            <td>RAM: <%= maq.ram %>% | CPU: <%= maq.cpu %>%</td>
-                            <td>1382626814</td>
-                            <td><strong><%= maq.ip %></strong></td>
-                            <td style="color: #64748b;"><%= new Date(maq.ultimaVez).toLocaleTimeString() %></td>
+                            <th>RAMAL</th>
+                            <th>COLABORADOR</th>
+                            <th>SETOR</th>
+                            <th>STATUS TELEFONIA</th>
                         </tr>
-                    <% }) %>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <tr><td>1001</td><td>Wesley Lima</td><td>TI / Suporte</td><td><span class="badge-online">Livre / Online</span></td></tr>
+                        <tr><td>1002</td><td>Pâmela Araújo</td><td>Recepção</td><td><span class="badge-online">Livre / Online</span></td></tr>
+                        <tr><td>1003</td><td>Rafael Silva</td><td>Infraestrutura</td><td><span class="badge-online">Livre / Online</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE DETALHES DO ATIVO (CLIQUE NO HOSTNAME) -->
+    <div id="modalDetalhes" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-computer" style="color: #0284c7;"></i> Detalhes do Ativo: <span id="m-hostname" style="color: #0284c7;"></span></h3>
+                <button class="close-btn" onclick="fecharModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <!-- Abas Internas da Modal -->
+                <div class="modal-subtabs">
+                    <div class="subtab active" onclick="trocarSubTab('sub-geral', this)">Geral / Informações</div>
+                    <div class="subtab" onclick="trocarSubTab('sub-discos', this)">Componentes & Armazenamento</div>
+                </div>
+
+                <!-- Sub-Aba 1: Informações Gerais do Ativo -->
+                <div id="sub-geral" class="modal-subcontent">
+                    <div class="info-grid-wrapper">
+                        <div class="form-grid">
+                            <div class="form-group"><label>Nome</label><input type="text" id="m-nome" class="form-control" readonly></div>
+                            <div class="form-group"><label>Status</label><input type="text" id="m-status" class="form-control" readonly value="Em uso"></div>
+                            <div class="form-group"><label>Localização</label><input type="text" class="form-control" readonly value="Matriz - CST Medicina"></div>
+                            <div class="form-group"><label>Tipo</label><input type="text" id="m-tipo" class="form-control" readonly></div>
+                            <div class="form-group"><label>Técnico Encarregado</label><input type="text" class="form-control" readonly value="wesley.lima"></div>
+                            <div class="form-group"><label>Fabricante</label><input type="text" id="m-fabricante" class="form-control" readonly></div>
+                            <div class="form-group"><label>Grupo Encarregado</label><input type="text" class="form-control" readonly value="Equipe TI"></div>
+                            <div class="form-group"><label>Modelo</label><input type="text" id="m-modelo" class="form-control" readonly></div>
+                            <div class="form-group"><label>Nome Alternativo do Usuário</label><input type="text" id="m-usuario-alt" class="form-control" readonly></div>
+                            <div class="form-group"><label>Número de Série</label><input type="text" id="m-serie" class="form-control" readonly></div>
+                            <div class="form-group"><label>Número de Inventário</label><input type="text" id="m-inventario" class="form-control" readonly></div>
+                            <div class="form-group"><label>UUID</label><input type="text" id="m-uuid" class="form-control" readonly></div>
+                        </div>
+
+                        <!-- Card com QR Code do Ativo -->
+                        <div class="qrcode-box">
+                            <p>URL DO ATIVO</p>
+                            <div id="qrcode"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub-Aba 2: Tabela de Discos & Partições -->
+                <div id="sub-discos" class="modal-subcontent" style="display: none;">
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>NOME</th>
+                                <th>INVENTÁRIO AUTOMÁTICO</th>
+                                <th>PARTIÇÃO</th>
+                                <th>PONTO DE MONTAGEM</th>
+                                <th>SISTEMA DE ARQUIVOS</th>
+                                <th>TAMANHO TOTAL</th>
+                                <th>ESPAÇO LIVRE</th>
+                                <th>PORCENTAGEM USADA</th>
+                                <th>CRIPTOGRAFIA</th>
+                            </tr>
+                        </thead>
+                        <tbody id="m-tabela-discos">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
         </div>
     </div>
 
     <script>
-        function atualizarRelogio() {
-            const agora = new Date();
-            document.getElementById('relogio').innerText = 'Atualizado: ' + agora.toLocaleTimeString();
+        let qrcodeObj = null;
+
+        function trocarSecao(secaoId, elemento) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(secaoId).classList.add('active');
+            elemento.classList.add('active');
         }
 
-        async function recarregarTabela() {
-            try {
-                const res = await fetch('/api/v1/rmm-metrics');
-                const dados = await res.json();
-                const tbody = document.getElementById('tabelaAtivos');
-                
-                if (dados.length === 0) return;
+        function trocarSubTab(subId, elemento) {
+            document.querySelectorAll('.modal-subcontent').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.subtab').forEach(el => el.classList.remove('active'));
+            document.getElementById(subId).style.display = 'block';
+            elemento.classList.add('active');
+        }
 
-                let html = '';
-                dados.forEach(maq => {
-                    html += `
+        async function abrirModalDetalhes(hostname) {
+            try {
+                const res = await fetch('/api/v1/detalhes/' + hostname);
+                const maq = await res.json();
+
+                document.getElementById('m-hostname').innerText = maq.hostname;
+                document.getElementById('m-nome').value = maq.hostname;
+                document.getElementById('m-tipo').value = maq.tipo || 'Desktop';
+                document.getElementById('m-fabricante').value = maq.fabricante || 'AMD/Intel';
+                document.getElementById('m-modelo').value = maq.modelo || 'A320M';
+                document.getElementById('m-usuario-alt').value = maq.usuario;
+                document.getElementById('m-serie').value = maq.num_serie || 'SN-CST2026';
+                document.getElementById('m-inventario').value = maq.num_inventario || 'CST-0085';
+                document.getElementById('m-uuid').value = maq.uuid || '4C4C4544-0038-1030-8034-B3C04F383232';
+
+                // Gera o QR Code
+                const qrContainer = document.getElementById('qrcode');
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, {
+                    text: window.location.origin + "/admin?asset=" + maq.hostname,
+                    width: 140,
+                    height: 140
+                });
+
+                // Preenche Discos
+                const tbodyDiscos = document.getElementById('m-tabela-discos');
+                const particoes = maq.particoes && maq.particoes.length > 0 ? maq.particoes : [
+                    { nome: "C:", auto: "Sim", particao: "Disk 0, Partition 2", montagem: "C:", filesystem: "NTFS", tamanho: "237.38 GB", livre: "24.16 GB", uso_percent: maq.disco || 80, cripto: "Não" }
+                ];
+
+                let htmlDiscos = '';
+                particoes.forEach(p => {
+                    htmlDiscos += `
                         <tr>
-                            <td class="host-name"><i class="fa-solid fa-desktop"></i> ${maq.hostname}</td>
-                            <td>Entidade raiz > CST</td>
-                            <td><span class="badge-online">Online</span></td>
-                            <td>Desktop</td>
-                            <td>${maq.usuario}</td>
-                            <td><span style="color: #0284c7; font-weight: 600;">rustdesk</span></td>
-                            <td>RAM: ${maq.ram}% | CPU: ${maq.cpu}%</td>
-                            <td>1382626814</td>
-                            <td><strong>${maq.ip}</strong></td>
-                            <td style="color: #64748b;">${new Date(maq.ultimaVez).toLocaleTimeString()}</td>
+                            <td style="font-weight: bold; color: #0284c7;">${p.nome}</td>
+                            <td>${p.auto || 'Sim'}</td>
+                            <td>${p.particao || 'Disk 0'}</td>
+                            <td>${p.montagem || 'C:'}</td>
+                            <td>${p.filesystem || 'NTFS'}</td>
+                            <td>${p.tamanho}</td>
+                            <td>${p.livre}</td>
+                            <td style="width: 160px;">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: ${p.uso_percent}%;">${p.uso_percent}%</div>
+                                </div>
+                            </td>
+                            <td>${p.cripto || 'Não'}</td>
                         </tr>
                     `;
                 });
-                tbody.innerHTML = html;
-                atualizarRelogio();
+                tbodyDiscos.innerHTML = htmlDiscos;
+
+                document.getElementById('modalDetalhes').style.display = 'flex';
             } catch (e) {
-                console.error("Erro ao atualizar ativos", e);
+                alert("Erro ao carregar detalhes do computador.");
             }
         }
 
-        setInterval(recarregarTabela, 5000);
+        function fecharModal() {
+            document.getElementById('modalDetalhes').style.display = 'none';
+        }
+
+        function atualizarRelogio() {
+            document.getElementById('relogio').innerText = 'Atualizado: ' + new Date().toLocaleTimeString();
+        }
+
+        setInterval(atualizarRelogio, 5000);
         atualizarRelogio();
     </script>
 </body>
