@@ -9,7 +9,6 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0b131e; color: #1e293b; }
 
-        /* Top Bar Navegação */
         .admin-header { background: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 12px 25px; display: flex; justify-content: space-between; align-items: center; }
         .nav-tabs { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; }
         .tab-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 6px; cursor: pointer; text-decoration: none; color: #475569; }
@@ -22,44 +21,25 @@
 
         .container { padding: 25px; }
 
-        /* Tabela RMM */
         .card-table { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
         th { background: #ffffff; color: #0f172a; font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 14px 16px; border-bottom: 2px solid #e2e8f0; }
         td { padding: 14px 16px; border-bottom: 1px solid #f1f5f9; font-size: 13px; color: #334155; }
         
         .badge-online { background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
-        .badge-offline { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
-        .host-link { font-weight: 700; color: #0284c7; cursor: pointer; text-decoration: none; }
+        .badge-offline { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .badge-call { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
 
-        /* Estilos do Inventário Dinâmico */
-        .inventory-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .inv-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .inv-card h4 { font-size: 14px; color: #475569; display: flex; align-items: center; gap: 8px; }
-        .inv-card .count { font-size: 26px; font-weight: 800; color: #0f172a; margin-top: 8px; }
-
-        /* Estilos da Telefonia IP Estilo Zabbix/Grafana */
-        .telefonia-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
+        /* Estilos da Telefonia IP */
+        .telefonia-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; margin-bottom: 20px; }
         .kpi-box { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 15px; color: #fff; text-align: center; }
-        .kpi-title { font-size: 12px; color: #9ca3af; margin-bottom: 5px; font-weight: 600; }
-        .kpi-value { font-size: 24px; font-weight: 800; }
+        .kpi-title { font-size: 11px; color: #9ca3af; margin-bottom: 5px; font-weight: 600; text-transform: uppercase; }
+        .kpi-value { font-size: 22px; font-weight: 800; }
         
         .tel-dashboard { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .dark-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 20px; color: #f3f4f6; }
-        .dark-card h4 { color: #38bdf8; font-size: 15px; border-bottom: 1px solid #1f2937; padding-bottom: 10px; margin-bottom: 15px; }
-
-        /* Modais */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); display: none; justify-content: center; align-items: center; z-index: 10000; }
-        .modal-card { background: #ffffff; width: 90%; max-width: 700px; border-radius: 10px; overflow: hidden; box-shadow: 0 20px 25px rgba(0,0,0,0.4); }
-        .modal-header { padding: 18px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
-        .modal-body { padding: 25px; max-height: 80vh; overflow-y: auto; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; color: #334155; }
-        .form-control { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; }
-        
-        .camera-box { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 15px; text-align: center; margin-top: 10px; background: #f8fafc; }
-        #videoCam { width: 100%; max-height: 220px; background: #000; border-radius: 6px; display: none; margin-bottom: 10px; }
-        #canvasPhoto { display: none; width: 100%; max-height: 220px; border-radius: 6px; margin-bottom: 10px; }
+        .dark-card h4 { color: #38bdf8; font-size: 15px; border-bottom: 1px solid #1f2937; padding-bottom: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
 
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -72,14 +52,11 @@
         <div class="nav-tabs">
             <a href="#" class="tab-btn active" onclick="trocarSecao('sec-computadores', this)"><i class="fa-solid fa-desktop" style="color: #0284c7;"></i> 💻 Computador (RMM)</a>
             <a href="#" class="tab-btn" onclick="trocarSecao('sec-ativos', this)"><i class="fa-solid fa-folder" style="color: #f59e0b;"></i> 📁 Ativos & Inventário</a>
-            <a href="#" class="tab-btn" onclick="trocarSecao('sec-telefonia', this)"><i class="fa-solid fa-phone" style="color: #10b981;"></i> 📞 Telefonia IP</a>
+            <a href="#" class="tab-btn" onclick="trocarSecao('sec-telefonia', this)"><i class="fa-solid fa-phone" style="color: #10b981;"></i> 📞 Telefonia IP & Ramais</a>
         </div>
 
         <div class="header-actions">
-            <!-- Botões Funcionais -->
-            <button class="btn-bi" onclick="abrirModalBI()"><i class="fa-solid fa-chart-column"></i> Exportar & BI</button>
-            <button class="btn-add" onclick="abrirModalAddAtivo()"><i class="fa-solid fa-plus"></i> + Adicionar Ativo</button>
-            <span style="font-size: 13px; font-weight: 700; margin: 0 10px;"><%= usuario %> (TI)</span>
+            <span style="font-size: 13px; font-weight: 700; margin: 0 10px; color: #334155;"><%= usuario %> (TI)</span>
             <a href="/logout" class="btn-sair">Sair</a>
         </div>
     </header>
@@ -93,8 +70,7 @@
                     <thead>
                         <tr>
                             <th>NOME</th><th>ENTIDADE</th><th>STATUS</th><th>TIPO</th><th>NOME ALTERNATIVO DO USUÁRIO</th>
-                            <th>GERENCIAMENTO REMOTO</th><th>PROCESSADOR</th><th>MEMÓRIA</th><th>ID REMOTO</th>
-                            <th>VERSÃO</th><th>CONECTIVIDADE IP</th><th>ÚLTIMA ATUALIZAÇÃO</th>
+                            <th>PROCESSADOR</th><th>MEMÓRIA</th><th>CONECTIVIDADE IP</th><th>ÚLTIMA ATUALIZAÇÃO</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -102,16 +78,13 @@
                             const isOnline = (new Date() - new Date(maq.ultimaVez)) < 35000;
                         %>
                             <tr>
-                                <td><a class="host-link" onclick="alert('Hostname: <%= maq.hostname %>')">💻 <%= maq.hostname %></a></td>
+                                <td><strong>💻 <%= maq.hostname %></strong></td>
                                 <td><%= maq.entidade || 'Entidade raiz > CST' %></td>
                                 <td><span class="<%= isOnline ? 'badge-online' : 'badge-offline' %>"><%= isOnline ? 'Online' : 'Offline' %></span></td>
                                 <td><%= maq.tipo || 'Desktop' %></td>
                                 <td><%= maq.usuario %></td>
-                                <td><span style="color: #0284c7; font-weight: 600;">rustdesk</span></td>
                                 <td><%= maq.processador || 'Intel / AMD' %></td>
                                 <td><strong><%= maq.ram_total || '8 GB' %></strong> (<%= maq.ram %>% uso)</td>
-                                <td style="color: #0284c7; font-weight: 700;"><%= maq.rustdesk_id || '1382626814' %></td>
-                                <td><%= maq.versao_agente || '1.21' %></td>
                                 <td><strong><%= maq.ip %></strong></td>
                                 <td style="color: #64748b;"><%= new Date(maq.ultimaVez).toLocaleTimeString() %></td>
                             </tr>
@@ -121,84 +94,53 @@
             </div>
         </div>
 
-        <!-- SEÇÃO 2: ATIVOS E INVENTÁRIO (SOMA DINÂMICA E PATRIMÔNIO) -->
+        <!-- SEÇÃO 2: ATIVOS -->
         <div id="sec-ativos" class="tab-content">
-            
-            <!-- Cards com Contagem Real Somada -->
-            <div class="inventory-cards">
-                <div class="inv-card">
-                    <h4>💻 Computadores</h4>
-                    <div class="count" id="cnt-pc">0</div>
-                </div>
-                <div class="inv-card">
-                    <h4>🖥️ Monitores</h4>
-                    <div class="count" id="cnt-monitor">0</div>
-                </div>
-                <div class="inv-card">
-                    <h4>⌨️ Teclados / Mouses / Headsets</h4>
-                    <div class="count" id="cnt-periferico">0</div>
-                </div>
-                <div class="inv-card">
-                    <h4>📱 Celulares Corporativos</h4>
-                    <div class="count" id="cnt-celular">0</div>
-                </div>
-                <div class="inv-card">
-                    <h4>🔌 Switches & Nobreaks</h4>
-                    <div class="count" id="cnt-infra">0</div>
-                </div>
-            </div>
-
-            <div style="background: #fff; padding: 25px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <h3 style="color: #0f172a; margin-bottom: 15px;"><i class="fa-solid fa-boxes-stacked"></i> Lista de Ativos Cadastrados</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>FOTO</th><th>TIPO</th><th>PATRIMÔNIO</th><th>NOME DO ATIVO</th><th>USUÁRIO ENCARREGADO</th><th>SETOR</th><th>DATA CADASTRO</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabelaInventarioCorpo">
-                        <!-- Renderizado via JS -->
-                    </tbody>
-                </table>
+            <div style="background: #fff; padding: 25px; border-radius: 8px;">
+                <h3>📁 Gestão de Ativos</h3>
+                <p style="color: #64748b;">Consulte a lista de inventário de hardware.</p>
             </div>
         </div>
 
-        <!-- SEÇÃO 3: TELEFONIA IP (RÉPLICA DO PAINEL INTELBRAS IMPACTA 300 / GRAFANA) -->
+        <!-- SEÇÃO 3: TELEFONIA IP EM TEMPO REAL (ATUALIZAÇÃO A CADA 3 SEG) -->
         <div id="sec-telefonia" class="tab-content">
             
-            <!-- KPIs do Topo -->
+            <!-- KPIs Telefonia -->
             <div class="telefonia-grid">
-                <div class="kpi-box"><div class="kpi-title">TOTAL DE RAMAIS</div><div class="kpi-value" style="color: #38bdf8;">50</div></div>
-                <div class="kpi-box"><div class="kpi-title">RAMAIS ONLINE</div><div class="kpi-value" style="color: #22c55e;">47 <span style="font-size: 14px;">(94%)</span></div></div>
-                <div class="kpi-box"><div class="kpi-title">RAMAIS OFFLINE</div><div class="kpi-value" style="color: #ef4444;">3 <span style="font-size: 14px;">(6%)</span></div></div>
-                <div class="kpi-box"><div class="kpi-title">SEM REGISTRO SIP</div><div class="kpi-value" style="color: #f59e0b;">1</div></div>
-                <div class="kpi-box"><div class="kpi-title">DISPONIBILIDADE GERAL</div><div class="kpi-value" style="color: #34d399;">94.0%</div></div>
+                <div class="kpi-box"><div class="kpi-title">TOTAL DE RAMAIS</div><div class="kpi-value" id="kpi-total" style="color: #38bdf8;">--</div></div>
+                <div class="kpi-box"><div class="kpi-title">RAMAIS ONLINE</div><div class="kpi-value" id="kpi-online" style="color: #22c55e;">--</div></div>
+                <div class="kpi-box"><div class="kpi-title">RAMAIS OFFLINE</div><div class="kpi-value" id="kpi-offline" style="color: #ef4444;">--</div></div>
+                <div class="kpi-box"><div class="kpi-title">EM CHAMADA AGORA</div><div class="kpi-value" id="kpi-chamada" style="color: #60a5fa;">--</div></div>
+                <div class="kpi-box"><div class="kpi-title">SEM REGISTRO SIP</div><div class="kpi-value" id="kpi-semsip" style="color: #f59e0b;">--</div></div>
+                <div class="kpi-box"><div class="kpi-title">DISPONIBILIDADE</div><div class="kpi-value" id="kpi-disp" style="color: #34d399;">--%</div></div>
             </div>
 
             <div class="tel-dashboard">
+                <!-- Tabela de Ramais e Latências -->
                 <div class="dark-card">
-                    <h4>📞 Status dos Ramais IP - Central Intelbras Impacta 300 ICIP</h4>
+                    <h4>
+                        <span>📞 Tabela de Ramais IP (Ping & Latência a cada 5s)</span>
+                        <span style="font-size: 11px; color: #34d399;" id="txtRelogioTel"><i class="fa-solid fa-rotate fa-spin"></i> Atualizando a cada 3s</span>
+                    </h4>
+                    
                     <table style="width: 100%; color: #e5e7eb;">
                         <thead>
                             <tr style="background: #1f2937; color: #9ca3af;">
-                                <th>RAMAL</th><th>NOME / SETOR</th><th>IP</th><th>MAC ADDRESS</th><th>STATUS</th><th>REGISTRO SIP</th><th>LATÊNCIA</th>
+                                <th>RAMAL</th><th>COLABORADOR / SETOR</th><th>IP DO RAMAL</th><th>MAC ADDRESS</th><th>STATUS</th><th>LATÊNCIA (PING)</th><th>AÇÃO TESTE</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr><td>001</td><td>Financeiro - Principal</td><td>192.168.102.10</td><td>00:1A:3F:41:2B:01</td><td><span class="badge-online">Online</span></td><td>🟢 Registrado</td><td>2 ms</td></tr>
-                            <tr><td>002</td><td>Recepção - Entrada</td><td>192.168.102.11</td><td>00:1A:3F:41:2B:02</td><td><span class="badge-online">Online</span></td><td>🟢 Registrado</td><td>3 ms</td></tr>
-                            <tr><td>003</td><td>Coordenação Médica</td><td>192.168.102.12</td><td>00:1A:3F:41:2B:03</td><td><span class="badge-online">Online</span></td><td>🟢 Registrado</td><td>3 ms</td></tr>
-                            <tr><td>004</td><td>Comercial / Vendas</td><td>192.168.102.13</td><td>00:1A:3F:41:2B:04</td><td><span class="badge-online">Online</span></td><td>🟢 Registrado</td><td>4 ms</td></tr>
-                            <tr><td>005</td><td>TI / Suporte Técnico</td><td>192.168.102.14</td><td>00:1A:3F:41:2B:05</td><td><span class="badge-online">Online</span></td><td>🟢 Registrado</td><td>1 ms</td></tr>
-                            <tr><td>010</td><td>Consultório 02</td><td>192.168.102.20</td><td>00:1A:3F:41:2B:10</td><td><span class="badge-offline">Offline</span></td><td>🟡 Sem Registro</td><td>--</td></tr>
+                        <tbody id="tbRamaisCorpo">
+                            <!-- Preenchido via JS a cada 3 segundos -->
                         </tbody>
                     </table>
                 </div>
 
+                <!-- Histórico e Chamadas Ativas em Tempo Real -->
                 <div class="dark-card">
-                    <h4>⚡ Mapa Visual dos 50 Ramais</h4>
-                    <div style="display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; margin-top: 15px;" id="mapaRamaisGrid">
-                        <!-- Renderizado via JS -->
+                    <h4><span>⚡ Chamadas Ativas & Histórico</span></h4>
+                    
+                    <div id="painelChamadasAtivas">
+                        <!-- Preenchido via JS -->
                     </div>
                 </div>
             </div>
@@ -207,242 +149,94 @@
 
     </div>
 
-    <!-- MODAL 1: CADASTRO DE ATIVO COM PATRIMÔNIO E CÂMERA -->
-    <div id="modalAddAtivo" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-plus-circle" style="color: #f59e0b;"></i> Cadastrar Novo Ativo CST</h3>
-                <button onclick="fecharModais()" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="formAtivo" onsubmit="salvarNovoAtivo(event)">
-                    <div class="form-group">
-                        <label>Tipo de Ativo</label>
-                        <select id="atvTipo" class="form-control" onchange="verificarCampoPatrimonio()" required>
-                            <option value="Computador">💻 Computador</option>
-                            <option value="Monitor">🖥️ Monitor</option>
-                            <option value="Celular">📱 Celular Corporativo</option>
-                            <option value="Teclado/Mouse">⌨️ Teclado / Mouse</option>
-                            <option value="Headset">🎧 Headset</option>
-                            <option value="Switch/Nobreak">🔌 Switch / Nobreak</option>
-                        </select>
-                    </div>
-
-                    <!-- Campo de Patrimônio Obrigatório para PC, Monitor e Celular -->
-                    <div class="form-group" id="grpPatrimonio">
-                        <label>Número de Patrimônio <span style="color: #ef4444;">*</span></label>
-                        <input type="text" id="atvPatrimonio" class="form-control" placeholder="ex: PAT-CST-2026-089">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Nome / Modelo do Ativo</label>
-                        <input type="text" id="atvNome" class="form-control" required placeholder="ex: Monitor Dell 24' ou Samsung A15">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Usuário Encarregado</label>
-                        <input type="text" id="atvUsuario" class="form-control" placeholder="ex: wesley.lima">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Setor / Localização</label>
-                        <input type="text" id="atvSetor" class="form-control" placeholder="ex: TI / Recepção">
-                    </div>
-
-                    <!-- Módulo de Foto da Câmera -->
-                    <div class="form-group">
-                        <label>📷 Foto do Ativo (Tirar Foto ou Upload)</label>
-                        <div class="camera-box">
-                            <video id="videoCam" autoplay playsinline></video>
-                            <canvas id="canvasPhoto"></canvas>
-                            
-                            <div style="display: flex; gap: 10px; justify-content: center;">
-                                <button type="button" class="btn-bi" style="background:#0284c7;" onclick="abrirCamera()"><i class="fa-solid fa-camera"></i> Abrir Câmera</button>
-                                <button type="button" class="btn-bi" style="background:#22c55e;" onclick="capturarFoto()"><i class="fa-solid fa-circle-dot"></i> Capturar Foto</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-add" style="width: 100%; padding: 12px; margin-top: 15px; font-size: 15px; justify-content: center;">
-                        <i class="fa-solid fa-save"></i> Salvar Ativo no Inventário
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 2: EXPORTAR & POWER BI -->
-    <div id="modalBI" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-chart-column" style="color: #3b82f6;"></i> Exportar Relatórios & Power BI</h3>
-                <button onclick="fecharModais()" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
-            </div>
-            <div class="modal-body" style="text-align: center;">
-                <p style="color: #475569; margin-bottom: 20px;">Escolha a opção de exportação dos dados da frota e inventário:</p>
-                <a href="/api/v1/exportar-csv" class="btn-bi" style="display: block; width: 100%; text-decoration: none; padding: 12px; margin-bottom: 12px; font-size: 14px; text-align: center;">
-                    <i class="fa-solid fa-file-csv"></i> Baixar Relatório em CSV (Excel)
-                </a>
-                <button class="btn-add" style="width: 100%; padding: 12px; font-size: 14px; justify-content: center;" onclick="copiarLinkBI()">
-                    <i class="fa-solid fa-link"></i> Copiar Endpoint JSON para Power BI
-                </button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        let fotoBase64 = "";
-
         function trocarSecao(secaoId, elemento) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             document.getElementById(secaoId).classList.add('active');
             elemento.classList.add('active');
-            if (secaoId === 'sec-ativos') carregarInventario();
+            if (secaoId === 'sec-telefonia') carregarTelefonia();
         }
 
-        function abrirModalAddAtivo() {
-            document.getElementById('modalAddAtivo').style.display = 'flex';
-            verificarCampoPatrimonio();
-        }
-
-        function abrirModalBI() {
-            document.getElementById('modalBI').style.display = 'flex';
-        }
-
-        function fecharModais() {
-            document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
-            fecharCamera();
-        }
-
-        function verificarCampoPatrimonio() {
-            const tipo = document.getElementById('atvTipo').value;
-            const grp = document.getElementById('grpPatrimonio');
-            const inp = document.getElementById('atvPatrimonio');
-
-            if (['Computador', 'Monitor', 'Celular'].includes(tipo)) {
-                grp.style.display = 'block';
-                inp.required = true;
-            } else {
-                grp.style.display = 'none';
-                inp.required = false;
-            }
-        }
-
-        // Módulo de Câmera (HTML5 WebRTC)
-        let streamCam = null;
-        async function abrirCamera() {
+        // --- ATUALIZAÇÃO DA TELEFONIA A CADA 3 SEGUNDOS ---
+        async function carregarTelefonia() {
             try {
-                const video = document.getElementById('videoCam');
-                streamCam = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = streamCam;
-                video.style.display = 'block';
+                const res = await fetch('/api/v1/telefonia/metrics');
+                const dados = await res.json();
+                
+                // 1. Atualiza KPIs do topo
+                document.getElementById('kpi-total').innerText = dados.resumo.total;
+                document.getElementById('kpi-online').innerText = dados.resumo.online;
+                document.getElementById('kpi-offline').innerText = dados.resumo.offline;
+                document.getElementById('kpi-chamada').innerText = dados.resumo.emChamada;
+                document.getElementById('kpi-semsip').innerText = dados.resumo.semSip;
+                document.getElementById('kpi-disp').innerText = dados.resumo.disponibilidade + '%';
+
+                // 2. Preenche Tabela de Ramais e Latências
+                let htmlTb = '';
+                dados.ramais.forEach(r => {
+                    const statusBadge = r.status === 'Online' 
+                        ? (r.emChamada ? '<span class="badge-call">📞 EM CHAMADA</span>' : '<span class="badge-online">🟢 Online</span>')
+                        : '<span class="badge-offline">🔴 Offline</span>';
+
+                    const latenciaText = r.status === 'Online' ? `<strong style="color:#34d399;">${r.latencia} ms</strong>` : '<span style="color:#ef4444;">Timeout</span>';
+
+                    htmlTb += `
+                        <tr>
+                            <td style="font-weight:bold; color:#38bdf8;">${r.ramal}</td>
+                            <td>${r.nome}</td>
+                            <td><strong style="color:#60a5fa;">${r.ip}</strong></td>
+                            <td style="font-size:11px; color:#9ca3af;">${r.mac}</td>
+                            <td>${statusBadge}</td>
+                            <td>${latenciaText}</td>
+                            <td>
+                                ${r.status === 'Online' ? `<button onclick="simularQueda('${r.ramal}')" style="background:#ef4444; color:#fff; border:none; padding:3px 8px; border-radius:4px; cursor:pointer; font-size:11px;">Simular Queda (E-mail)</button>` : '<span style="color:#9ca3af; font-size:11px;">Caiu</span>'}
+                            </td>
+                        </tr>
+                    `;
+                });
+                document.getElementById('tbRamaisCorpo').innerHTML = htmlTb;
+
+                // 3. Preenche Painel de Chamadas em Tempo Real
+                let htmlChamadas = '';
+                dados.chamadas.forEach(c => {
+                    const isAtiva = c.status === 'EM CHAMADA';
+                    htmlChamadas += `
+                        <div style="background:#1f2937; border-left:4px solid ${isAtiva ? '#3b82f6' : '#64748b'}; padding:12px; margin-bottom:10px; border-radius:4px;">
+                            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px;">
+                                <span style="font-weight:bold; color:${isAtiva ? '#60a5fa' : '#9ca3af'};">${c.status}</span>
+                                <span style="color:#9ca3af;">⏱️ ${c.duracao}</span>
+                            </div>
+                            <div style="font-size:13px; font-weight:bold; color:#fff;">${c.origem}</div>
+                            <div style="font-size:12px; color:#9ca3af;">➡️ ${c.destino}</div>
+                        </div>
+                    `;
+                });
+                document.getElementById('painelChamadasAtivas').innerHTML = htmlChamadas;
+
             } catch (e) {
-                alert("Não foi possível acessar a câmera do dispositivo.");
+                console.error("Erro ao atualizar telefonia", e);
             }
         }
 
-        function capturarFoto() {
-            const video = document.getElementById('videoCam');
-            const canvas = document.getElementById('canvasPhoto');
-            if (!video.srcObject) return alert("Abra a câmera primeiro.");
-
-            canvas.width = video.videoWidth || 300;
-            canvas.height = video.videoHeight || 200;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            fotoBase64 = canvas.toDataURL('image/jpeg');
-            canvas.style.display = 'block';
-            video.style.display = 'none';
-            fecharCamera();
-        }
-
-        function fecharCamera() {
-            if (streamCam) {
-                streamCam.getTracks().forEach(track => track.stop());
-                streamCam = null;
-            }
-        }
-
-        async function salvarNovoAtivo(e) {
-            e.preventDefault();
-            const payload = {
-                tipo: document.getElementById('atvTipo').value,
-                patrimonio: document.getElementById('atvPatrimonio').value,
-                nome: document.getElementById('atvNome').value,
-                usuario: document.getElementById('atvUsuario').value,
-                setor: document.getElementById('atvSetor').value,
-                foto: fotoBase64
-            };
-
-            await fetch('/api/v1/ativos', {
+        async function simularQueda(ramal) {
+            if (!confirm("Deseja simular a queda de sinal do Ramal " + ramal + "? O sistema mudará o status para Offline e enviará um e-mail para ti@cstbh.com.br.")) return;
+            await fetch('/api/v1/telefonia/simular-queda', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ ramal })
             });
-
-            alert("Ativo cadastrado com sucesso!");
-            fecharModais();
-            carregarInventario();
+            alert("Simulação de queda enviada! Verifique a caixa de entrada ti@cstbh.com.br.");
+            carregarTelefonia();
         }
 
-        async function carregarInventario() {
-            const res = await fetch('/api/v1/ativos');
-            const ativos = await res.json();
-
-            let cntPc = 0, cntMon = 0, cntPer = 0, cntCel = 0, cntInf = 0;
-            let htmlTable = '';
-
-            ativos.forEach(a => {
-                if (a.tipo === 'Computador') cntPc++;
-                else if (a.tipo === 'Monitor') cntMon++;
-                else if (['Teclado/Mouse', 'Headset'].includes(a.tipo)) cntPer++;
-                else if (a.tipo === 'Celular') cntCel++;
-                else cntInf++;
-
-                const imgHtml = a.foto ? `<img src="${a.foto}" style="width:40px; height:40px; border-radius:4px; object-fit:cover;">` : '<i class="fa-solid fa-image" style="color:#cbd5e1; font-size:20px;"></i>';
-
-                htmlTable += `
-                    <tr>
-                        <td>${imgHtml}</td>
-                        <td><strong>${a.tipo}</strong></td>
-                        <td><span style="color:#0284c7; font-weight:bold;">${a.patrimonio}</span></td>
-                        <td>${a.nome}</td>
-                        <td>${a.usuario}</td>
-                        <td>${a.setor}</td>
-                        <td>${a.data}</td>
-                    </tr>
-                `;
-            });
-
-            document.getElementById('cnt-pc').innerText = cntPc;
-            document.getElementById('cnt-monitor').innerText = cntMon;
-            document.getElementById('cnt-periferico').innerText = cntPer;
-            document.getElementById('cnt-celular').innerText = cntCel;
-            document.getElementById('cnt-infra').innerText = cntInf;
-            document.getElementById('tabelaInventarioCorpo').innerHTML = htmlTable;
-        }
-
-        function copiarLinkBI() {
-            const url = window.location.origin + '/api/v1/rmm-metrics';
-            navigator.clipboard.writeText(url);
-            alert("Endpoint copiado: " + url);
-        }
-
-        function carregarMapaRamais() {
-            const container = document.getElementById('mapaRamaisGrid');
-            let html = '';
-            for (let i = 1; i <= 50; i++) {
-                const isOff = i === 10 || i === 25 || i === 40;
-                const color = isOff ? '#ef4444' : '#22c55e';
-                html += `<div style="width:14px; height:14px; border-radius:50%; background:${color}; margin:auto;" title="Ramal ${i}"></div>`;
+        // Loop automático a cada 3 segundos na telefonia
+        setInterval(() => {
+            const secTel = document.getElementById('sec-telefonia');
+            if (secTel && secTel.classList.contains('active')) {
+                carregarTelefonia();
             }
-            container.innerHTML = html;
-        }
-
-        carregarMapaRamais();
-        carregarInventario();
+        }, 3000);
     </script>
 </body>
 </html>
