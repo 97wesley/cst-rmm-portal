@@ -1,1 +1,66 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel Admin - CST</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; margin: 0; }
+        .navbar { background: #fff; padding: 15px 30px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .nav-links { display: flex; gap: 20px; font-weight: bold; color: #475569; font-size: 14px; }
+        .btn-danger { background: #ef4444; color: white; text-decoration: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; }
+        
+        .container { padding: 30px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { text-align: left; padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        th { background: #f8fafc; color: #0f172a; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        .badge-online { background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 12px; border: 1px solid #bbf7d0; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-links">
+            <span style="color: #0ea5e9;">🏠 Home</span> / 
+            <span style="color: #eab308;">📁 Ativos</span> / 
+            <span>📞 Telefonia IP</span> / 
+            <span>💻 Computador</span>
+        </div>
+        <div>
+            <span style="margin-right: 15px; font-weight: bold;"><%= usuario %> (TI)</span>
+            <a href="/logout" class="btn-danger">Sair</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Status</th>
+                    <th>Usuário Logado</th>
+                    <th>Memória RAM</th>
+                    <th>Disco</th>
+                    <th>Endereço IP</th>
+                    <th>Última Atualização</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if(estacoes.length === 0) { %>
+                    <tr><td colspan="7" style="text-align: center; color: #94a3b8;">Nenhum computador conectado.</td></tr>
+                <% } %>
+                <% estacoes.forEach(function(maq) { %>
+                    <tr>
+                        <td style="font-weight: bold; color: #0284c7;">💻 <%= maq.hostname %></td>
+                        <td><span class="badge-online">Online</span></td>
+                        <td><%= maq.usuario.replace('CST\\', '') %></td>
+                        <td><%= maq.ram %>% Usado</td>
+                        <td><%= maq.disco %>% Usado</td>
+                        <td><%= maq.ip %></td>
+                        <td style="color: #64748b;"><%= maq.ultimaVez.toLocaleTimeString() %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
