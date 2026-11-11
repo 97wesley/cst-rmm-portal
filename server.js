@@ -2,7 +2,6 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
-const ActiveDirectory = require('activedirectory2');
 const nodemailer = require('nodemailer');
 
 const app = express();
@@ -11,26 +10,15 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(session({
-    secret: 'cst-rmm-secret-key-2026',
+    secret: 'cst-rmm-secret-key-2026-v2',
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 86400000 }
 }));
 
 const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
-const DB_ATIVOS = path.join(__dirname, 'ativos_db.json');
 
-// --- CONFIGURAÇÃO DO ACTIVE DIRECTORY DA CST ---
-const adConfig = {
-    url: 'ldap://192.168.102.1', // Altere para o IP do seu Controlador de Domínio (DC)
-    baseDN: 'DC=CST,DC=LOCAL',
-    connectTimeout: 5000
-};
-
-// Usuários com permissão de Administrador da TI
-const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
-
-// --- CONFIGURAÇÃO DE E-MAIL DE ALERTA ---
+// --- E-MAIL DE ALERTA ---
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 587,
@@ -51,7 +39,7 @@ async function enviarAlertaQuedaRamal(ramalObj) {
     try { await transporter.sendMail(mailOptions); } catch (e) {}
 }
 
-// --- TELEFONIA EM MEMÓRIA ---
+// --- TELEFONIA DADOS ---
 let centralStatus = { ip: "192.168.102.1", modelo: "Intelbras Impacta 300 ICIP", online: true, uptime: "15 dias, 04 horas", trafegoRx: "12.4 Mbps", trafegoTx: "8.7 Mbps", perdaPacotes: "0.0%", jitterMdio: "1.2 ms" };
 let ramaisTelefonia = [
     { ramal: "001", nome: "Financeiro - Principal", setor: "Financeiro", ip: "192.168.102.10", mac: "00:1A:3F:41:2B:01", status: "Online", registroSip: "Registrado", latencia: 2, emChamada: false },
@@ -66,7 +54,7 @@ let chamadasHistorico = [
     { id: 100, origem: "Ramal 005 (TI)", destino: "Ramal 001 (Financeiro)", status: "FINALIZADA", duracao: "03:12" }
 ];
 let eventosTelefonia = [
-    { hora: new Date().toLocaleTimeString('pt-BR'), texto: "Sincronização SIP realizada no Gateway ICIP.", tipo: "info" }
+    { hora: new Date().toLocaleTimeString('pt-BR'), texto: "Sincronização SIP realizada no Gateway ICIP v2.", tipo: "info" }
 ];
 
 setInterval(() => {
@@ -78,106 +66,68 @@ setInterval(() => {
     });
 }, 5000);
 
-// --- ESTAÇÕES E BANCO LOCAL ---
+// --- ESTAÇÕES ---
 function carregarEstacoes() {
     if (fs.existsSync(DB_ESTACOES)) {
         try { return new Map(JSON.parse(fs.readFileSync(DB_ESTACOES, 'utf8'))); } catch (e) {}
     }
     return new Map([
-        ["GC-M08-PC0085", { hostname: "GC-M08-PC0085", entidade: "Entidade raiz > CST", usuario: "wesley.lima@CST", tipo: "Desktop", remoto: "rustdesk", rustdesk_id: "1382626814", versao_agente: "1.21", processador: "AMD Ryzen 3 3200G", ram_total: "16 GB", ip: "192.168.56.1", cpu: 41, ram: 80.1, disco: 89.6, ultimaVez: new Date().toISOString() }],
-        ["CS-M02-PC0025", { hostname: "CS-M02-PC0025", entidade: "Entidade raiz > CST", usuario: "pamela.araujo@CST", tipo: "Desktop", remoto: "rustdesk", rustdesk_id: "1211199845", versao_agente: "1.21", processador: "Intel Core i3-8100", ram_total: "8 GB", ip: "192.168.111.86", cpu: 15, ram: 38.0, disco: 45.2, ultimaVez: new Date(Date.now() - 600000).toISOString() }]
+        ["GC-M08-PC0085", { hostname: "GC-M08-PC0085", entidade: "Entidade raiz > CST", usuario: "wesley.lima@CST", tipo: "Desktop", remoto: "rustdesk", rustdesk_id: "1382626814", versao_agente: "1.21", processador: "AMD Ryzen 3 3200G", ram_total: "16 GB", ip: "192.168.56.1", cpu: 41, ram: 80.1, disco: 89.6, ultimaVez: new Date().toISOString() }]
     ]);
 }
 const estacoesRegistradas = carregarEstacoes();
 const comandosPendentes = new Map();
+const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
 
 const autenticar = (req, res, next) => {
     if (req.session.user) return next();
     res.redirect('/login');
 };
 
-// --- ROTA GET LOGIN ---
 app.get('/login', (req, res) => {
     res.send(`
-        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Login CST</title>
+        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Login CST v2</title>
         <style>body{font-family:'Segoe UI',sans-serif;background:#0b131e;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}
         .box{background:#132030;padding:40px;border-radius:10px;width:360px;} input,select{width:100%;padding:10px;margin:10px 0;background:#0b131e;border:1px solid #1e2d42;color:#fff;border-radius:5px;}
         button{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head>
-        <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST</h2>
+        <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST (v2.0)</h2>
         <form action="/login" method="POST">
         <input type="text" name="username" placeholder="Usuário (ex: wesley.lima)" required>
-        <input type="password" name="password" placeholder="Senha do Active Directory" required>
+        <input type="password" name="password" placeholder="Senha (123)" required>
         <select name="perfil"><option value="user">👤 Colaborador</option><option value="admin">⚙️ TI (Administrador)</option></select>
         <button type="submit">Entrar no Portal</button></form></div></body></html>
     `);
 });
 
-// --- ROTA DE LOGIN INTELIGENTE (AD / LOCAL) ---
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
-    const userClean = (username || '').toLowerCase().trim();
+    const user = (username || '').toLowerCase().trim();
 
-    // Lista de Administradores da TI autorizados
-    const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
+    if (password !== '123' && password !== 'Cst@2026!') {
+        return res.send(`<script>alert("Senha incorreta. Use 123."); window.location.href="/login";</script>`);
+    }
 
-    // Se for perfil Administrador, valida se é da equipe de TI e se a senha confere
     if (perfil === 'admin') {
-        if (administradoresTI.includes(userClean) && (password === '123' || password === 'Cst@2026!')) {
-            req.session.user = { login: userClean, admin: true };
+        if (administradoresTI.includes(user)) {
+            req.session.user = { login: user, admin: true };
             return res.redirect('/admin');
         } else {
-            return res.send(`
-                <script>
-                    alert("Acesso Negado: Credenciais de Administrador inválidas ou usuário não pertence à TI.");
-                    window.location.href = "/login";
-                </script>
-            `);
+            return res.send(`<script>alert("Acesso Negado: Usuário não pertence à equipe de TI."); window.location.href="/login";</script>`);
         }
-    } 
-    // Se for modo Colaborador (Autoatendimento)
-    else {
-        if (password === '123' || password.length > 0) {
-            req.session.user = { login: userClean, admin: false };
-            return res.redirect('/');
-        } else {
-            return res.send(`
-                <script>
-                    alert("Senha incorreta.");
-                    window.location.href = "/login";
-                </script>
-            `);
-        }
+    } else {
+        req.session.user = { login: user, admin: false };
+        return res.redirect('/');
     }
-});
-
-        // Login validado no Active Directory com sucesso!
-        if (perfil === 'admin') {
-            if (administradoresTI.includes(userClean)) {
-                req.session.user = { login: userClean, admin: true };
-                return res.redirect('/admin');
-            } else {
-                return res.send(`
-                    <script>
-                        alert("Acesso Restrito: Seu usuário do AD não faz parte da equipe de TI.");
-                        window.location.href = "/login";
-                    </script>
-                `);
-            }
-        } else {
-            req.session.user = { login: userClean, admin: false };
-            return res.redirect('/');
-        }
-    });
 });
 
 app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/login'); });
 
 app.get('/', autenticar, (req, res) => {
     if (req.session.user.admin) return res.redirect('/admin');
-    res.send(`<h1>Painel do Colaborador - CST Self-Service</h1><a href="/logout">Sair</a>`);
+    res.send(`<h1>Painel de Usuário</h1><a href="/logout">Sair</a>`);
 });
 
-// --- ROTA DE ADMINISTRADOR COM INTERFACE COMPLETA ---
+// --- ROTA DE ADMINISTRADOR COMPLETA E ATUALIZADA ---
 app.get('/admin', autenticar, (req, res) => {
     if (!req.session.user.admin) return res.status(403).send("Acesso Negado.");
     
@@ -186,7 +136,7 @@ app.get('/admin', autenticar, (req, res) => {
         <html lang="pt-BR">
         <head>
             <meta charset="UTF-8">
-            <title>Painel RMM Administrador - CST</title>
+            <title>Painel RMM Administrador v2.0 - CST</title>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
@@ -337,24 +287,24 @@ app.get('/admin', autenticar, (req, res) => {
                         let html = '';
                         dados.forEach(maq => {
                             const isOnline = (new Date() - new Date(maq.ultimaVez)) < 35000;
-                            html += \`
+                            html += `
                                 <tr>
-                                    <td><strong>💻 \${maq.hostname}</strong></td>
-                                    <td>\${maq.entidade || 'Entidade raiz > CST'}</td>
-                                    <td><span class="\${isOnline ? 'badge-online' : 'badge-offline'}">\${isOnline ? 'Online' : 'Offline'}</span></td>
-                                    <td>\${maq.tipo || 'Desktop'}</td>
-                                    <td>\${maq.usuario}</td>
-                                    <td>\${maq.processador || 'Intel/AMD'}</td>
-                                    <td><strong>\${maq.ram_total || '8 GB'}</strong> (\${maq.ram}% uso)</td>
-                                    <td>\${maq.disco}% uso</td>
-                                    <td><strong>\${maq.ip}</strong></td>
-                                    <td style="color:#64748b;">\${new Date(maq.ultimaVez).toLocaleTimeString()}</td>
+                                    <td><strong>💻 ${maq.hostname}</strong></td>
+                                    <td>${maq.entidade || 'Entidade raiz > CST'}</td>
+                                    <td><span class="${isOnline ? 'badge-online' : 'badge-offline'}">${isOnline ? 'Online' : 'Offline'}</span></td>
+                                    <td>${maq.tipo || 'Desktop'}</td>
+                                    <td>${maq.usuario}</td>
+                                    <td>${maq.processador || 'Intel/AMD'}</td>
+                                    <td><strong>${maq.ram_total || '8 GB'}</strong> (${maq.ram}% uso)</td>
+                                    <td>${maq.disco}% uso</td>
+                                    <td><strong>${maq.ip}</strong></td>
+                                    <td style="color:#64748b;">${new Date(maq.ultimaVez).toLocaleTimeString()}</td>
                                     <td>
-                                        <button class="btn-cmd" onclick="enviarCmd('\${maq.hostname}', 'limpar_cache')">🧹 Cache</button>
-                                        <button class="btn-cmd" onclick="enviarCmd('\${maq.hostname}', 'destravar_impressora')">🔄 Spooler</button>
+                                        <button class="btn-cmd" onclick="enviarCmd('${maq.hostname}', 'limpar_cache')">🧹 Cache</button>
+                                        <button class="btn-cmd" onclick="enviarCmd('${maq.hostname}', 'destravar_impressora')">🔄 Spooler</button>
                                     </td>
                                 </tr>
-                            \`;
+                            `;
                         });
                         document.getElementById('tbComputadoresRmm').innerHTML = html;
                     } catch (e) {}
@@ -388,28 +338,28 @@ app.get('/admin', autenticar, (req, res) => {
                         let htmlTb = '';
                         dados.ramais.forEach(r => {
                             const badgeSt = r.status === 'Online' ? (r.emChamada ? '<span style="background:#0284c7;color:#fff;padding:2px 6px;border-radius:10px;font-size:10px;">📞 EM CHAMADA</span>' : '<span class="badge-online">🟢 Online</span>') : '<span class="badge-offline">🔴 Offline</span>';
-                            const lat = r.status === 'Online' ? \`<strong style="color:#34d399;">\${r.latencia} ms</strong>\` : '<span style="color:#ef4444;">Timeout</span>';
-                            htmlTb += \`
+                            const lat = r.status === 'Online' ? `<strong style="color:#34d399;">${r.latencia} ms</strong>` : '<span style="color:#ef4444;">Timeout</span>';
+                            htmlTb += `
                                 <tr>
-                                    <td style="font-weight:bold;color:#38bdf8;">\${r.ramal}</td>
-                                    <td>\${r.nome}</td>
-                                    <td><strong style="color:#60a5fa;">\${r.ip}</strong></td>
-                                    <td style="font-size:11px;color:#9ca3af;">\${r.mac}</td>
-                                    <td>\${badgeSt}</td>
-                                    <td>\${lat}</td>
-                                    <td>\${r.status === 'Online' ? \`<button onclick="simularQueda('\${r.ramal}')" style="background:#ef4444;color:#fff;border:none;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:10px;">Queda (E-mail)</button>\` : 'Offline'}</td>
+                                    <td style="font-weight:bold;color:#38bdf8;">${r.ramal}</td>
+                                    <td>${r.nome}</td>
+                                    <td><strong style="color:#60a5fa;">${r.ip}</strong></td>
+                                    <td style="font-size:11px;color:#9ca3af;">${r.mac}</td>
+                                    <td>${badgeSt}</td>
+                                    <td>${lat}</td>
+                                    <td>${r.status === 'Online' ? `<button onclick="simularQueda('${r.ramal}')" style="background:#ef4444;color:#fff;border:none;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:10px;">Queda (E-mail)</button>` : 'Offline'}</td>
                                 </tr>
-                            \`;
+                            `;
                         });
                         document.getElementById('tbRamaisCorpo').innerHTML = htmlTb;
 
                         let htmlLog = '';
-                        dados.eventos.forEach(ev => { htmlLog += \`<div class="event-log-item \${ev.tipo === 'danger' ? 'danger' : ''}"><span style="color:#94a3b8;">\${ev.hora}</span> \${ev.texto}</div>\`; });
+                        dados.eventos.forEach(ev => { htmlLog += `<div class="event-log-item ${ev.tipo === 'danger' ? 'danger' : ''}"><span style="color:#94a3b8;">${ev.hora}</span> ${ev.texto}</div>`; });
                         document.getElementById('containerEventosLog').innerHTML = htmlLog;
 
                         let htmlCh = '';
                         dados.chamadas.forEach(c => {
-                            htmlCh += \`<div style="background:#1f2937;border-left:4px solid #3b82f6;padding:10px;margin-bottom:8px;border-radius:4px;font-size:12px;"><div style="display:flex;justify-content:space-between;"><span style="font-weight:bold;color:#60a5fa;">\${c.status}</span><span>⏱️ \${c.duracao}</span></div><div>\${c.origem}</div><div style="color:#9ca3af;">➡️ \${c.destino}</div></div>\`;
+                            htmlCh += `<div style="background:#1f2937;border-left:4px solid #3b82f6;padding:10px;margin-bottom:8px;border-radius:4px;font-size:12px;"><div style="display:flex;justify-content:space-between;"><span style="font-weight:bold;color:#60a5fa;">${c.status}</span><span>⏱️ ${c.duracao}</span></div><div>${c.origem}</div><div style="color:#9ca3af;">➡️ ${c.destino}</div></div>`;
                         });
                         document.getElementById('containerChamadasAtivas').innerHTML = htmlCh;
                     } catch (e) {}
@@ -439,7 +389,7 @@ app.get('/admin', autenticar, (req, res) => {
     `);
 });
 
-// --- APIS DO SERVIDOR ---
+// --- APIS ---
 app.post('/api/v1/telemetria', (req, res) => {
     const { hostname, usuario, ip, cpu, ram, disco } = req.body;
     if (hostname) {
@@ -497,4 +447,4 @@ app.post('/api/v1/telefonia/simular-queda', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor RMM Corporativo rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor RMM Corporativo v2.0 rodando na porta ${PORT}`));
