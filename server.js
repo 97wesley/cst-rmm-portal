@@ -19,14 +19,14 @@ app.use(session({
 
 const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
 
-// --- CONFIGURAÇÃO OFICIAL DO ACTIVE DIRECTORY (PRODUÇÃO) ---
+// --- CONFIGURAÇÃO DO ACTIVE DIRECTORY (PRODUÇÃO) ---
 const adConfig = {
-    url: 'ldap://192.168.102.1',
+    url: 'ldap://192.168.102.1', // Ajuste para o IP público/DDNS se o servidor estiver no Render
     baseDN: 'DC=CST,DC=LOCAL',
-    connectTimeout: 5000
+    connectTimeout: 7000
 };
 
-// Equipe de TI autorizada a acessar o painel administrativo
+// Equipe de TI com permissão de Administrador
 const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
 
 // --- CONFIGURAÇÃO DE E-MAIL DE ALERTA ---
@@ -65,7 +65,7 @@ let chamadasHistorico = [
     { id: 100, origem: "Ramal 005 (TI)", destino: "Ramal 001 (Financeiro)", status: "FINALIZADA", duracao: "03:12" }
 ];
 let eventosTelefonia = [
-    { hora: new Date().toLocaleTimeString('pt-BR'), texto: "Sincronização SIP realizada no Gateway ICIP (Produção).", tipo: "info" }
+    { hora: new Date().toLocaleTimeString('pt-BR'), texto: "Sincronização SIP realizada no Gateway ICIP.", tipo: "info" }
 ];
 
 setInterval(() => {
@@ -96,20 +96,20 @@ const autenticar = (req, res, next) => {
 
 app.get('/login', (req, res) => {
     res.send(`
-        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Acesso CST Produção</title>
+        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Acesso CST Produção AD</title>
         <style>body{font-family:'Segoe UI',sans-serif;background:#0b131e;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}
         .box{background:#132030;padding:40px;border-radius:10px;width:360px;} input,select{width:100%;padding:10px;margin:10px 0;background:#0b131e;border:1px solid #1e2d42;color:#fff;border-radius:5px;}
         button{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head>
-        <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST (Produção)</h2>
+        <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST (AD)</h2>
         <form action="/login" method="POST">
         <input type="text" name="username" placeholder="ex: wesley.lima" required>
-        <input type="password" name="password" placeholder="Senha da Rede AD" required>
+        <input type="password" name="password" placeholder="Senha da Rede" required>
         <select name="perfil"><option value="user">👤 Colaborador (Autoatendimento)</option><option value="admin">⚙️ TI (Administrador)</option></select>
         <button type="submit">Entrar no Portal</button></form></div></body></html>
     `);
 });
 
-// --- ROTA DE LOGIN EXCLUSIVA COM AD REAL (PRODUÇÃO) ---
+// --- ROTA DE LOGIN EXCLUSIVA COM ACTIVE DIRECTORY (SEM FALBACKS DE TESTE) ---
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
     const userClean = (username || '').toLowerCase().trim();
@@ -121,13 +121,13 @@ app.post('/login', (req, res) => {
         if (err || !auth) {
             return res.send(`
                 <script>
-                    alert("Credenciais inválidas. Verifique sua senha de rede do Active Directory.");
+                    alert("Falha na autenticação do Active Directory. Usuário ou senha incorretos.");
                     window.location.href = "/login";
                 </script>
             `);
         }
 
-        // Validado com sucesso no AD corporativo
+        // Validação de perfil de TI
         if (perfil === 'admin') {
             if (administradoresTI.includes(userClean)) {
                 req.session.user = { login: userClean, admin: true };
@@ -213,7 +213,7 @@ app.get('/admin', autenticar, (req, res) => {
                     <a class="tab-btn" onclick="trocarSecao('sec-telefonia', this)"><i class="fa-solid fa-phone" style="color: #10b981;"></i> 📞 Telefonia IP & Ramais</a>
                 </div>
                 <div>
-                    <span style="font-size: 13px; font-weight: 700; margin-right: 15px;">${req.session.user.login} (TI Produção)</span>
+                    <span style="font-size: 13px; font-weight: 700; margin-right: 15px;">${req.session.user.login} (TI AD)</span>
                     <a href="/logout" style="background:#ef4444;color:#fff;padding:6px 12px;border-radius:4px;text-decoration:none;font-weight:bold;">Sair</a>
                 </div>
             </header>
@@ -474,4 +474,4 @@ app.post('/api/v1/telefonia/simular-queda', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor RMM Corporativo em Produção rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor RMM Corporativo em Produção AD rodando na porta ${PORT}`));
