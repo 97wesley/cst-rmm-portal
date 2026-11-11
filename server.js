@@ -98,18 +98,33 @@ const autenticar = (req, res, next) => {
 
 // --- TELA DE LOGIN LIMPA (SEM MENCIONAR TESTES) ---
 app.get('/login', (req, res) => {
-    res.send(`
-        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Acesso CST Produção AD</title>
-        <style>body{font-family:'Segoe UI',sans-serif;background:#0b131e;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}
-        .box{background:#132030;padding:40px;border-radius:10px;width:360px;} input,select{width:100%;padding:10px;margin:10px 0;background:#0b131e;border:1px solid #1e2d42;color:#fff;border-radius:5px;}
-        button{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head>
-        <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST (AD)</h2>
-        <form action="/login" method="POST">
-        <input type="text" name="username" placeholder="Usuário de rede (ex: wesley.lima)" required>
-        <input type="password" name="password" placeholder="Senha da rede AD" required>
-        <select name="perfil"><option value="user">👤 Colaborador (Autoatendimento)</option><option value="admin">⚙️ TI (Administrador)</option></select>
-        <button type="submit">Entrar no Portal</button></form></div></body></html>
-    `);
+    res.render('login', { erro: null });
+});
+
+app.post('/login', (req, res) => {
+    const { username, password, perfil } = req.body;
+    const userClean = (username || '').toLowerCase().trim();
+    const userAD = userClean.includes('@') ? userClean : `${userClean}@cst.local`;
+
+    const ad = new ActiveDirectory(adConfig);
+
+    ad.authenticate(userAD, password, (err, auth) => {
+        if (err || !auth) {
+            return res.render('login', { erro: 'Usuário ou senha de rede incorretos.' });
+        }
+
+        if (perfil === 'admin') {
+            if (administradoresTI.includes(userClean)) {
+                req.session.user = { login: userClean, admin: true };
+                return res.redirect('/admin');
+            } else {
+                return res.render('login', { erro: 'Acesso Negado: Conta sem privilégios de TI.' });
+            }
+        } else {
+            req.session.user = { login: userClean, admin: false };
+            return res.redirect('/');
+        }
+    });
 });
 
 // --- ROTA DE LOGIN EXCLUSIVA COM ACTIVE DIRECTORY (SEM FALLBACKS) ---
