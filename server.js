@@ -1,19 +1,49 @@
 const express = require('express');
 const session = require('express-session');
-const path = require('path');
-const fs = require('fs');
-const nodemailer = require('nodemailer');
+const ActiveDirectory = require('activedirectory2');
 const app = express();
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-    secret: 'cst-rmm-secret-key-2026',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { maxAge: 86400000 }
-}));
+// Configuração do Active Directory da CST
+const adConfig = {
+    url: 'ldap://192.168.102.1', // IP do seu Controlador de Domínio (DC)
+    baseDN: 'DC=CST,DC=LOCAL',
+    connectTimeout: 5000
+};
+
+// Usuários com permissão de Administrador da TI
+const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
+
+app.post('/login', (req, res) => {
+    const { username, password, perfil } = req.body;
+    const userClean = (username || '').toLowerCase().trim();
+    const userAD = userClean.includes('@') ? userClean : `${userClean}@cst.local`;
+
+    // Instancia a conexão LDAP para validar a senha real
+    const ad = new ActiveDirectory(adConfig);
+
+    ad.authenticate(userAD, password, (err, auth) => {
+        if (err || !auth) {
+            console.log(`[AD AUTH] Falha de login para ${userClean}:`, err ? err.message : 'Senha incorreta');
+            return res.render('login', { erro: 'Usuário ou senha de rede (AD) incorretos.' });
+        }
+
+        // Login validado no Active Directory com sucesso!
+        if (perfil === 'admin') {
+            if (administradoresTI.includes(userClean)) {
+                req.session.user = { login: userClean, admin: true };
+                return res.redirect('/admin');
+            } else {
+                return res.render('login', { erro: 'Acesso Restrito: Seu usuário não pertence à equipe de TI.' });
+            }
+        } else {
+            req.session.user = { login: userClean, admin: false };
+            return res.redirect('/');
+        }
+    });
+});
 
 const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
 const DB_ATIVOS = path.join(__dirname, 'ativos_db.json');
