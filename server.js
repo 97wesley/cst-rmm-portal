@@ -1,14 +1,28 @@
 const express = require('express');
 const session = require('express-session');
+const path = require('path');
+const fs = require('fs');
 const ActiveDirectory = require('activedirectory2');
+const nodemailer = require('nodemailer');
+
 const app = express();
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Configuração do Active Directory da CST
+app.use(session({
+    secret: 'cst-rmm-secret-key-2026',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { maxAge: 86400000 }
+}));
+
+const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
+const DB_ATIVOS = path.join(__dirname, 'ativos_db.json');
+
+// --- CONFIGURAÇÃO DO ACTIVE DIRECTORY DA CST ---
 const adConfig = {
-    url: 'ldap://192.168.102.1', // IP do seu Controlador de Domínio (DC)
+    url: 'ldap://192.168.102.1', // Altere para o IP do seu Controlador de Domínio (DC)
     baseDN: 'DC=CST,DC=LOCAL',
     connectTimeout: 5000
 };
@@ -16,39 +30,7 @@ const adConfig = {
 // Usuários com permissão de Administrador da TI
 const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
 
-app.post('/login', (req, res) => {
-    const { username, password, perfil } = req.body;
-    const userClean = (username || '').toLowerCase().trim();
-    const userAD = userClean.includes('@') ? userClean : `${userClean}@cst.local`;
-
-    // Instancia a conexão LDAP para validar a senha real
-    const ad = new ActiveDirectory(adConfig);
-
-    ad.authenticate(userAD, password, (err, auth) => {
-        if (err || !auth) {
-            console.log(`[AD AUTH] Falha de login para ${userClean}:`, err ? err.message : 'Senha incorreta');
-            return res.render('login', { erro: 'Usuário ou senha de rede (AD) incorretos.' });
-        }
-
-        // Login validado no Active Directory com sucesso!
-        if (perfil === 'admin') {
-            if (administradoresTI.includes(userClean)) {
-                req.session.user = { login: userClean, admin: true };
-                return res.redirect('/admin');
-            } else {
-                return res.render('login', { erro: 'Acesso Restrito: Seu usuário não pertence à equipe de TI.' });
-            }
-        } else {
-            req.session.user = { login: userClean, admin: false };
-            return res.redirect('/');
-        }
-    });
-});
-
-const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
-const DB_ATIVOS = path.join(__dirname, 'ativos_db.json');
-
-// --- E-MAIL DE ALERTA ---
+// --- CONFIGURAÇÃO DE E-MAIL DE ALERTA ---
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 587,
@@ -69,7 +51,7 @@ async function enviarAlertaQuedaRamal(ramalObj) {
     try { await transporter.sendMail(mailOptions); } catch (e) {}
 }
 
-// --- TELEFONIA DADOS ---
+// --- TELEFONIA EM MEMÓRIA ---
 let centralStatus = { ip: "192.168.102.1", modelo: "Intelbras Impacta 300 ICIP", online: true, uptime: "15 dias, 04 horas", trafegoRx: "12.4 Mbps", trafegoTx: "8.7 Mbps", perdaPacotes: "0.0%", jitterMdio: "1.2 ms" };
 let ramaisTelefonia = [
     { ramal: "001", nome: "Financeiro - Principal", setor: "Financeiro", ip: "192.168.102.10", mac: "00:1A:3F:41:2B:01", status: "Online", registroSip: "Registrado", latencia: 2, emChamada: false },
@@ -96,7 +78,7 @@ setInterval(() => {
     });
 }, 5000);
 
-// --- ESTAÇÕES E AUTENTICAÇÃO ---
+// --- ESTAÇÕES E BANCO LOCAL ---
 function carregarEstacoes() {
     if (fs.existsSync(DB_ESTACOES)) {
         try { return new Map(JSON.parse(fs.readFileSync(DB_ESTACOES, 'utf8'))); } catch (e) {}
@@ -108,13 +90,13 @@ function carregarEstacoes() {
 }
 const estacoesRegistradas = carregarEstacoes();
 const comandosPendentes = new Map();
-const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
 
 const autenticar = (req, res, next) => {
     if (req.session.user) return next();
     res.redirect('/login');
 };
 
+// --- ROTA GET LOGIN ---
 app.get('/login', (req, res) => {
     res.send(`
         <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Login CST</title>
@@ -124,35 +106,60 @@ app.get('/login', (req, res) => {
         <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST</h2>
         <form action="/login" method="POST">
         <input type="text" name="username" placeholder="Usuário (ex: wesley.lima)" required>
-        <input type="password" name="password" placeholder="Senha (123)" required>
+        <input type="password" name="password" placeholder="Senha do Active Directory" required>
         <select name="perfil"><option value="user">👤 Colaborador</option><option value="admin">⚙️ TI (Administrador)</option></select>
         <button type="submit">Entrar no Portal</button></form></div></body></html>
     `);
 });
 
+// --- ROTA POST LOGIN COM VALIDAÇÃO AUTÊNTICA NO AD/LDAP ---
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
-    const user = (username || '').toLowerCase().trim();
-    if (password !== '123') return res.send("Senha incorreta. Use 123.");
-    if (perfil === 'admin') {
-        if (administradoresTI.includes(user)) {
-            req.session.user = { login: user, admin: true };
-            return res.redirect('/admin');
-        } else { return res.send("Acesso negado."); }
-    } else {
-        req.session.user = { login: user, admin: false };
-        return res.redirect('/');
-    }
+    const userClean = (username || '').toLowerCase().trim();
+    const userAD = userClean.includes('@') ? userClean : `${userClean}@cst.local`;
+
+    // Conecta ao AD/LDAP para verificar a senha real
+    const ad = new ActiveDirectory(adConfig);
+
+    ad.authenticate(userAD, password, (err, auth) => {
+        if (err || !auth) {
+            console.log(`[AD AUTH ERROR] Falha no login de ${userClean}:`, err ? err.message : 'Credenciais inválidas');
+            return res.send(`
+                <script>
+                    alert("Usuário ou senha de rede (Active Directory) incorretos.");
+                    window.location.href = "/login";
+                </script>
+            `);
+        }
+
+        // Login validado no Active Directory com sucesso!
+        if (perfil === 'admin') {
+            if (administradoresTI.includes(userClean)) {
+                req.session.user = { login: userClean, admin: true };
+                return res.redirect('/admin');
+            } else {
+                return res.send(`
+                    <script>
+                        alert("Acesso Restrito: Seu usuário do AD não faz parte da equipe de TI.");
+                        window.location.href = "/login";
+                    </script>
+                `);
+            }
+        } else {
+            req.session.user = { login: userClean, admin: false };
+            return res.redirect('/');
+        }
+    });
 });
 
 app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/login'); });
 
 app.get('/', autenticar, (req, res) => {
     if (req.session.user.admin) return res.redirect('/admin');
-    res.send(`<h1>Painel de Usuário em manutenção...</h1><a href="/logout">Sair</a>`);
+    res.send(`<h1>Painel do Colaborador - CST Self-Service</h1><a href="/logout">Sair</a>`);
 });
 
-// --- ROTA DE ADMINISTRADOR COM INTERFACE EMBUTIDA COMPLETA ---
+// --- ROTA DE ADMINISTRADOR COM INTERFACE COMPLETA ---
 app.get('/admin', autenticar, (req, res) => {
     if (!req.session.user.admin) return res.status(403).send("Acesso Negado.");
     
@@ -180,7 +187,6 @@ app.get('/admin', autenticar, (req, res) => {
                 .badge-offline { background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; }
                 .btn-cmd { background: #0284c7; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; margin-right: 4px; }
                 
-                /* TARJA DA CENTRAL IP COM CUBO 3D ANIMADO */
                 .pbx-banner-container { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border: 1px solid #334155; border-radius: 12px; padding: 20px 25px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
                 .pbx-info-side { display: flex; align-items: center; gap: 20px; }
                 .pbx-3d-stage { width: 55px; height: 55px; perspective: 600px; }
@@ -218,7 +224,6 @@ app.get('/admin', autenticar, (req, res) => {
             </header>
 
             <div class="container">
-                <!-- SEÇÃO 1: RMM COMPUTADORES COM AUTO-SYNC 5s -->
                 <div id="sec-computadores" class="tab-content active">
                     <div style="margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; color: #fff;">
                         <h3>💻 Estações de Trabalho Registradas</h3>
@@ -238,7 +243,6 @@ app.get('/admin', autenticar, (req, res) => {
                     </div>
                 </div>
 
-                <!-- SEÇÃO 2: ATIVOS -->
                 <div id="sec-ativos" class="tab-content">
                     <div style="background: #fff; padding: 25px; border-radius: 8px; color: #1e293b;">
                         <h3>📁 Gestão de Ativos CST</h3>
@@ -246,7 +250,6 @@ app.get('/admin', autenticar, (req, res) => {
                     </div>
                 </div>
 
-                <!-- SEÇÃO 3: TELEFONIA IP EXPANDIDA COM CUBO 3D E RODAPÉ PREENCHIDO -->
                 <div id="sec-telefonia" class="tab-content">
                     <div class="pbx-banner-container">
                         <div class="pbx-info-side">
@@ -418,6 +421,7 @@ app.get('/admin', autenticar, (req, res) => {
     `);
 });
 
+// --- APIS DO SERVIDOR ---
 app.post('/api/v1/telemetria', (req, res) => {
     const { hostname, usuario, ip, cpu, ram, disco } = req.body;
     if (hostname) {
