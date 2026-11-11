@@ -2,29 +2,32 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Portal do Colaborador - CST</title>
+    <title>Portal de Autoatendimento TI - CST</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background-color: #0b131e; color: #e2e8f0; padding: 30px; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid #1e2d42; padding-bottom: 15px; }
-        .btn-logout { background: #ef4444; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; }
+        body { background-color: #0b131e; color: #e2e8f0; padding: 25px 30px; }
         
-        .machine-bar { background: #132030; border: 1px solid #1e2e45; border-radius: 12px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .badge-online { background: rgba(34,197,94,0.15); color: #4ade80; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 10px; }
-        .stats { display: flex; gap: 20px; color: #94a3b8; font-size: 14px; margin-top: 10px; }
-        .stats span { color: #38bdf8; font-weight: bold; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .header h2 { font-size: 22px; font-weight: 700; color: #f8fafc; }
+        .btn-logout { background: #ef4444; color: white; text-decoration: none; padding: 8px 18px; border-radius: 6px; font-weight: 700; font-size: 13px; }
 
-        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .card { background-color: #132030; border: 1px solid #1e2e45; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .card-header { border-bottom: 1px solid #1e2d42; padding-bottom: 12px; color: #f1f5f9; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        
-        .btn-action { background: #1a293d; border: 1px solid #273952; color: #cbd5e1; padding: 12px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+        .machine-bar { background: #132030; border: 1px solid #1e2e45; border-radius: 12px; padding: 18px 25px; margin-bottom: 25px; }
+        .machine-title { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .badge-online { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid #22c55e; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+        .stats { display: flex; gap: 20px; color: #94a3b8; font-size: 13px; }
+        .stats span { color: #38bdf8; font-weight: 700; }
+
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 20px; }
+        .card { background-color: #132030; border: 1px solid #1e2e45; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+        .card-header { border-bottom: 1px solid #1e2d42; padding-bottom: 10px; margin-bottom: 4px; color: #f1f5f9; font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+
+        .btn-action { background: #1a293d; border: 1px solid #273952; color: #cbd5e1; padding: 11px 14px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; font-size: 13px; transition: 0.2s; }
         .btn-action:hover:not(:disabled) { background: #22354e; border-color: #38bdf8; color: #fff; }
         .btn-action:disabled { opacity: 0.6; cursor: not-allowed; border-color: #047857; color: #34d399; }
         
-        #toast-container { position: fixed; top: 25px; right: 25px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; }
-        .toast { padding: 16px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 15px; color: #fff; transform: translateX(120%); animation: slideIn 0.4s forwards; }
+        #toast-container { position: fixed; top: 25px; right: 25px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { padding: 14px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 12px; color: #fff; transform: translateX(120%); animation: slideIn 0.4s forwards; }
         .toast.info { background: #1e3a8a; border-left: 5px solid #3b82f6; }
         .toast.success { background: #064e3b; border-left: 5px solid #10b981; }
         @keyframes slideIn { to { transform: translateX(0); } }
@@ -40,7 +43,7 @@
     </div>
 
     <div id="estacoesContainer">
-        <p style="color: #94a3b8;">Buscando dados da sua máquina...</p>
+        <div class="machine-bar"><p style="color: #94a3b8;">Conectando à sua máquina...</p></div>
     </div>
 
     <script>
@@ -51,14 +54,14 @@
             const icone = tipo === 'success' ? 'fa-circle-check' : 'fa-gear fa-spin';
             toast.innerHTML = '<i class="fa-solid ' + icone + '"></i> <span>' + mensagem + '</span>';
             container.appendChild(toast);
-            setTimeout(() => { toast.style.animation = 'fadeOut 0.4s forwards'; setTimeout(() => toast.remove(), 400); }, 5000);
+            setTimeout(() => { toast.style.animation = 'fadeOut 0.4s forwards'; setTimeout(() => toast.remove(), 400); }, 4000);
         }
 
         async function executar(hostname, acao, btnElement) {
-            const txt = btnElement.innerHTML;
+            const txtOriginal = btnElement.innerHTML;
             btnElement.disabled = true;
-            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Solicitando...';
-            mostrarTarja('Comando enviado. Verifique a tela do seu computador!', 'info');
+            btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Executando...';
+            mostrarTarja('Solicitação enviada. O Windows executará a correção.', 'info');
 
             await fetch('/api/v1/executar', {
                 method: 'POST',
@@ -67,53 +70,71 @@
             });
             
             setTimeout(() => {
-                mostrarTarja('Comando processado pelo agente.', 'success');
+                mostrarTarja('Procedimento executado com sucesso!', 'success');
                 btnElement.innerHTML = '<i class="fa-solid fa-check"></i> Concluído';
-                setTimeout(() => { btnElement.disabled = false; btnElement.innerHTML = txt; }, 3000);
+                setTimeout(() => { btnElement.disabled = false; btnElement.innerHTML = txtOriginal; }, 3000);
             }, 1500);
         }
 
         async function carregar() {
             const res = await fetch('/api/v1/rmm-metrics');
             const dados = await res.json();
-            // Filtra para pegar apenas a máquina logada pelo usuário atual (ou a primeira disponivel se teste)
-            const maq = dados.length > 0 ? dados[0] : null; 
+            const maq = dados.length > 0 ? dados[0] : null;
 
             if (maq && !document.getElementById('renderizado')) {
                 document.getElementById('estacoesContainer').innerHTML = `
                     <div id="renderizado">
                         <div class="machine-bar">
-                            <div>
-                                <h3 style="color:#fff; font-size:18px"><i class="fa-solid fa-desktop"></i> ${maq.hostname} <span class="badge-online">ONLINE</span></h3>
-                                <div class="stats">
-                                    IP: <span>${maq.ip}</span> | CPU: <span>${maq.cpu}%</span> | RAM: <span>${maq.ram}%</span> | Disco: <span>${maq.disco}%</span>
-                                </div>
+                            <div class="machine-title">
+                                <i class="fa-solid fa-desktop"></i> ${maq.hostname} 
+                                <span class="badge-online">ONLINE</span>
+                            </div>
+                            <div class="stats">
+                                IP: <span>${maq.ip}</span> | CPU: <span>${maq.cpu}%</span> | RAM: <span>${maq.ram}%</span> | Disco: <span>${maq.disco}%</span>
                             </div>
                         </div>
 
                         <div class="cards-grid">
+                            <!-- 1. Travamento & Desempenho -->
                             <div class="card">
-                                <div class="card-header"><i class="fa-solid fa-gauge-high" style="color: #38bdf8;"></i> Desempenho</div>
-                                <button class="btn-action" onclick="executar('${maq.hostname}', 'limpar_cache', this)"><span>🧹 Limpar Cache do Sistema</span></button>
+                                <div class="card-header"><i class="fa-solid fa-gauge-high" style="color: #38bdf8;"></i> Travamento & Desempenho</div>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'limpar_cache', this)"><span>🧹 Cache do Computador</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'cache_navegadores', this)"><span>🌐 Cache Navegadores (Chrome/Edge/Firefox/Opera)</span></button>
                                 <button class="btn-action" onclick="executar('${maq.hostname}', 'otimizar_disco', this)"><span>💽 Otimizar Disco</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'tracert_servidor', this)"><span>🛤️ Tracert Rota ao Servidor</span></button>
                             </div>
 
+                            <!-- 2. Impressoras -->
                             <div class="card">
                                 <div class="card-header"><i class="fa-solid fa-print" style="color: #34d399;"></i> Impressoras</div>
-                                <button class="btn-action" onclick="executar('${maq.hostname}', 'listar_impressoras', this)"><span>📋 Listar Minhas Impressoras</span></button>
-                                <button class="btn-action" onclick="executar('${maq.hostname}', 'destravar_impressora', this)"><span>🔄 Reiniciar Spooler</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'listar_impressoras', this)"><span>📋 Lista de Impressoras</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'destravar_impressora', this)"><span>🔄 Reiniciar Spooler de Impressão</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'limpar_fila_impressao', this)"><span>🗑️ Limpar Fila de Impressão Travada</span></button>
                             </div>
 
+                            <!-- 3. Rede -->
                             <div class="card">
-                                <div class="card-header"><i class="fa-solid fa-wifi" style="color: #facc15;"></i> Rede</div>
-                                <button class="btn-action" onclick="executar('${maq.hostname}', 'ping_teste', this)"><span>📶 Testar Conexão de Internet</span></button>
-                                <button class="btn-action" onclick="executar('${maq.hostname}', 'renovar_ip', this)"><span>🔄 Renovar IP e DNS</span></button>
+                                <div class="card-header"><i class="fa-solid fa-wifi" style="color: #facc15;"></i> Rede & Conectividade</div>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'ping_teste', this)"><span>📶 Teste de Ping 8.8.8.8</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'flush_dns', this)"><span>🧹 Limpar Cache DNS</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'renovar_ip', this)"><span>🔄 Renovar Endereço IP</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'reset_winsock', this)"><span>🛠️ Redefinir Adaptador de Rede</span></button>
                             </div>
 
+                            <!-- 4. Atualização -->
                             <div class="card">
-                                <div class="card-header"><i class="fa-solid fa-display" style="color: #ec4899;"></i> Vídeo & Sistema</div>
-                                <button class="btn-action" onclick="executar('${maq.hostname}', 'reiniciar_video', this)"><span>🔄 Reiniciar Tela/Vídeo</span></button>
-                                <button class="btn-action" onclick="executar('${maq.hostname}', 'ajustar_dimensao', this)"><span>📐 Abrir Ajustes de Tela</span></button>
+                                <div class="card-header"><i class="fa-solid fa-arrows-spin" style="color: #a855f7;"></i> Atualização & Sistema</div>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'verificar_update', this)"><span>🔍 Verificar Windows Update</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'atualizar_gpo', this)"><span>🛡️ Atualizar GPO</span></button>
+                            </div>
+
+                            <!-- 5. Vídeo & Exibição -->
+                            <div class="card">
+                                <div class="card-header"><i class="fa-solid fa-display" style="color: #ec4899;"></i> Vídeo & Exibição</div>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'reiniciar_video', this)"><span>🔄 Reiniciar Driver de Vídeo</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'ajustar_dimensao', this)"><span>📐 Ajustar Dimensão / Resolução</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'melhor_escala', this)"><span>🔍 Ajustar Melhor Escala</span></button>
+                                <button class="btn-action" onclick="executar('${maq.hostname}', 'alternar_tema', this)"><span>🌓 Alternar Tipo de Tema (Escuro/Claro)</span></button>
                             </div>
                         </div>
                     </div>`;
