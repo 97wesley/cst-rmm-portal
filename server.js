@@ -5,7 +5,7 @@ app.use(express.json());
 const estacoesRegistradas = new Map();
 const comandosPendentes = new Map();
 
-// 1. Rota Principal: Exibe a Interface Web do Painel
+// 1. Rota Principal: Interface Completa de Autoatendimento
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -15,20 +15,27 @@ app.get('/', (req, res) => {
             <title>Central de Autoatendimento - CST</title>
             <style>
                 body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-                .container { max-width: 1000px; margin: 0 auto; }
+                .container { max-width: 1200px; margin: 0 auto; }
                 h1 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 10px; }
-                .card { background: #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center; }
+                .card { background: #1e293b; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+                .header-info { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 15px; }
                 .info h3 { margin: 0 0 5px 0; color: #f1f5f9; }
                 .info p { margin: 2px 0; color: #94a3b8; font-size: 14px; }
                 .badge { background: #22c55e; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-                .actions button { background: #0284c7; color: white; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; margin-left: 5px; font-weight: bold; }
+                
+                .grid-categorias { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; }
+                .cat-box { background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; }
+                .cat-box h4 { margin: 0 0 10px 0; color: #38bdf8; font-size: 15px; border-bottom: 1px dashed #334155; padding-bottom: 5px; }
+                
+                .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+                .actions button { background: #0284c7; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
                 .actions button:hover { background: #0369a1; }
             </style>
         </head>
         <body>
             <div class="container">
                 <h1>🖥️ Central de Autoatendimento & RMM - CST</h1>
-                <p>Monitoramento de estações em tempo real.</p>
+                <p>Painel de suporte autônomo e monitoramento em tempo real.</p>
                 <div id="estacoes">Carregando estações conectadas...</div>
             </div>
 
@@ -48,16 +55,64 @@ app.get('/', (req, res) => {
                         dados.forEach(maq => {
                             html += \`
                                 <div class="card">
-                                    <div class="info">
-                                        <h3>💻 Host: \${maq.hostname} <span class="badge">ONLINE</span></h3>
-                                        <p><strong>👤 Usuário:</strong> \${maq.usuario}</p>
-                                        <p><strong>🌐 IP Real:</strong> \${maq.ip}</p>
-                                        <p><strong>📊 CPU:</strong> \${maq.cpu}% | <strong>RAM:</strong> \${maq.ram}% | <strong>Disco:</strong> \${maq.disco}%</p>
+                                    <div class="header-info">
+                                        <div class="info">
+                                            <h3>💻 Host: \${maq.hostname} <span class="badge">ONLINE</span></h3>
+                                            <p><strong>👤 Usuário:</strong> \${maq.usuario} | <strong>🌐 IP Real:</strong> \${maq.ip}</p>
+                                            <p><strong>📊 CPU:</strong> \${maq.cpu}% | <strong>RAM:</strong> \${maq.ram}% | <strong>Disco:</strong> \${maq.disco}%</p>
+                                        </div>
                                     </div>
-                                    <div class="actions">
-                                        <button onclick="enviarAcao('\${maq.hostname}', 'limpar_cache')">🧹 Limpar Cache</button>
-                                        <button onclick="enviarAcao('\${maq.hostname}', 'destravar_impressora')">🖨️ Spooler</button>
-                                        <button onclick="enviarAcao('\${maq.hostname}', 'flush_dns')">🌐 FlushDNS</button>
+
+                                    <div class="grid-categorias">
+                                        <!-- Travamento & Desempenho -->
+                                        <div class="cat-box">
+                                            <h4>⚙️ Travamento & Desempenho</h4>
+                                            <div class="actions">
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'limpar_cache')">🧹 Cache PC</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'cache_navegador')">🌐 Cache Navegadores</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'otimizar_disco')">💽 Otimizar Disco</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'tracert_servidor')">🛤️ Tracert Rota</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Impressoras -->
+                                        <div class="cat-box">
+                                            <h4>🖨️ Impressoras</h4>
+                                            <div class="actions">
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'listar_impressoras')">📋 Listar Impressoras</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'destravar_impressora')">🔄 Reiniciar Spooler</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Rede & Conectividade -->
+                                        <div class="cat-box">
+                                            <h4>🌐 Rede & Conectividade</h4>
+                                            <div class="actions">
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'ping_teste')">📶 Ping 8.8.8.8</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'flush_dns')">🧹 FlushDNS</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'renovar_ip')">🔄 Renovar IP</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Atualizações & Sistema -->
+                                        <div class="cat-box">
+                                            <h4>🔄 Atualizações & Sistema</h4>
+                                            <div class="actions">
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'verificar_update')">🔍 Windows Update</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'atualizar_gpo')">🔄 Atualizar GPO</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Vídeo & Exibição -->
+                                        <div class="cat-box">
+                                            <h4>🎬 Vídeo & Exibição</h4>
+                                            <div class="actions">
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'reiniciar_video')">🔄 Reiniciar Driver</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'ajustar_dimensao')">📐 Ajustar Dimensão</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'melhor_escala')">🔍 Melhor Escala</button>
+                                                <button onclick="enviarAcao('\${maq.hostname}', 'alternar_tema')">🌓 Alternar Tema</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             \`;
@@ -69,13 +124,13 @@ app.get('/', (req, res) => {
                 }
 
                 async function enviarAcao(hostname, acao) {
-                    if (!confirm("Deseja executar a ação " + acao + " na máquina " + hostname + "?")) return;
+                    if (!confirm("Deseja executar a rotina [" + acao + "] na máquina " + hostname + "?")) return;
                     await fetch('/api/v1/executar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ hostname, acao })
                     });
-                    alert("Comando enviado para a fila da máquina!");
+                    alert("Comando enfileirado com sucesso!");
                 }
 
                 setInterval(carregarDados, 3000);
@@ -86,7 +141,7 @@ app.get('/', (req, res) => {
     `);
 });
 
-// 2. Recebe a telemetria do agente (com o IP real)
+// 2. Recebe a telemetria do agente
 app.post('/api/v1/telemetria', (req, res) => {
     const { hostname, usuario, ip, cpu, ram, disco } = req.body;
     if (!hostname) return res.status(400).send("Hostname obrigatório");
@@ -104,7 +159,7 @@ app.post('/api/v1/telemetria', (req, res) => {
     res.json({ status: "ok" });
 });
 
-// 3. Enfileira comandos para a máquina
+// 3. Enfileira comandos
 app.post('/api/v1/executar', (req, res) => {
     const { hostname, acao } = req.body;
     const target = (hostname || '').toUpperCase();
@@ -113,18 +168,18 @@ app.post('/api/v1/executar', (req, res) => {
         comandosPendentes.set(target, []);
     }
     comandosPendentes.get(target).push({ acao });
-    res.json({ status: "sucesso", mensagem: `Ação ${acao} enfileirada para ${target}` });
+    res.json({ status: "sucesso", mensagem: `Ação ${acao} enfileirada` });
 });
 
-// 4. Agente busca comandos pendentes
+// 4. Entrega pendências ao agente
 app.get('/api/v1/pendencias/:hostname', (req, res) => {
     const target = req.params.hostname.toUpperCase();
     const acoes = comandosPendentes.get(target) || [];
-    comandosPendentes.set(target, []); // Limpa a fila após entregar
+    comandosPendentes.set(target, []); // Limpa após entregar
     res.json({ acoes });
 });
 
-// 5. Endpoint para a Interface Web consultar as máquinas conectadas
+// 5. Métricas para a tela
 app.get('/api/v1/rmm-metrics', (req, res) => {
     const lista = Array.from(estacoesRegistradas.values());
     res.json(lista);
@@ -132,5 +187,5 @@ app.get('/api/v1/rmm-metrics', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor RMM rodando na porta ${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
 });
