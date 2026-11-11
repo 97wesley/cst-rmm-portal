@@ -7,6 +7,8 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 
+// IMPORTANTE: Se você tiver uma pasta "public" com um index.html estático, 
+// remova ou renomeie o index.html da pasta public para ele não sobrescrever a tela de login!
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -21,9 +23,9 @@ const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
 
 // --- CONFIGURAÇÃO DO ACTIVE DIRECTORY (PRODUÇÃO) ---
 const adConfig = {
-    url: 'ldap://192.168.102.1', // Ajuste para o IP público/DDNS se o servidor estiver no Render
+    url: 'ldap://192.168.102.1', // Altere para o IP/DDNS acessível do seu AD se estiver na nuvem
     baseDN: 'DC=CST,DC=LOCAL',
-    connectTimeout: 7000
+    connectTimeout: 5000
 };
 
 // Equipe de TI com permissão de Administrador
@@ -94,6 +96,7 @@ const autenticar = (req, res, next) => {
     res.redirect('/login');
 };
 
+// --- TELA DE LOGIN LIMPA (SEM MENCIONAR TESTES) ---
 app.get('/login', (req, res) => {
     res.send(`
         <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Acesso CST Produção AD</title>
@@ -102,14 +105,14 @@ app.get('/login', (req, res) => {
         button{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head>
         <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST (AD)</h2>
         <form action="/login" method="POST">
-        <input type="text" name="username" placeholder="ex: wesley.lima" required>
-        <input type="password" name="password" placeholder="Senha da Rede" required>
+        <input type="text" name="username" placeholder="Usuário de rede (ex: wesley.lima)" required>
+        <input type="password" name="password" placeholder="Senha da rede AD" required>
         <select name="perfil"><option value="user">👤 Colaborador (Autoatendimento)</option><option value="admin">⚙️ TI (Administrador)</option></select>
         <button type="submit">Entrar no Portal</button></form></div></body></html>
     `);
 });
 
-// --- ROTA DE LOGIN EXCLUSIVA COM ACTIVE DIRECTORY (SEM FALBACKS DE TESTE) ---
+// --- ROTA DE LOGIN EXCLUSIVA COM ACTIVE DIRECTORY (SEM FALLBACKS) ---
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
     const userClean = (username || '').toLowerCase().trim();
@@ -127,7 +130,7 @@ app.post('/login', (req, res) => {
             `);
         }
 
-        // Validação de perfil de TI
+        // Validação estrita de perfil de TI
         if (perfil === 'admin') {
             if (administradoresTI.includes(userClean)) {
                 req.session.user = { login: userClean, admin: true };
@@ -399,7 +402,7 @@ app.get('/admin', autenticar, (req, res) => {
 
                 async function simularQueda(ramal) {
                     if (!confirm("Simular queda no ramal " + ramal + "?")) return;
-                    await fetch('/api/v1/telefonia/simular-queda', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ramal }) });
+                    await fetch('/api/v1/telefoinia/simular-queda', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ramal }) });
                     alert("Alerta de queda enviado!");
                     carregarTelefonia();
                 }
