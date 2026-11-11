@@ -7,8 +7,6 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 
-// IMPORTANTE: Se você tiver uma pasta "public" com um index.html estático, 
-// remova ou renomeie o index.html da pasta public para ele não sobrescrever a tela de login!
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -21,9 +19,9 @@ app.use(session({
 
 const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
 
-// --- CONFIGURAÇÃO DO ACTIVE DIRECTORY (PRODUÇÃO) ---
+// --- CONFIGURAÇÃO DO ACTIVE DIRECTORY DA CST ---
 const adConfig = {
-    url: 'ldap://192.168.102.1', // Altere para o IP/DDNS acessível do seu AD se estiver na nuvem
+    url: 'ldap://192.168.102.1', // IP do seu Controlador de Domínio (DC)
     baseDN: 'DC=CST,DC=LOCAL',
     connectTimeout: 5000
 };
@@ -96,11 +94,11 @@ const autenticar = (req, res, next) => {
     res.redirect('/login');
 };
 
-// --- TELA DE LOGIN LIMPA (SEM MENCIONAR TESTES) ---
 app.get('/login', (req, res) => {
     res.render('login', { erro: null });
 });
 
+// --- ROTA DE LOGIN EXCLUSIVA COM ACTIVE DIRECTORY (PRODUÇÃO) ---
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
     const userClean = (username || '').toLowerCase().trim();
@@ -113,50 +111,13 @@ app.post('/login', (req, res) => {
             return res.render('login', { erro: 'Usuário ou senha de rede incorretos.' });
         }
 
+        // Validação de perfil de TI
         if (perfil === 'admin') {
             if (administradoresTI.includes(userClean)) {
                 req.session.user = { login: userClean, admin: true };
                 return res.redirect('/admin');
             } else {
                 return res.render('login', { erro: 'Acesso Negado: Conta sem privilégios de TI.' });
-            }
-        } else {
-            req.session.user = { login: userClean, admin: false };
-            return res.redirect('/');
-        }
-    });
-});
-
-// --- ROTA DE LOGIN EXCLUSIVA COM ACTIVE DIRECTORY (SEM FALLBACKS) ---
-app.post('/login', (req, res) => {
-    const { username, password, perfil } = req.body;
-    const userClean = (username || '').toLowerCase().trim();
-    const userAD = userClean.includes('@') ? userClean : `${userClean}@cst.local`;
-
-    const ad = new ActiveDirectory(adConfig);
-
-    ad.authenticate(userAD, password, (err, auth) => {
-        if (err || !auth) {
-            return res.send(`
-                <script>
-                    alert("Falha na autenticação do Active Directory. Usuário ou senha incorretos.");
-                    window.location.href = "/login";
-                </script>
-            `);
-        }
-
-        // Validação estrita de perfil de TI
-        if (perfil === 'admin') {
-            if (administradoresTI.includes(userClean)) {
-                req.session.user = { login: userClean, admin: true };
-                return res.redirect('/admin');
-            } else {
-                return res.send(`
-                    <script>
-                        alert("Acesso Negado: Sua conta autenticou no AD, mas não possui privilégios administrativos de TI.");
-                        window.location.href = "/login";
-                    </script>
-                `);
             }
         } else {
             req.session.user = { login: userClean, admin: false };
@@ -417,7 +378,7 @@ app.get('/admin', autenticar, (req, res) => {
 
                 async function simularQueda(ramal) {
                     if (!confirm("Simular queda no ramal " + ramal + "?")) return;
-                    await fetch('/api/v1/telefoinia/simular-queda', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ramal }) });
+                    await fetch('/api/v1/telefonia/simular-queda', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ramal }) });
                     alert("Alerta de queda enviado!");
                     carregarTelefonia();
                 }
@@ -492,4 +453,4 @@ app.post('/api/v1/telefonia/simular-queda', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor RMM Corporativo em Produção AD rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor RMM Corporativo rodando na porta ${PORT}`));
