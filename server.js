@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
+const ActiveDirectory = require('activedirectory2');
 const nodemailer = require('nodemailer');
 
 const app = express();
@@ -10,7 +11,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(session({
-    secret: 'cst-rmm-secret-key-2026-v2',
+    secret: 'cst-rmm-secret-key-2026-ad',
     resave: false,
     saveUninitialized: true,
     cookie: { maxAge: 86400000 }
@@ -18,7 +19,17 @@ app.use(session({
 
 const DB_ESTACOES = path.join(__dirname, 'estacoes_db.json');
 
-// --- E-MAIL DE ALERTA ---
+// --- CONFIGURAÇÃO OFICIAL DO ACTIVE DIRECTORY (AD / LDAP) DA CST ---
+const adConfig = {
+    url: 'ldap://192.168.102.1',     // IP do seu Controlador de Domínio (DC)
+    baseDN: 'DC=CST,DC=LOCAL',      // Base DN da sua rede
+    connectTimeout: 5000
+};
+
+// Equipe de TI autorizada a acessar o Painel Administrador
+const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
+
+// --- CONFIGURAÇÃO DE E-MAIL DE ALERTA ---
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: process.env.SMTP_PORT || 587,
@@ -54,7 +65,7 @@ let chamadasHistorico = [
     { id: 100, origem: "Ramal 005 (TI)", destino: "Ramal 001 (Financeiro)", status: "FINALIZADA", duracao: "03:12" }
 ];
 let eventosTelefonia = [
-    { hora: new Date().toLocaleTimeString('pt-BR'), texto: "Sincronização SIP realizada no Gateway ICIP v2.", tipo: "info" }
+    { hora: new Date().toLocaleTimeString('pt-BR'), texto: "Sincronização SIP realizada no Gateway ICIP AD.", tipo: "info" }
 ];
 
 setInterval(() => {
@@ -77,7 +88,6 @@ function carregarEstacoes() {
 }
 const estacoesRegistradas = carregarEstacoes();
 const comandosPendentes = new Map();
-const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
 
 const autenticar = (req, res, next) => {
     if (req.session.user) return next();
@@ -86,48 +96,69 @@ const autenticar = (req, res, next) => {
 
 app.get('/login', (req, res) => {
     res.send(`
-        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Login CST v2</title>
+        <!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Login CST AD</title>
         <style>body{font-family:'Segoe UI',sans-serif;background:#0b131e;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}
         .box{background:#132030;padding:40px;border-radius:10px;width:360px;} input,select{width:100%;padding:10px;margin:10px 0;background:#0b131e;border:1px solid #1e2d42;color:#fff;border-radius:5px;}
         button{width:100%;padding:12px;background:#0284c7;color:#fff;border:none;border-radius:5px;font-weight:bold;cursor:pointer;}</style></head>
-        <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST (v2.0)</h2>
+        <body><div class="box"><h2 style="color:#38bdf8;text-align:center;">Acesso CST (Active Directory)</h2>
         <form action="/login" method="POST">
-        <input type="text" name="username" placeholder="Usuário (ex: wesley.lima)" required>
-        <input type="password" name="password" placeholder="Senha (123)" required>
+        <input type="text" name="username" placeholder="Usuário de Rede (ex: wesley.lima)" required>
+        <input type="password" name="password" placeholder="Senha de Rede (AD)" required>
         <select name="perfil"><option value="user">👤 Colaborador</option><option value="admin">⚙️ TI (Administrador)</option></select>
-        <button type="submit">Entrar no Portal</button></form></div></body></html>
+        <button type="submit">Entrar com AD</button></form></div></body></html>
     `);
 });
 
+// --- ROTA DE LOGIN COM AUTENTICAÇÃO REAL NO ACTIVE DIRECTORY ---
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
-    const user = (username || '').toLowerCase().trim();
+    const userClean = (username || '').toLowerCase().trim();
+    
+    // Formata o nome de usuário para o padrão do domínio se necessário
+    const userAD = userClean.includes('@') ? userClean : `${userClean}@cst.local`;
 
-    if (password !== '123' && password !== 'Cst@2026!') {
-        return res.send(`<script>alert("Senha incorreta. Use 123."); window.location.href="/login";</script>`);
-    }
+    const ad = new ActiveDirectory(adConfig);
 
-    if (perfil === 'admin') {
-        if (administradoresTI.includes(user)) {
-            req.session.user = { login: user, admin: true };
-            return res.redirect('/admin');
-        } else {
-            return res.send(`<script>alert("Acesso Negado: Usuário não pertence à equipe de TI."); window.location.href="/login";</script>`);
+    // Valida a credencial diretamente contra o Active Directory
+    ad.authenticate(userAD, password, (err, auth) => {
+        if (err || !auth) {
+            console.log(`[AD AUTH ERROR] Falha no login de ${userClean}:`, err ? err.message : 'Credenciais inválidas');
+            return res.send(`
+                <script>
+                    alert("Falha na autenticação do Active Directory. Usuário ou senha incorretos.");
+                    window.location.href = "/login";
+                </script>
+            `);
         }
-    } else {
-        req.session.user = { login: user, admin: false };
-        return res.redirect('/');
-    }
+
+        // Se autenticou com sucesso no AD, valida permissões
+        if (perfil === 'admin') {
+            if (administradoresTI.includes(userClean)) {
+                req.session.user = { login: userClean, admin: true };
+                return res.redirect('/admin');
+            } else {
+                return res.send(`
+                    <script>
+                        alert("Acesso Negado: Sua conta de rede autenticou no AD, mas não pertence ao grupo da TI.");
+                        window.location.href = "/login";
+                    </script>
+                `);
+            }
+        } else {
+            req.session.user = { login: userClean, admin: false };
+            return res.redirect('/');
+        }
+    });
 });
 
 app.get('/logout', (req, res) => { req.session.destroy(); res.redirect('/login'); });
 
 app.get('/', autenticar, (req, res) => {
     if (req.session.user.admin) return res.redirect('/admin');
-    res.send(`<h1>Painel de Usuário</h1><a href="/logout">Sair</a>`);
+    res.send(`<h1>Painel do Colaborador - CST Self-Service</h1><a href="/logout">Sair</a>`);
 });
 
-// --- ROTA DE ADMINISTRADOR COMPLETA E ATUALIZADA ---
+// --- ROTA DE ADMINISTRADOR COMPLETA ---
 app.get('/admin', autenticar, (req, res) => {
     if (!req.session.user.admin) return res.status(403).send("Acesso Negado.");
     
@@ -136,7 +167,7 @@ app.get('/admin', autenticar, (req, res) => {
         <html lang="pt-BR">
         <head>
             <meta charset="UTF-8">
-            <title>Painel RMM Administrador v2.0 - CST</title>
+            <title>Painel RMM Administrador - CST</title>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
@@ -186,7 +217,7 @@ app.get('/admin', autenticar, (req, res) => {
                     <a class="tab-btn" onclick="trocarSecao('sec-telefonia', this)"><i class="fa-solid fa-phone" style="color: #10b981;"></i> 📞 Telefonia IP & Ramais</a>
                 </div>
                 <div>
-                    <span style="font-size: 13px; font-weight: 700; margin-right: 15px;">${req.session.user.login} (TI)</span>
+                    <span style="font-size: 13px; font-weight: 700; margin-right: 15px;">${req.session.user.login} (TI AD)</span>
                     <a href="/logout" style="background:#ef4444;color:#fff;padding:6px 12px;border-radius:4px;text-decoration:none;font-weight:bold;">Sair</a>
                 </div>
             </header>
@@ -447,4 +478,4 @@ app.post('/api/v1/telefonia/simular-queda', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor RMM Corporativo v2.0 rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor RMM Corporativo com AD rodando na porta ${PORT}`));
