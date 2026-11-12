@@ -1,8 +1,8 @@
-cat << 'EOF' > views/login.ejs
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acesso CST - Active Directory</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -14,7 +14,7 @@ cat << 'EOF' > views/login.ejs
         input, select { width: 100%; padding: 10px; background: #1f2937; border: 1px solid #374151; border-radius: 6px; color: #fff; font-size: 14px; }
         input:focus, select:focus { outline: none; border-color: #38bdf8; }
         .btn-submit { width: 100%; background: #0284c7; color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
-        .btn-submit:hover { background: #0284c7; }
+        .btn-submit:hover { background: #0369a1; }
         .error-msg { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; font-weight: bold; }
     </style>
 </head>
@@ -45,4 +45,3 @@ cat << 'EOF' > views/login.ejs
     </div>
 </body>
 </html>
-EOF
