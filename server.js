@@ -47,6 +47,76 @@ app.get('/login', (req, res) => {
     res.render('login', { erro: null });
 });
 
+// ==========================================
+// ROTAS DA APLICAÇÃO
+// ==========================================
+
+// Página de Login (GET)
+app.get('/login', (req, res) => {
+    res.render('login', { erro: null });
+});
+
+// Processamento do Login (POST - Active Directory)
+app.post('/login', (req, res) => {
+    // ... (todo o código de autenticação do AD que já criamos) ...
+});
+
+// Rota Raiz (/): Painel do Colaborador
+app.get('/', autenticar, (req, res) => {
+    if (req.session.user.admin && req.query.view !== 'colaborador') {
+        return res.redirect('/admin');
+    }
+    res.render('colaborador', { usuario: req.session.user });
+});
+
+// Rota do Painel Administrativo de TI
+app.get('/admin', autenticar, (req, res) => {
+    if (!req.session.user.admin) {
+        return res.redirect('/');
+    }
+    res.send(`<h1>Painel Administrativo RMM - CST</h1><p>Bem-vindo, ${req.session.user.login}</p><a href="/logout">Sair</a>`);
+});
+
+// ==========================================
+// 📍 COLOQUE A ETAPA 2 EXATAMENTE AQUI:
+// ==========================================
+const { exec } = require('child_process');
+
+// Rota para executar os scripts de reparo via PowerShell
+app.post('/executar-reparo', autenticar, (req, res) => {
+    const { acao } = req.body;
+    
+    const acoesPermitidas = ['limpar_cache', 'destravar_impressora'];
+    if (!acoesPermitidas.includes(acao)) {
+        return res.status(400).json({ sucesso: false, erro: 'Ação inválida.' });
+    }
+
+    const comando = `powershell -ExecutionPolicy Bypass -File "${path.join(__dirname, 'scripts', 'reparos.ps1')}" -Acao ${acao}`;
+
+    exec(comando, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Erro ao executar PowerShell: ${error.message}`);
+            return res.json({ sucesso: false, erro: 'Falha ao executar o script de reparo.' });
+        }
+        res.json({ sucesso: true, mensagem: stdout.trim() });
+    });
+});
+// ==========================================
+
+// Logout da sessão
+app.get('/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.redirect('/login');
+    });
+});
+
+// Inicialização do Servidor (FINAL DO ARQUIVO)
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[CST TI] Servidor rodando em http://0.0.0.0:${PORT}`);
+});
+
+
 // Processamento do Login (POST - Active Directory)
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
