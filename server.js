@@ -1,4 +1,3 @@
-cat << 'EOF' > ~/cst-rmm-portal/server.js
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
@@ -15,7 +14,7 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
-    secret: 'cst-rmm-secret-key-2024',
+    secret: 'cst-rmm-cloud-secret-key',
     resave: false,
     saveUninitialized: true
 }));
@@ -77,11 +76,11 @@ app.post('/login', (req, res) => {
     });
 });
 
-app.get('/', autenticar, (req, res) => res.render('colaborador', { usuario: req.session.user }));
+app.get('/', autenticar, (req, res) => res.render('colaborador', { usuario: req.session.user, estacoes: estacoes || [] }));
 
 app.get('/admin', autenticar, (req, res) => {
     if (req.session.user && req.session.user.perfil !== 'admin') return res.redirect('/');
-    res.render('admin-dashboard', { usuario: req.session.user, estacoes, configPabx });
+    res.render('admin-dashboard', { usuario: req.session.user, estacoes: estacoes || [], configPabx: configPabx || {} });
 });
 
 app.get('/logout', (req, res) => req.session.destroy(() => res.redirect('/login')));
@@ -120,7 +119,7 @@ app.post('/api/agente/resultado', (req, res) => {
 
 app.get('/api/estacoes', autenticar, (req, res) => {
   const agora = Date.now();
-  res.json(estacoes.map(e => ({ ...e, online: (agora - new Date(e.ultimaVez).getTime()) < 15000 })));
+  res.json((estacoes || []).map(e => ({ ...e, online: (agora - new Date(e.ultimaVez).getTime()) < 15000 })));
 });
 
 app.post('/api/estacoes/:hostname/ramal', autenticar, (req, res) => {
@@ -156,7 +155,7 @@ app.get('/api/comando/:id', autenticar, (req, res) => {
 app.get('/api/processos-live', autenticar, (req, res) => {
   const agora = Date.now();
   const registros = [];
-  for (const est of estacoes) {
+  for (const est of (estacoes || [])) {
     if ((agora - new Date(est.ultimaVez).getTime()) >= 15000) continue;
     for (const p of (est.programas_abertos || [])) {
       registros.push({ hostname: est.hostname, usuario: est.usuario, ip: est.ip, processo: p.processo, titulo: p.titulo, ram_mb: p.ram_mb, hora: new Date(est.ultimaVez).toLocaleTimeString('pt-BR', { hour12: false }) });
@@ -165,7 +164,7 @@ app.get('/api/processos-live', autenticar, (req, res) => {
   res.json(registros);
 });
 
-app.get('/api/ativos', autenticar, (req, res) => res.json(ativos));
+app.get('/api/ativos', autenticar, (req, res) => res.json(ativos || []));
 
 app.post('/api/ativos', autenticar, uploadAtivos.fields([
   { name: 'foto_pc', maxCount: 1 }, { name: 'foto_monitor', maxCount: 1 }, { name: 'foto_perifericos', maxCount: 1 }, { name: 'foto_headset', maxCount: 1 }, { name: 'foto_celular', maxCount: 1 }
@@ -280,5 +279,5 @@ app.post('/api/pabx/evento', (req, res) => {
   res.json({ ok: true });
 });
 
-app.listen(8000, '0.0.0.0', () => console.log('[CST TI] Servidor rodando na porta 8000'));
-EOF
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, '0.0.0.0', () => console.log(`[CST TI] Servidor na nuvem rodando na porta ${PORT}`));
