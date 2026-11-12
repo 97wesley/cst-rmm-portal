@@ -52,7 +52,56 @@
             <button class="btn-acao" onclick="alert('Rede conectada ao Domínio CST Local.')">Testar Conexão</button>
         </div>
     </div>
+<div class="grid-tools">
+        <div class="tool-card">
+            <i class="fa-solid fa-broom"></i>
+            <h3>Limpeza de Cache do Sistema</h3>
+            <p>Remove arquivos temporários e libera espaço no seu perfil de usuário local.</p>
+            <button class="btn-acao" onclick="executarAutoAtendimento('limpar_cache')">Executar Limpeza</button>
+        </div>
 
+        <div class="tool-card">
+            <i class="fa-solid fa-print"></i>
+            <h3>Reiniciar Fila de Impressão</h3>
+            <p>Corrige impressoras travadas ou documentos presos no Spooler.</p>
+            <button class="btn-acao" onclick="executarAutoAtendimento('destravar_impressora')">Reiniciar Spooler</button>
+        </div>
+
+        <div class="tool-card">
+            <i class="fa-solid fa-network-wired"></i>
+            <h3>Diagnóstico de Rede</h3>
+            <p>Verifica a conectividade com os servidores e Active Directory da CST.</p>
+            <button class="btn-acao" onclick="alert('Rede conectada ao Domínio CST Local.')">Testar Conexão</button>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 📍 COLOQUE A ETAPA 3 EXATAMENTE AQUI:      -->
+    <!-- ========================================== -->
+    <script>
+        async function executarAutoAtendimento(acao) {
+            if (!confirm("Deseja executar esta ferramenta de reparo?")) return;
+            
+            try {
+                const response = await fetch('/executar-reparo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao })
+                });
+                
+                const resultado = await response.json();
+                if (resultado.sucesso) {
+                    alert("Sucesso: " + resultado.mensagem);
+                } else {
+                    alert("Erro: " + resultado.erro);
+                }
+            } catch (err) {
+                alert("Erro de comunicação com o servidor de suporte.");
+            }
+        }
+    </script>
+</body>
+</html>
     <script>
         async function executarAutoAtendimento(acao) {
             if (!confirm("Deseja executar esta ferramenta de reparo em sua estação?")) return;
