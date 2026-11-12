@@ -67,11 +67,26 @@ app.get('/login', (req, res) => res.render('login', { erro: null }));
 
 app.post('/login', (req, res) => {
     const { login, senha } = req.body;
+    
+    // ACESSO DE EMERGÊNCIA (Para não ficar trancado fora do Render)
+    // Se o Render não conseguir conectar no AD, você usa esta senha temporária para entrar como Admin.
+    if (login === 'wesley.lima' && senha === 'Cst@Admin2026') {
+        req.session.user = { login: 'wesley.lima', perfil: 'admin' };
+        return res.redirect('/admin');
+    }
+
+    // Fluxo normal via Active Directory
     const userPrincipalName = `${login}@cst.local`;
     const ad = new ActiveDirectory(configAD);
     ad.authenticate(userPrincipalName, senha, function(err, auth) {
-        if (err || !auth) return res.render('login', { erro: 'Credenciais inválidas ou erro no AD.' });
-        req.session.user = { login: login, perfil: administradoresTI.includes(login) ? 'admin' : 'colaborador' };
+        if (err || !auth) {
+            return res.render('login', { erro: 'Credenciais inválidas ou sem conexão com o AD.' });
+        }
+        
+        // Garante que seu usuário SEMPRE seja admin, mesmo que venha do AD
+        const isMasterAdmin = login.toLowerCase() === 'wesley.lima' || administradoresTI.includes(login);
+        req.session.user = { login: login, perfil: isMasterAdmin ? 'admin' : 'colaborador' };
+        
         res.redirect(req.session.user.perfil === 'admin' ? '/admin' : '/');
     });
 });
