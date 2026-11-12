@@ -6,11 +6,11 @@ const { exec } = require('child_process');
 
 const app = express();
 
-// Configuração do motor de views (EJS) apontando para a pasta real "views"
+// Configuração do motor de views (EJS)
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middlewares para leitura de formulários e sessões
+// Middlewares
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,16 +22,16 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-// Configuração do Active Directory da CST
+// Configuração do Active Directory da CST (IP atualizado)
 const adConfig = {
-    url: 'ldap://192.168.102.1',
+    url: 'ldap://192.168.101.10',
     baseDN: 'DC=CST,DC=LOCAL'
 };
 
-// Lista de utilizadores administradores de TI autorizados
+// Lista de usuários administradores de TI autorizados
 const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
 
-// Middleware de autenticação para proteger as rotas
+// Middleware de autenticação
 function autenticar(req, res, next) {
     if (req.session && req.session.user) {
         return next();
@@ -43,12 +43,10 @@ function autenticar(req, res, next) {
 // ROTAS DA APLICAÇÃO
 // ==========================================
 
-// Página de Login (GET)
 app.get('/login', (req, res) => {
     res.render('login', { erro: null });
 });
 
-// Processamento do Login (POST - Active Directory)
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
 
@@ -57,13 +55,12 @@ app.post('/login', (req, res) => {
 
     const ad = new ActiveDirectory(adConfig);
 
-    // Timeout de 5 segundos para evitar que a página fique a carregar infinitamente
     let respondeu = false;
     const timeoutConexao = setTimeout(() => {
         if (!respondeu) {
             respondeu = true;
             return res.render('login', {
-                erro: 'Tempo limite excedido: não foi possível contactar o Active Directory (192.168.102.1).'
+                erro: 'Tempo limite excedido: não foi possível contactar o Active Directory (192.168.101.10).'
             });
         }
     }, 5000);
@@ -76,7 +73,7 @@ app.post('/login', (req, res) => {
         if (err || !auth) {
             console.error('Erro LDAP:', err);
             return res.render('login', {
-                erro: 'Falha na autenticação do Active Directory. Utilizador ou palavra-passe incorretos.'
+                erro: 'Falha na autenticação do Active Directory. Usuário ou senha incorretos.'
             });
         }
 
@@ -84,7 +81,7 @@ app.post('/login', (req, res) => {
 
         if (perfil === 'admin' && !isAdmin) {
             return res.render('login', {
-                erro: 'Acesso negado: a sua conta não possui privilégios de Administrador TI.'
+                erro: 'Acesso negado: sua conta não possui privilégios de Administrador TI.'
             });
         }
 
@@ -101,7 +98,6 @@ app.post('/login', (req, res) => {
     });
 });
 
-// Rota Raiz (/): Painel do Colaborador (Autoatendimento)
 app.get('/', autenticar, (req, res) => {
     if (req.session.user.admin && req.query.view !== 'colaborador') {
         return res.redirect('/admin');
@@ -109,7 +105,6 @@ app.get('/', autenticar, (req, res) => {
     res.render('colaborador', { usuario: req.session.user });
 });
 
-// Rota do Painel Administrativo de TI
 app.get('/admin', autenticar, (req, res) => {
     if (!req.session.user.admin) {
         return res.redirect('/');
@@ -117,7 +112,6 @@ app.get('/admin', autenticar, (req, res) => {
     res.render('admin-dashboard', { usuario: req.session.user });
 });
 
-// Rota para executar os scripts de reparo via PowerShell
 app.post('/executar-reparo', autenticar, (req, res) => {
     const { acao } = req.body;
 
@@ -138,14 +132,12 @@ app.post('/executar-reparo', autenticar, (req, res) => {
     });
 });
 
-// Terminar sessão
 app.get('/logout', (req, res) => {
     req.session.destroy(() => {
         res.redirect('/login');
     });
 });
 
-// Inicialização do Servidor
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`[CST TI] Servidor rodando na porta ${PORT}`);
