@@ -1,712 +1,187 @@
-cat << 'EOF' > ~/cst-rmm-portal/views/admin-dashboard.ejs
+cat << 'EOF' > ~/cst-rmm-portal/views/colaborador.ejs
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>CST TI — Central RMM, Ativos & Telefonia IP</title>
+  <title>CST Autoatendimento TI</title>
   <style>
     * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-    body { margin: 0; background: #0b1120; color: #e2e8f0; }
-    .topbar { background: #ffffff; color: #0f172a; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; position: sticky; top: 0; z-index: 50; }
-    .tabs { display: flex; gap: 10px; flex-wrap: wrap; }
-    .tab-btn { border: none; background: transparent; padding: 9px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer; color: #475569; transition: 0.2s; }
-    .tab-btn.active { background: #e0f2fe; color: #0284c7; }
-    .user-area { display: flex; align-items: center; gap: 12px; }
-    .btn-agent { background: #0f172a; color: #38bdf8; border: 1px solid #38bdf8; padding: 7px 12px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; }
-    .btn-sair { background: #ef4444; color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 7px; font-weight: 700; font-size: 13px; }
-    .container { padding: 22px; max-width: 1650px; margin: 0 auto; }
-    .section { display: none; }
-    .section.active { display: block; }
-    .sec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
-    .live-badge { color: #22c55e; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-    .dot-pulse { width: 9px; height: 9px; background: #22c55e; border-radius: 50%; display: inline-block; animation: pulse 1.2s infinite; }
-    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
+    body { margin: 0; background: #f1f5f9; color: #0f172a; }
+    .header { background: #0f172a; color: #fff; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { margin: 0; font-size: 18px; color: #38bdf8; }
+    .btn-sair { background: #ef4444; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 13px; }
+    .wrap { max-width: 1120px; margin: 28px auto; padding: 0 20px; }
+    .status-bar { background: #fff; border-radius: 12px; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(15,23,42,0.06); margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+    .pill-ok { background: #dcfce7; color: #166534; padding: 5px 12px; border-radius: 99px; font-weight: 700; font-size: 12.5px; }
+    .pill-warn { background: #fef3c7; color: #92400e; padding: 5px 12px; border-radius: 99px; font-weight: 700; font-size: 12.5px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
+    .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 4px 15px rgba(15,23,42,0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
+    .card h3 { margin: 0 0 8px 0; font-size: 16px; color: #0f172a; }
+    .card p { margin: 0 0 16px 0; font-size: 13px; color: #64748b; line-height: 1.45; }
+    .btn-fix { background: #0284c7; color: #fff; border: none; padding: 11px 14px; border-radius: 9px; font-weight: 700; font-size: 13.5px; cursor: pointer; width: 100%; transition: 0.2s; margin-bottom: 8px; }
+    .btn-fix:hover { background: #0369a1; }
+    .btn-sec { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; padding: 9px 12px; border-radius: 8px; font-weight: 600; font-size: 12.5px; cursor: pointer; width: 100%; margin-bottom: 6px; }
+    .btn-sec:hover { background: #e2e8f0; }
 
-    /* Tabela RMM */
-    .table-wrap { background: #ffffff; color: #0f172a; border-radius: 10px; overflow-x: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.35); }
-    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-    th { background: #f8fafc; color: #065f46; text-align: left; padding: 12px 10px; border-bottom: 2px solid #e2e8f0; font-weight: 800; white-space: nowrap; }
-    td { padding: 11px 10px; border-bottom: 1px solid #f1f5f9; white-space: nowrap; vertical-align: middle; }
-    tr:hover td { background: #f8fafc; }
-    .host-link { color: #047857; font-weight: 800; cursor: pointer; text-decoration: underline; }
-    .badge-on { background: #dcfce7; color: #166534; padding: 3px 9px; border-radius: 99px; font-weight: 700; font-size: 11px; }
-    .badge-off { background: #f1f5f9; color: #64748b; padding: 3px 9px; border-radius: 99px; font-weight: 700; font-size: 11px; }
-    .ramal-edit { cursor: pointer; color: #0284c7; font-weight: 700; border-bottom: 1px dashed #0284c7; }
-
-    /* Modais */
-    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); z-index: 100; overflow-y: auto; padding: 24px; }
-    .modal-bg.open { display: flex; justify-content: center; align-items: flex-start; }
-    .modal-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; width: 100%; max-width: 1250px; padding: 24px; color: #f8fafc; box-shadow: 0 25px 50px rgba(0,0,0,0.6); }
-    .modal-top { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 14px; margin-bottom: 18px; }
-    .btn-close { background: #334155; color: #fff; border: none; padding: 7px 14px; border-radius: 7px; cursor: pointer; font-weight: 700; }
-
-    /* Gráficos Comparativos */
-    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .chart-box { background: #1e293b; border-radius: 10px; padding: 14px; border: 1px solid #334155; }
-    .bar-track { background: #0f172a; height: 14px; border-radius: 7px; overflow: hidden; margin: 6px 0; }
-    .bar-fill { height: 100%; transition: width 0.4s; }
-    .sparkline { display: flex; align-items: flex-end; gap: 3px; height: 48px; margin-top: 10px; background: #0f172a; padding: 6px; border-radius: 6px; }
-    .spark-bar { flex: 1; background: #38bdf8; min-height: 3px; border-radius: 2px; }
-
-    /* Ações Remotas */
-    .actions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
-    .act-group { background: #1e293b; border-radius: 10px; padding: 12px; border: 1px solid #334155; }
-    .act-group h4 { margin: 0 0 10px 0; color: #38bdf8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .act-btn { width: 100%; text-align: left; background: #0f172a; color: #e2e8f0; border: 1px solid #334155; padding: 8px 10px; border-radius: 7px; margin-bottom: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; transition: 0.15s; }
-    .act-btn:hover { background: #0284c7; border-color: #38bdf8; color: #fff; }
-    .console-out { background: #020617; color: #4ade80; font-family: Consolas, monospace; font-size: 12px; padding: 14px; border-radius: 8px; border: 1px solid #1e293b; min-height: 120px; max-height: 260px; overflow-y: auto; white-space: pre-wrap; }
-
-    /* Ativos & Inventário */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; }
-    .kpi-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 14px; }
-    .kpi-card span { font-size: 12px; color: #94a3b8; display: block; }
-    .kpi-card strong { font-size: 24px; color: #38bdf8; }
-    .form-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; margin-bottom: 18px; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-    .field-box { background: #0f172a; padding: 10px; border-radius: 8px; border: 1px solid #334155; }
-    .field-box label { display: block; font-size: 11.5px; color: #94a3b8; margin-bottom: 5px; font-weight: 700; }
-    .field-box input[type="text"] { width: 100%; padding: 7px 9px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 12.5px; margin-bottom: 6px; }
-    .field-box input[type="file"] { font-size: 11px; color: #cbd5e1; width: 100%; }
-    .thumb-img { width: 46px; height: 46px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1; cursor: zoom-in; display: block; margin-top: 4px; }
-
-    /* Visualizador 4K */
-    .img-4k-enhanced { max-width: 92vw; max-height: 80vh; border-radius: 10px; image-rendering: high-quality; filter: url(#sharpen4k) contrast(1.08) saturate(1.06); box-shadow: 0 0 40px rgba(56, 189, 248, 0.35); transition: transform 0.2s; }
-
-    /* PABX */
-    .pabx-banner { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 18px; }
-    .pabx-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin-top: 18px; }
-    .panel-dark { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; }
-    .log-line { font-family: Consolas, monospace; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid #334155; }
+    /* Caixa de Resultado Ao Vivo */
+    .result-panel { margin-top: 24px; background: #fff; border-radius: 14px; padding: 20px; border-left: 6px solid #0284c7; box-shadow: 0 8px 25px rgba(15,23,42,0.08); display: none; }
+    .result-panel.show { display: block; }
+    .result-panel.sucesso { border-left-color: #16a34a; }
+    .result-panel.erro { border-left-color: #dc2626; }
+    .tech-details { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 8px; font-family: Consolas, monospace; font-size: 12px; margin-top: 12px; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
   </style>
 </head>
 <body>
-  <!-- Filtro SVG para nitidez 4K nas fotos de patrimônio -->
-  <svg width="0" height="0" style="position:absolute">
-    <filter id="sharpen4k">
-      <feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 -0.35 0 -0.35 2.4 -0.35 0 -0.35 0"/>
-    </filter>
-  </svg>
+  <% const nomeColab = typeof usuario === 'object' && usuario !== null ? (usuario.nome || usuario.login || 'Colaborador') : (usuario || 'Colaborador'); %>
 
-  <% const nomeAdmin = typeof usuario === 'object' && usuario !== null ? (usuario.nome || usuario.login || 'Admin') : (usuario || 'Admin'); %>
-
-  <div class="topbar">
-    <div class="tabs">
-      <button class="tab-btn active" onclick="abrirAba('rmm', this)">🖥️ Computador (RMM 5s)</button>
-      <button class="tab-btn" onclick="abrirAba('ativos', this)">📁 Ativos & Inventário</button>
-      <button class="tab-btn" onclick="abrirAba('pabx', this)">📞 Telefonia IP & Ramais</button>
-    </div>
-    <div class="user-area">
-      <button class="btn-agent" onclick="abrirModalAgente()">⚡ Sincronizar PC Windows</button>
-      <span style="font-size:13px; font-weight:700;"><%= nomeAdmin %> (TI)</span>
+  <div class="header">
+    <h1>🛠️ CST — Central de Autoatendimento TI</h1>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <span style="font-size:13.5px;">Olá, <strong><%= nomeColab %></strong></span>
       <a href="/logout" class="btn-sair">Sair</a>
     </div>
   </div>
 
-  <div class="container">
-    <!-- ==================== ABA 1: COMPUTADOR (RMM 5s) ==================== -->
-    <div id="aba-rmm" class="section active">
-      <div class="sec-header">
-        <h2 style="margin:0;">🖥️ Estações de Trabalho Registradas</h2>
-        <div class="live-badge"><span class="dot-pulse"></span> Auto-sincronizando a cada 5s (<span id="contadorEstacoes">0</span> estações)</div>
+  <div class="wrap">
+    <div class="status-bar">
+      <div>
+        <strong style="font-size:15px;">Estação Vinculada:</strong>
+        <span id="minhaMaquina" style="color:#0284c7; font-weight:700; margin-left:6px;">Localizando computador na rede...</span>
       </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>NOME</th>
-              <th>ENTIDADE</th>
-              <th>STATUS</th>
-              <th>TIPO</th>
-              <th>NOME ALTERNATIVO DO USUÁRIO</th>
-              <th>SISTEMA OPERACIONAL</th>
-              <th>PROCESSADOR</th>
-              <th>MEMÓRIA</th>
-              <th>UNIDADE C:</th>
-              <th>RAMAL</th>
-              <th>CONECTIVIDADE - IP</th>
-              <th>ÚLTIMA ATUALIZAÇÃO</th>
-            </tr>
-          </thead>
-          <tbody id="tbEstacoes">
-            <tr><td colspan="12" style="text-align:center; padding:24px; color:#64748b;">Aguardando sincronização das estações Windows...</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <span id="statusSinc" class="pill-warn">Sincronizando (5s)...</span>
     </div>
 
-    <!-- ==================== ABA 2: ATIVOS & INVENTÁRIO ==================== -->
-    <div id="aba-ativos" class="section">
-      <div class="sec-header">
-        <h2 style="margin:0;">📁 Gestão de Ativos, Patrimônio & Fotos (4K)</h2>
-        <span style="color:#94a3b8; font-size:13px;">Tire fotos direto pelo celular ou anexe imagens dos equipamentos</span>
-      </div>
-
-      <div class="kpi-grid">
-        <div class="kpi-card"><span>💻 Computadores</span><strong id="cntPc">0</strong></div>
-        <div class="kpi-card"><span>🖥️ Monitores</span><strong id="cntMon">0</strong></div>
-        <div class="kpi-card"><span>⌨️ Teclado / Mouse</span><strong id="cntPer">0</strong></div>
-        <div class="kpi-card"><span>🎧 Headsets</span><strong id="cntHead">0</strong></div>
-        <div class="kpi-card"><span>📱 Celulares</span><strong id="cntCel">0</strong></div>
-      </div>
-
-      <form id="formAtivo" class="form-card" enctype="multipart/form-data">
-        <div class="form-grid">
-          <div class="field-box">
-            <label>Colaborador & Setor</label>
-            <input type="text" name="colaborador" placeholder="Ex: Wesley Lima" required>
-            <input type="text" name="setor" placeholder="Ex: TI / Suporte">
-          </div>
-          <div class="field-box">
-            <label>💻 Computador (Patrimônio + Foto)</label>
-            <input type="text" name="pat_pc" placeholder="Patrimônio PC">
-            <input type="file" name="foto_pc" accept="image/*" capture="environment">
-          </div>
-          <div class="field-box">
-            <label>🖥️ Monitor (Patrimônio + Foto)</label>
-            <input type="text" name="pat_monitor" placeholder="Patrimônio Monitor">
-            <input type="file" name="foto_monitor" accept="image/*" capture="environment">
-          </div>
-          <div class="field-box">
-            <label>⌨️ Teclado / Mouse (Modelo + Foto)</label>
-            <input type="text" name="desc_perifericos" placeholder="Ex: Kit Logitech USB">
-            <input type="file" name="foto_perifericos" accept="image/*" capture="environment">
-          </div>
-          <div class="field-box">
-            <label>🎧 Headset (Patrimônio + Foto)</label>
-            <input type="text" name="pat_headset" placeholder="Patrimônio Headset">
-            <input type="file" name="foto_headset" accept="image/*" capture="environment">
-          </div>
-          <div class="field-box">
-            <label>📱 Celular (Patrimônio + Foto)</label>
-            <input type="text" name="pat_celular" placeholder="Patrimônio Celular">
-            <input type="file" name="foto_celular" accept="image/*" capture="environment">
-          </div>
-        </div>
-        <div style="margin-top:12px; text-align:right;">
-          <button type="submit" style="background:#0284c7; color:#fff; border:none; padding:10px 20px; border-radius:8px; font-weight:700; cursor:pointer;">💾 Salvar Ativo & Fotos</button>
-        </div>
-      </form>
-
-      <div class="table-wrap" style="margin-bottom:24px;">
-        <table>
-          <thead>
-            <tr>
-              <th>COLABORADOR / SETOR</th>
-              <th>COMPUTADOR</th>
-              <th>MONITOR</th>
-              <th>TECLADO / MOUSE</th>
-              <th>HEADSET</th>
-              <th>CELULAR</th>
-              <th>AÇÕES</th>
-            </tr>
-          </thead>
-          <tbody id="tbAtivos"></tbody>
-        </table>
-      </div>
-
-      <!-- LOG EM TEMPO REAL DE PROGRAMAS ABERTOS (ATUALIZADO A CADA 1 SEGUNDO) -->
-      <div class="panel-dark">
-        <div class="sec-header">
-          <h3 style="margin:0; color:#38bdf8;">🔴 Log de Programas Abertos nas Estações (Tempo Real — 1s)</h3>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <input type="text" id="filtroProc" placeholder="Filtrar por PC, usuário ou programa..." style="padding:6px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; font-size:12px;">
-            <span class="live-badge"><span class="dot-pulse"></span> LIVE 1s</span>
-          </div>
-        </div>
-        <div class="table-wrap" style="max-height:320px; overflow-y:auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>HORA</th>
-                <th>ESTAÇÃO</th>
-                <th>USUÁRIO</th>
-                <th>PROGRAMA (.EXE)</th>
-                <th>JANELA / TÍTULO ABERTO</th>
-                <th>MEMÓRIA</th>
-              </tr>
-            </thead>
-            <tbody id="tbProcessosLive">
-              <tr><td colspan="6" style="text-align:center; padding:16px; color:#64748b;">Aguardando estações online...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== ABA 3: TELEFONIA IP & RAMAIS ==================== -->
-    <div id="aba-pabx" class="section">
-      <div class="pabx-banner">
+    <div class="grid">
+      <div class="card">
         <div>
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <h3 style="margin:0;"><%= configPabx.modelo %></h3>
-            <span id="badgeCentral" class="badge-off">Verificando...</span>
-          </div>
-          <div style="margin-top:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px;">
-            <span>IP Real da Central PABX (VLAN):</span>
-            <input type="text" id="inputIpCentral" value="<%= configPabx.ipCentral %>" style="padding:5px 9px; border-radius:6px; border:1px solid #38bdf8; background:#0f172a; color:#38bdf8; font-weight:700; width:150px;">
-            <button onclick="salvarIpCentral()" style="background:#0f172a; color:#22c55e; border:1px solid #22c55e; padding:5px 10px; border-radius:6px; cursor:pointer; font-weight:700;">Salvar IP</button>
-            <span style="color:#94a3b8;">| Última verificação: <strong id="pabxHora">--:--:--</strong></span>
-          </div>
+          <h3>🚀 Computador Lento ou Travando</h3>
+          <p>Limpa arquivos temporários do Windows e o cache acumulado dos navegadores sem apagar suas senhas.</p>
         </div>
-        <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap;">
-          <div><div style="font-size:11px; color:#94a3b8;">PORTA SIP (5060)</div><strong id="pabxSip" style="color:#38bdf8;">--</strong></div>
-          <div><div style="font-size:11px; color:#94a3b8;">PERDA DE PACOTES</div><strong id="pabxPerda" style="color:#22c55e;">--</strong></div>
-          <div><div style="font-size:11px; color:#94a3b8;">LATÊNCIA REAL</div><strong id="pabxLatencia" style="color:#38bdf8;">--</strong></div>
-          <button onclick="testarSinalCentral()" style="background:#2563eb; color:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer;">🔍 Testar Sinal da Central</button>
-        </div>
-      </div>
-
-      <!-- Cadastro rápido de Ramal Real -->
-      <div class="form-card" style="padding:12px 16px;">
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <strong style="font-size:13px; color:#38bdf8;">+ Adicionar Ramal Real:</strong>
-          <input type="text" id="rmNumero" placeholder="Ramal (ex: 201)" style="padding:6px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; width:120px;">
-          <input type="text" id="rmColab" placeholder="Colaborador" style="padding:6px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; width:170px;">
-          <input type="text" id="rmSetor" placeholder="Setor (ex: TI)" style="padding:6px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; width:150px;">
-          <input type="text" id="rmIp" placeholder="IP do Ramal na VLAN" style="padding:6px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; width:165px;">
-          <input type="text" id="rmMac" placeholder="MAC Address (opcional)" style="padding:6px 10px; border-radius:6px; border:1px solid #334155; background:#0f172a; color:#fff; width:165px;">
-          <button onclick="adicionarRamal()" style="background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-weight:700; cursor:pointer;">Cadastrar Ramal</button>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>RAMAL</th>
-              <th>COLABORADOR / SETOR</th>
-              <th>IP DO RAMAL</th>
-              <th>MAC ADDRESS</th>
-              <th>STATUS</th>
-              <th>LATÊNCIA (PING REAL)</th>
-              <th>AÇÃO</th>
-            </tr>
-          </thead>
-          <tbody id="tbRamais"></tbody>
-        </table>
-      </div>
-
-      <div class="pabx-cols">
-        <div class="panel-dark">
-          <h4 style="margin-top:0; color:#38bdf8;">📊 Ramais por Setor (Real)</h4>
-          <div id="boxSetoresPabx" style="font-size:13px; color:#94a3b8;">Cadastre os ramais acima para visualizar os setores.</div>
-        </div>
-        <div class="panel-dark">
-          <h4 style="margin-top:0; color:#facc15;">⚡ Live Log de Eventos SIP & Rede (3s)</h4>
-          <div id="boxLogsPabx" style="max-height:240px; overflow-y:auto;"></div>
-        </div>
-        <div class="panel-dark">
-          <h4 style="margin-top:0; color:#f472b6;">📞 Ligações em Andamento Agora</h4>
-          <div id="boxLigacoesPabx" style="font-size:13px; color:#94a3b8;">Nenhuma chamada ativa reportada no momento.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL: GRÁFICOS & AÇÕES REMOTAS DA ESTAÇÃO ==================== -->
-  <div id="modalEstacao" class="modal-bg">
-    <div class="modal-card">
-      <div class="modal-top">
         <div>
-          <h2 style="margin:0; color:#38bdf8;" id="mdHostTitle">Estação</h2>
-          <span id="mdHostSub" style="font-size:13px; color:#94a3b8;"></span>
-        </div>
-        <button class="btn-close" onclick="fecharModal('modalEstacao')">Fechar ✕</button>
-      </div>
-
-      <!-- Gráficos de Comparação -->
-      <div class="charts-grid" id="mdCharts"></div>
-
-      <!-- Grupos de Comandos Remotos Reais -->
-      <div class="actions-grid">
-        <div class="act-group">
-          <h4>🚀 Travamento & Disco</h4>
-          <button class="act-btn" onclick="executarRemoto('limpar_cache')">🧹 Cache do Computador</button>
-          <button class="act-btn" onclick="executarRemoto('limpar_navegadores')">🌐 Cache Chrome/Firefox/Edge/Opera</button>
-          <button class="act-btn" onclick="executarRemoto('otimizar_disco')">⚡ Otimizar Disco (Unidade C:)</button>
-          <button class="act-btn" onclick="executarRemoto('tracert_servidor')">🛰️ Tracert até o Servidor</button>
-        </div>
-
-        <div class="act-group">
-          <h4>🖨️ Impressora</h4>
-          <button class="act-btn" onclick="executarRemoto('listar_impressoras')">📋 Listar Impressoras</button>
-          <button class="act-btn" onclick="executarRemoto('destravar_impressora')">🔄 Reiniciar Spooler</button>
-          <button class="act-btn" onclick="executarRemoto('limpar_fila_impressao')">🗑️ Limpar Fila Travada</button>
-        </div>
-
-        <div class="act-group">
-          <h4>🌐 Rede</h4>
-          <button class="act-btn" onclick="executarRemoto('ping_internet')">📡 Teste de Ping 8.8.8.8</button>
-          <button class="act-btn" onclick="executarRemoto('flush_dns')">🧹 Limpar Cache DNS</button>
-          <button class="act-btn" onclick="executarRemoto('renovar_ip')">🔄 Renovar IP (DHCP)</button>
-          <button class="act-btn" onclick="executarRemoto('reset_rede')">🔌 Placa de Rede & Reset Winsock</button>
-        </div>
-
-        <div class="act-group">
-          <h4>🔄 Atualização & AD</h4>
-          <button class="act-btn" onclick="executarRemoto('verificar_atualizacoes')">🔍 Verificar Atualizações</button>
-          <button class="act-btn" onclick="executarRemoto('atualizar_gpo')">🛡️ Atualizar GPO (gpupdate)</button>
-          <button class="act-btn" onclick="executarRemoto('sincronizar_hora')">⏱️ Sincronizar Hora com AD</button>
-        </div>
-
-        <div class="act-group">
-          <h4>🖥️ Vídeo & Tema</h4>
-          <button class="act-btn" onclick="executarRemoto('reiniciar_video')">🎬 Reiniciar Driver de Vídeo</button>
-          <button class="act-btn" onclick="executarRemoto('ajustar_dimensao')">📐 Ajustar Dimensão (Nativa)</button>
-          <button class="act-btn" onclick="executarRemoto('ajustar_escala')">🔍 Ajustar Melhor Escala</button>
-          <button class="act-btn" onclick="executarRemoto('alternar_tema')">🌓 Alternar Tema (Claro/Escuro)</button>
+          <button class="btn-fix" onclick="solicitarReparo('limpar_cache', 'Limpeza de Cache do Sistema')">Limpar Arquivos Temporários</button>
+          <button class="btn-sec" onclick="solicitarReparo('limpar_navegadores', 'Limpeza de Cache dos Navegadores')">Limpar Cache Chrome / Edge / Firefox</button>
         </div>
       </div>
 
-      <h4 style="margin:0 0 8px 0; color:#94a3b8;">Retorno da Execução na Máquina (Ao Vivo):</h4>
-      <div id="mdConsole" class="console-out">Selecione uma ação acima para executar diretamente na estação...</div>
+      <div class="card">
+        <div>
+          <h3>🖨️ Problemas na Impressora</h3>
+          <p>Destrava documentos parados na fila e reinicia o serviço de impressão da sua estação.</p>
+        </div>
+        <div>
+          <button class="btn-fix" onclick="solicitarReparo('destravar_impressora', 'Reinicio do Spooler de Impressão')">Destravar & Reiniciar Impressora</button>
+          <button class="btn-sec" onclick="solicitarReparo('limpar_fila_impressao', 'Limpeza da Fila de Impressão')">Limpar Documentos Presos</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h3>🌐 Internet ou Sistema Fora</h3>
+          <p>Atualiza o endereço de rede e limpa o cache DNS quando algum sistema interno ou site não abre.</p>
+        </div>
+        <div>
+          <button class="btn-fix" onclick="solicitarReparo('flush_dns', 'Limpeza de Cache DNS')">Corrigir Acesso / Limpar DNS</button>
+          <button class="btn-sec" onclick="solicitarReparo('renovar_ip', 'Renovação de IP na Rede')">Renovar Conexão de Rede (IP)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div>
+          <h3>🖥️ Tela, Políticas e Horário</h3>
+          <p>Reinicia o driver gráfico se a tela piscar/travar ou sincroniza suas permissões com o servidor da empresa.</p>
+        </div>
+        <div>
+          <button class="btn-fix" onclick="solicitarReparo('reiniciar_video', 'Reinício do Driver de Vídeo')">Destravar Tela / Vídeo</button>
+          <button class="btn-sec" onclick="solicitarReparo('atualizar_gpo', 'Atualização de Políticas da Empresa')">Atualizar Permissões (GPO)</button>
+        </div>
+      </div>
     </div>
-  </div>
 
-  <!-- ==================== MODAL: INSTALAR AGENTE WINDOWS ==================== -->
-  <div id="modalAgente" class="modal-bg">
-    <div class="modal-card" style="max-width:820px;">
-      <div class="modal-top">
-        <h3 style="margin:0; color:#38bdf8;">⚡ Sincronizar Estação Windows (Agente CST RMM)</h3>
-        <button class="btn-close" onclick="fecharModal('modalAgente')">Fechar ✕</button>
+    <!-- Resultado Ao Vivo na Tela -->
+    <div id="painelResultado" class="result-panel">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong id="resTitulo" style="font-size:16px;">Executando diagnóstico...</strong>
+        <span id="resHora" style="font-size:12px; color:#64748b;"></span>
       </div>
-      <p style="font-size:13.5px; color:#cbd5e1;">Abra o <strong>PowerShell como Administrador</strong> na estação Windows e cole o comando abaixo para iniciar a sincronização imediata e registrar na inicialização do Windows:</p>
-      <pre id="cmdAgenteBox" style="background:#020617; color:#38bdf8; padding:14px; border-radius:8px; overflow-x:auto; font-size:12px; border:1px solid #334155;">New-Item -ItemType Directory -Path "C:\CST-RMM" -Force | Out-Null; Invoke-WebRequest -Uri "http://192.168.102.48:8000/agente-cst.ps1" -OutFile "C:\CST-RMM\agente-cst.ps1"; schtasks /create /tn "CST-RMM-Agente" /tr "powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File C:\CST-RMM\agente-cst.ps1" /sc onlogon /rl highest /f; Start-Process powershell.exe -WindowStyle Hidden -ArgumentList "-ExecutionPolicy Bypass -File C:\CST-RMM\agente-cst.ps1"</pre>
-      <button onclick="copiarComandoAgente()" style="background:#0284c7; color:#fff; border:none; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer;">📋 Copiar Comando PowerShell</button>
-    </div>
-  </div>
-
-  <!-- ==================== MODAL: VISUALIZADOR DE FOTO 4K ==================== -->
-  <div id="modalFoto4k" class="modal-bg" onclick="fecharModal('modalFoto4k')">
-    <div style="text-align:center; margin:auto;" onclick="event.stopPropagation()">
-      <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; background:#0f172a; padding:10px 16px; border-radius:8px;">
-        <span id="tituloFoto4k" style="font-weight:700; color:#38bdf8;">Visualização Ultra-Nitidez 4K</span>
-        <button class="btn-close" onclick="fecharModal('modalFoto4k')">Fechar ✕</button>
-      </div>
-      <img id="imgFoto4k" src="" class="img-4k-enhanced">
+      <p id="resResumo" style="margin:8px 0 0 0; font-size:14px;"></p>
+      <div id="resDetalhes" class="tech-details"></div>
     </div>
   </div>
 
   <script>
-    let cacheEstacoes = [];
-    let hostSelecionado = null;
+    const loginAtual = "<%= typeof usuario === 'object' && usuario !== null ? (usuario.login || '') : (usuario || '') %>".toLowerCase();
+    let hostnameAlvo = 'AUTO';
 
-    function abrirAba(nome, btn) {
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('aba-' + nome).classList.add('active');
-      btn.classList.add('active');
-    }
-
-    function fecharModal(id) {
-      document.getElementById(id).classList.remove('open');
-      if (id === 'modalEstacao') hostSelecionado = null;
-    }
-
-    function abrirModalAgente() {
-      document.getElementById('modalAgente').classList.add('open');
-    }
-
-    function copiarComandoAgente() {
-      const txt = document.getElementById('cmdAgenteBox').innerText;
-      navigator.clipboard.writeText(txt);
-      alert('Comando copiado! Cole no PowerShell Administrador da estacao Windows.');
-    }
-
-    function abrirFoto4k(url, titulo) {
-      document.getElementById('imgFoto4k').src = url;
-      document.getElementById('tituloFoto4k').innerText = '🔍 ' + titulo + ' (Aprimoramento 4K Ativo)';
-      document.getElementById('modalFoto4k').classList.add('open');
-    }
-
-    // --- 1. SINCRONIZAÇÃO RMM A CADA 5 SEGUNDOS ---
-    async function carregarEstacoes() {
+    async function sincronizarMinhaEstacao() {
       try {
         const res = await fetch('/api/estacoes');
-        cacheEstacoes = await res.json();
-        document.getElementById('contadorEstacoes').innerText = cacheEstacoes.length;
-        const tb = document.getElementById('tbEstacoes');
-
-        if (!cacheEstacoes.length) {
-          tb.innerHTML = '<tr><td colspan="12" style="text-align:center; padding:24px; color:#64748b;">Nenhuma maquina sincronizada ainda. Clique em "Sincronizar PC Windows" no topo.</td></tr>';
-          return;
+        const lista = await res.json();
+        const minha = lista.find(e => e.usuario && loginAtual && e.usuario.toLowerCase().includes(loginAtual)) || lista.find(e => e.online);
+        const pill = document.getElementById('statusSinc');
+        if (minha) {
+          hostnameAlvo = minha.hostname;
+          document.getElementById('minhaMaquina').innerText = `${minha.hostname} (IP: ${minha.ip})`;
+          pill.className = minha.online ? 'pill-ok' : 'pill-warn';
+          pill.innerText = minha.online ? '● Estação Online e Sincronizada' : '● Estação Offline';
+        } else {
+          document.getElementById('minhaMaquina').innerText = 'Identificação automática por IP';
+          pill.className = 'pill-warn';
+          pill.innerText = 'Aguardando agente na estação';
         }
-
-        tb.innerHTML = cacheEstacoes.map(m => {
-          const dataFmt = new Date(m.ultimaVez).toLocaleString('pt-BR');
-          return `<tr>
-            <td><span class="host-link" onclick="abrirEstacao('${m.hostname}')">🖥️ ${m.hostname}</span></td>
-            <td>${m.entidade}</td>
-            <td><span class="${m.online ? 'badge-on' : 'badge-off'}">${m.online ? 'Online' : 'Offline'}</span></td>
-            <td>${m.tipo}</td>
-            <td>${m.usuario}</td>
-            <td>${m.so}</td>
-            <td>${m.processador}</td>
-            <td><strong>${m.ram_total}</strong> (${m.ram_uso}% uso)</td>
-            <td><strong>${m.disco_c_livre} GB</strong> / ${m.disco_c_total} GB (${m.disco_c_uso}%)</td>
-            <td><span class="ramal-edit" onclick="editarRamal('${m.hostname}', '${m.ramal || ''}')">📞 ${m.ramal || 'Definir'}</span></td>
-            <td><strong>${m.ip}</strong></td>
-            <td style="color:#64748b;">${dataFmt}</td>
-          </tr>`;
-        }).join('');
-
-        if (hostSelecionado) renderizarGraficosModal(hostSelecionado);
       } catch (e) {}
     }
 
-    async function editarRamal(hostname, atual) {
-      const novo = prompt('Digite o numero do ramal para ' + hostname + ':', atual === '-' ? '' : atual);
-      if (novo === null) return;
-      await fetch('/api/estacoes/' + encodeURIComponent(hostname) + '/ramal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ramal: novo })
-      });
-      carregarEstacoes();
-    }
+    async function solicitarReparo(acao, nomeAmigavel) {
+      const painel = document.getElementById('painelResultado');
+      const titulo = document.getElementById('resTitulo');
+      const resumo = document.getElementById('resResumo');
+      const detalhes = document.getElementById('resDetalhes');
 
-    function abrirEstacao(hostname) {
-      hostSelecionado = hostname;
-      const maq = cacheEstacoes.find(e => e.hostname === hostname);
-      if (!maq) return;
-      document.getElementById('mdHostTitle').innerText = '🖥️ ' + maq.hostname + ' (' + maq.usuario + ')';
-      document.getElementById('mdHostSub').innerText = `${maq.so} | IP: ${maq.ip} | Ramal: ${maq.ramal} | ${maq.processador}`;
-      document.getElementById('mdConsole').innerText = 'Pronto para enviar comandos remotos para ' + maq.hostname + '...';
-      renderizarGraficosModal(hostname);
-      document.getElementById('modalEstacao').classList.add('open');
-    }
+      painel.className = 'result-panel show';
+      titulo.innerText = '⏳ Executando: ' + nomeAmigavel + '...';
+      resumo.innerText = 'Aguardando resposta em tempo real da sua estação de trabalho...';
+      detalhes.innerText = 'Enviando instrução para ' + hostnameAlvo + '...';
 
-    function renderizarGraficosModal(hostname) {
-      const maq = cacheEstacoes.find(e => e.hostname === hostname);
-      if (!maq) return;
-      const total = cacheEstacoes.length || 1;
-      const mediaCpu = (cacheEstacoes.reduce((s, e) => s + (e.cpu_uso || 0), 0) / total).toFixed(1);
-      const mediaRam = (cacheEstacoes.reduce((s, e) => s + (e.ram_uso || 0), 0) / total).toFixed(1);
-      const mediaDisco = (cacheEstacoes.reduce((s, e) => s + (e.disco_c_uso || 0), 0) / total).toFixed(1);
-
-      const hist = (maq.historico || []).map(h =>
-        `<div class="spark-bar" title="${h.hora} - CPU: ${h.cpu}% | RAM: ${h.ram}%" style="height:${Math.max(8, h.cpu)}%"></div>`
-      ).join('');
-
-      document.getElementById('mdCharts').innerHTML = `
-        <div class="chart-box">
-          <div style="display:flex; justify-content:space-between;"><strong>CPU Atual vs Média Rede</strong><span>${maq.cpu_uso}% / ${mediaCpu}%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${maq.cpu_uso}%; background:#38bdf8;"></div></div>
-          <div class="bar-track" style="height:8px;"><div class="bar-fill" style="width:${mediaCpu}%; background:#64748b;"></div></div>
-          <div class="sparkline">${hist}</div>
-        </div>
-        <div class="chart-box">
-          <div style="display:flex; justify-content:space-between;"><strong>Memória RAM vs Média Rede</strong><span>${maq.ram_uso}% / ${mediaRam}%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${maq.ram_uso}%; background:#f59e0b;"></div></div>
-          <div class="bar-track" style="height:8px;"><div class="bar-fill" style="width:${mediaRam}%; background:#64748b;"></div></div>
-          <p style="font-size:12px; color:#94a3b8; margin-top:12px;">Capacidade instalada: <strong>${maq.ram_total}</strong></p>
-        </div>
-        <div class="chart-box">
-          <div style="display:flex; justify-content:space-between;"><strong>Unidade C: vs Média Rede</strong><span>${maq.disco_c_uso}% / ${mediaDisco}%</span></div>
-          <div class="bar-track"><div class="bar-fill" style="width:${maq.disco_c_uso}%; background:#22c55e;"></div></div>
-          <div class="bar-track" style="height:8px;"><div class="bar-fill" style="width:${mediaDisco}%; background:#64748b;"></div></div>
-          <p style="font-size:12px; color:#94a3b8; margin-top:12px;">Livre: <strong>${maq.disco_c_livre} GB</strong> de <strong>${maq.disco_c_total} GB</strong></p>
-        </div>
-      `;
-    }
-
-    async function executarRemoto(acao) {
-      if (!hostSelecionado) return;
-      const box = document.getElementById('mdConsole');
-      box.innerText = '⏳ Enviando comando "' + acao + '" para ' + hostSelecionado + '...';
       const res = await fetch('/api/comando', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostname: hostSelecionado, acao })
+        body: JSON.stringify({ hostname: hostnameAlvo, acao })
       });
       const data = await res.json();
+
       if (!data.ok) {
-        box.innerText = '❌ Erro: ' + (data.erro || 'Falha ao enfileirar');
+        painel.className = 'result-panel show erro';
+        titulo.innerText = '❌ Não foi possível executar';
+        resumo.innerText = data.erro || 'Estação não respondeu.';
+        detalhes.innerText = 'Verifique se o agente CST RMM está ativo nesta estação.';
         return;
       }
 
-      const poll = setInterval(async () => {
+      let tentativas = 0;
+      const timer = setInterval(async () => {
+        tentativas++;
         const r = await fetch('/api/comando/' + data.id);
-        const status = await r.json();
-        if (status.concluido) {
-          clearInterval(poll);
-          box.innerText = `[${status.finalizadoEm}] ${status.sucesso ? '✅ SUCESSO' : '❌ ERRO'} em ${status.hostname}:\n\n${status.saida}`;
+        const st = await r.json();
+        if (st.concluido) {
+          clearInterval(timer);
+          painel.className = st.sucesso ? 'result-panel show sucesso' : 'result-panel show erro';
+          titulo.innerText = st.sucesso ? '✅ Concluído com Sucesso: ' + nomeAmigavel : '❌ Erro ao Executar: ' + nomeAmigavel;
+          resumo.innerText = st.sucesso
+            ? 'A ação foi aplicada diretamente no computador ' + st.hostname + '.'
+            : 'Houve uma falha durante a execução no computador ' + st.hostname + '.';
+          document.getElementById('resHora').innerText = 'Finalizado às ' + st.finalizadoEm;
+          detalhes.innerText = st.saida;
+        } else if (tentativas > 25) {
+          clearInterval(timer);
+          painel.className = 'result-panel show erro';
+          titulo.innerText = '⚠️ Tempo limite excedido';
+          resumo.innerText = 'A estação ' + data.hostname + ' demorou para responder.';
         }
       }, 1000);
     }
 
-    // --- 2. ATIVOS & INVENTÁRIO + LOG DE PROGRAMAS ABERTOS (1s) ---
-    document.getElementById('formAtivo').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const res = await fetch('/api/ativos', { method: 'POST', body: fd });
-      const data = await res.json();
-      if (data.ok) {
-        e.target.reset();
-        carregarAtivos();
-      }
-    });
-
-    async function carregarAtivos() {
-      const res = await fetch('/api/ativos');
-      const lista = await res.json();
-
-      document.getElementById('cntPc').innerText = lista.filter(a => a.pat_pc || a.foto_pc).length;
-      document.getElementById('cntMon').innerText = lista.filter(a => a.pat_monitor || a.foto_monitor).length;
-      document.getElementById('cntPer').innerText = lista.filter(a => a.desc_perifericos || a.foto_perifericos).length;
-      document.getElementById('cntHead').innerText = lista.filter(a => a.pat_headset || a.foto_headset).length;
-      document.getElementById('cntCel').innerText = lista.filter(a => a.pat_celular || a.foto_celular).length;
-
-      const celulaAtivo = (pat, foto, label) => {
-        const img = foto ? `<img src="${foto}" class="thumb-img" onclick="abrirFoto4k('${foto}', '${label} - Pat: ${pat || 'S/N'}')">` : '';
-        return `<div><strong>${pat || '-'}</strong>${img}</div>`;
-      };
-
-      document.getElementById('tbAtivos').innerHTML = lista.map(a => `<tr>
-        <td><strong>${a.colaborador}</strong><br><span style="color:#64748b; font-size:11px;">${a.setor}</span></td>
-        <td>${celulaAtivo(a.pat_pc, a.foto_pc, 'Computador ' + a.colaborador)}</td>
-        <td>${celulaAtivo(a.pat_monitor, a.foto_monitor, 'Monitor ' + a.colaborador)}</td>
-        <td>${celulaAtivo(a.desc_perifericos, a.foto_perifericos, 'Perifericos ' + a.colaborador)}</td>
-        <td>${celulaAtivo(a.pat_headset, a.foto_headset, 'Headset ' + a.colaborador)}</td>
-        <td>${celulaAtivo(a.pat_celular, a.foto_celular, 'Celular ' + a.colaborador)}</td>
-        <td><button onclick="excluirAtivo('${a.id}')" style="background:#ef4444; color:#fff; border:none; padding:5px 9px; border-radius:5px; cursor:pointer;">Excluir</button></td>
-      </tr>`).join('') || '<tr><td colspan="7" style="text-align:center; padding:16px; color:#64748b;">Nenhum ativo cadastrado ainda.</td></tr>';
-    }
-
-    async function excluirAtivo(id) {
-      if (!confirm('Remover este registro de ativo?')) return;
-      await fetch('/api/ativos/' + id, { method: 'DELETE' });
-      carregarAtivos();
-    }
-
-    async function carregarProcessosLive() {
-      try {
-        const res = await fetch('/api/processos-live');
-        const lista = await res.json();
-        const filtro = (document.getElementById('filtroProc').value || '').toLowerCase();
-        const filtrados = lista.filter(p =>
-          !filtro ||
-          p.hostname.toLowerCase().includes(filtro) ||
-          p.usuario.toLowerCase().includes(filtro) ||
-          p.processo.toLowerCase().includes(filtro) ||
-          p.titulo.toLowerCase().includes(filtro)
-        );
-        const tb = document.getElementById('tbProcessosLive');
-        if (!filtrados.length) {
-          tb.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:14px; color:#64748b;">Nenhum programa ativo reportado no momento.</td></tr>';
-          return;
-        }
-        tb.innerHTML = filtrados.map(p => `<tr>
-          <td>${p.hora}</td>
-          <td><strong>${p.hostname}</strong></td>
-          <td>${p.usuario}</td>
-          <td style="color:#0284c7; font-weight:700;">${p.processo}</td>
-          <td>${p.titulo}</td>
-          <td>${p.ram_mb} MB</td>
-        </tr>`).join('');
-      } catch (e) {}
-    }
-
-    // --- 3. TELEFONIA IP & PABX REAL ---
-    async function carregarPabx() {
-      try {
-        const res = await fetch('/api/pabx/status');
-        const d = await res.json();
-        const badge = document.getElementById('badgeCentral');
-        badge.className = d.central.online ? 'badge-on' : 'badge-off';
-        badge.innerText = d.central.online ? '100% OPERACIONAL (ONLINE)' : 'SEM RESPOSTA NA VLAN';
-
-        document.getElementById('pabxHora').innerText = d.central.ultimoTeste || '--';
-        document.getElementById('pabxSip').innerText = d.central.portaSipAberta ? 'ABERTA (5060)' : 'FECHADA / N/A';
-        document.getElementById('pabxPerda').innerText = d.central.perdaPct + '%';
-        document.getElementById('pabxLatencia').innerText = d.central.latenciaMs !== null ? d.central.latenciaMs + ' ms' : 'Timeout';
-
-        document.getElementById('tbRamais').innerHTML = (d.ramais || []).map(r => `<tr>
-          <td><strong>${r.ramal}</strong></td>
-          <td>${r.colaborador} <span style="color:#64748b;">(${r.setor})</span></td>
-          <td><strong>${r.ip}</strong></td>
-          <td>${r.mac}</td>
-          <td><span class="${r.online ? 'badge-on' : 'badge-off'}">${r.online ? 'Online' : 'Offline'}</span></td>
-          <td>${r.latenciaMs !== null ? r.latenciaMs + ' ms' : 'Sem ping'}</td>
-          <td><button onclick="removerRamal('${r.ramal}')" style="background:#ef4444; color:#fff; border:none; padding:4px 8px; border-radius:4px; cursor:pointer;">Remover</button></td>
-        </tr>`).join('') || '<tr><td colspan="7" style="text-align:center; padding:16px; color:#64748b;">Nenhum ramal cadastrado. Adicione acima para monitorar ao vivo.</td></tr>';
-
-        // Agrupa setores reais
-        const setores = {};
-        (d.ramais || []).forEach(r => {
-          if (!setores[r.setor]) setores[r.setor] = { total: 0, on: 0 };
-          setores[r.setor].total++;
-          if (r.online) setores[r.setor].on++;
-        });
-        const htmlSetores = Object.entries(setores).map(([nome, s]) => {
-          const pct = Math.round((s.on / s.total) * 100);
-          return `<div style="margin-bottom:10px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><strong>${nome}</strong><span>${s.on}/${s.total} Online (${pct}%)</span></div>
-            <div class="bar-track" style="height:8px;"><div class="bar-fill" style="width:${pct}%; background:#38bdf8;"></div></div>
-          </div>`;
-        }).join('');
-        document.getElementById('boxSetoresPabx').innerHTML = htmlSetores || 'Cadastre ramais para visualizar por setor.';
-
-        document.getElementById('boxLogsPabx').innerHTML = (d.logs || []).map(l =>
-          `<div class="log-line"><span style="color:#38bdf8;">[${l.hora}]</span> <strong>${l.tipo}:</strong> ${l.mensagem}</div>`
-        ).join('') || '<span style="color:#64748b; font-size:12px;">Aguardando eventos...</span>';
-
-        document.getElementById('boxLigacoesPabx').innerHTML = (d.ligacoes || []).map(c =>
-          `<div class="log-line">📞 <strong>${c.origem}</strong> ➔ <strong>${c.destino}</strong> (${c.inicio})</div>`
-        ).join('') || 'Nenhuma chamada em andamento no momento.';
-      } catch (e) {}
-    }
-
-    async function salvarIpCentral() {
-      const ipCentral = document.getElementById('inputIpCentral').value;
-      await fetch('/api/pabx/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ipCentral })
-      });
-      carregarPabx();
-    }
-
-    async function testarSinalCentral() {
-      const res = await fetch('/api/pabx/testar', { method: 'POST' });
-      const data = await res.json();
-      alert(data.mensagem);
-      carregarPabx();
-    }
-
-    async function adicionarRamal() {
-      const body = {
-        ramal: document.getElementById('rmNumero').value,
-        colaborador: document.getElementById('rmColab').value,
-        setor: document.getElementById('rmSetor').value,
-        ip: document.getElementById('rmIp').value,
-        mac: document.getElementById('rmMac').value
-      };
-      await fetch('/api/pabx/ramais', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      document.getElementById('rmNumero').value = '';
-      document.getElementById('rmIp').value = '';
-      carregarPabx();
-    }
-
-    async function removerRamal(ramal) {
-      await fetch('/api/pabx/ramais/' + encodeURIComponent(ramal), { method: 'DELETE' });
-      carregarPabx();
-    }
-
-    // Inicializa loops em tempo real
-    carregarEstacoes();
-    carregarAtivos();
-    carregarProcessosLive();
-    carregarPabx();
-
-    setInterval(carregarEstacoes, 5000);      // RMM a cada 5s
-    setInterval(carregarProcessosLive, 1000); // Programas abertos a cada 1s
-    setInterval(carregarPabx, 3000);          // PABX e Ramais a cada 3s
+    sincronizarMinhaEstacao();
+    setInterval(sincronizarMinhaEstacao, 5000);
   </script>
 </body>
 </html>
