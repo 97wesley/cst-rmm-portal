@@ -55,7 +55,7 @@ if (!fs.existsSync(path.join(__dirname, 'public/uploads/ativos'))) fs.mkdirSync(
 
 // Configuração do Active Directory
 const configAD = {
-    url: 'ldap://192.168.101.10',
+    url: 'ldap://192.168.101.10', // IP interno do seu AD no escritório
     baseDN: 'dc=cst,dc=local',
 };
 const administradoresTI = ['wesley.lima', 'admin', 'wesley', 'Lide'];
