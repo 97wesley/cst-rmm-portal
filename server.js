@@ -4,7 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const net = require('net');
 const { exec } = require('child_process');
-const multer = require('multer');
+const multer = require('multer'); // Certifique-se de que "multer" está no package.json
+const ActiveDirectory = require('activedirectory2');
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -31,6 +32,7 @@ function lerJson(arquivo, padrao) {
 }
 function salvarJson(arquivo, dados) { fs.writeFileSync(path.join(DATA_DIR, arquivo), JSON.stringify(dados, null, 2)); }
 
+// Variáveis Globais de Estado
 let estacoes = lerJson('estacoes.json', []);
 let ativos = lerJson('ativos.json', []);
 let ramaisPabx = lerJson('ramais.json', []);
@@ -40,6 +42,7 @@ let ligacoesAtivas = [];
 let comandosPendentes = {};
 let resultadosComandos = {};
 
+// Configuração de Upload de Imagens (Ativos)
 const storageAtivos = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, 'public/uploads/ativos')),
   filename: (req, file, cb) => {
@@ -50,43 +53,41 @@ const storageAtivos = multer.diskStorage({
 const uploadAtivos = multer({ storage: storageAtivos, limits: { fileSize: 25 * 1024 * 1024 } });
 if (!fs.existsSync(path.join(__dirname, 'public/uploads/ativos'))) fs.mkdirSync(path.join(__dirname, 'public/uploads/ativos'), { recursive: true });
 
-const ActiveDirectory = require('activedirectory2');
+// Configuração do Active Directory
 const configAD = {
     url: 'ldap://192.168.101.10',
     baseDN: 'dc=cst,dc=local',
 };
-
-const administradoresTI = ['wesley.lima', 'admin'];
+const administradoresTI = ['wesley.lima', 'admin', 'wesley', 'Lide'];
 
 function autenticar(req, res, next) {
     if (req.session && req.session.user) return next();
     res.redirect('/login');
 }
 
+// ---------------- ROTAS WEB ----------------
+
 app.get('/login', (req, res) => res.render('login', { erro: null }));
 
 app.post('/login', (req, res) => {
     const { login, senha } = req.body;
     
-    // ACESSO DE EMERGÊNCIA (Para não ficar trancado fora do Render)
-    // Se o Render não conseguir conectar no AD, você usa esta senha temporária para entrar como Admin.
+    // ACESSO DE EMERGÊNCIA (Para a nuvem / Render)
     if (login === 'wesley.lima' && senha === 'Cst@Admin2026') {
         req.session.user = { login: 'wesley.lima', perfil: 'admin' };
         return res.redirect('/admin');
     }
 
-    // Fluxo normal via Active Directory
+    // Fluxo normal via AD
     const userPrincipalName = `${login}@cst.local`;
     const ad = new ActiveDirectory(configAD);
+    
     ad.authenticate(userPrincipalName, senha, function(err, auth) {
         if (err || !auth) {
-            return res.render('login', { erro: 'Credenciais inválidas ou sem conexão com o AD.' });
+            return res.render('login', { erro: 'Credenciais inválidas ou erro no AD (Timeout).' });
         }
-        
-        // Garante que seu usuário SEMPRE seja admin, mesmo que venha do AD
-        const isMasterAdmin = login.toLowerCase() === 'wesley.lima' || administradoresTI.includes(login);
+        const isMasterAdmin = administradoresTI.includes(login.toLowerCase());
         req.session.user = { login: login, perfil: isMasterAdmin ? 'admin' : 'colaborador' };
-        
         res.redirect(req.session.user.perfil === 'admin' ? '/admin' : '/');
     });
 });
@@ -100,6 +101,8 @@ app.get('/admin', autenticar, (req, res) => {
 
 app.get('/logout', (req, res) => req.session.destroy(() => res.redirect('/login')));
 
+// ---------------- ROTAS RMM E AGENTE ----------------
+
 app.post('/api/agente/checkin', (req, res) => {
   const dados = req.body || {};
   if (!dados.hostname) return res.status(400).json({ erro: 'hostname obrigatorio' });
@@ -109,7 +112,7 @@ app.post('/api/agente/checkin', (req, res) => {
   const novoPonto = { hora: new Date().toLocaleTimeString('pt-BR', { hour12: false }), cpu: Number(dados.cpu_uso || 0), ram: Number(dados.ram_uso || 0), disco: Number(dados.disco_c_uso || 0) };
   const historico = [...historicoAnterior.slice(-19), novoPonto];
   const registro = {
-    hostname: dados.hostname, entidade: dados.entidade || 'Entidade raiz > CST', tipo: dados.tipo || 'Desktop',
+    hostname: dados.hostname, entidade: dados.entidade || 'CST', tipo: dados.tipo || 'Desktop',
     usuario: dados.usuario || 'Desconhecido', so: dados.so || 'Windows', processador: dados.processador || 'CPU',
     ram_total: dados.ram_total || '8 GB', ram_uso: Number(dados.ram_uso || 0), cpu_uso: Number(dados.cpu_uso || 0),
     disco_c_livre: Number(dados.disco_c_livre || 0), disco_c_total: Number(dados.disco_c_total || 0), disco_c_uso: Number(dados.disco_c_uso || 0),
@@ -151,7 +154,7 @@ app.post('/api/comando', autenticar, (req, res) => {
   const userLogin = req.session.user ? (req.session.user.login || req.session.user) : '';
   if (!hostname || hostname === 'AUTO') {
     const alvo = estacoes.find(e => e.ip === clientIp) || estacoes.find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase()));
-    if (!alvo) return res.status(404).json({ erro: 'Estacao nao identificada para usuario/IP.' });
+    if (!alvo) return res.status(404).json({ erro: 'Estacao nao identificada.' });
     hostname = alvo.hostname;
   }
   const id = 'cmd_' + Date.now() + '_' + Math.round(Math.random() * 1000);
@@ -179,6 +182,8 @@ app.get('/api/processos-live', autenticar, (req, res) => {
   res.json(registros);
 });
 
+// ---------------- ROTAS ATIVOS ----------------
+
 app.get('/api/ativos', autenticar, (req, res) => res.json(ativos || []));
 
 app.post('/api/ativos', autenticar, uploadAtivos.fields([
@@ -204,6 +209,8 @@ app.delete('/api/ativos/:id', autenticar, (req, res) => {
   salvarJson('ativos.json', ativos);
   res.json({ ok: true });
 });
+
+// ---------------- ROTAS PABX ----------------
 
 let statusCentralPabx = { online: false, latenciaMs: null, perdaPct: 100, portaSipAberta: false, ultimoTeste: 'Aguardando...', detalhe: '' };
 
@@ -295,4 +302,4 @@ app.post('/api/pabx/evento', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, '0.0.0.0', () => console.log(`[CST TI] Servidor na nuvem rodando na porta ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`[CST TI] Servidor rodando na porta ${PORT}`));
