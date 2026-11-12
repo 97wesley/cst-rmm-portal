@@ -6,19 +6,20 @@ const { exec } = require('child_process');
 
 const app = express();
 
-// Configuração do motor de views (EJS) apontando para a sua pasta "vistas"
+// Configuração do motor de views (EJS) apontando para a pasta real "views"
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'vistas'));
+app.set('views', path.join(__dirname, 'views'));
 
 // Middlewares para leitura de formulários e sessões
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
     secret: 'cst_rmm_portal_secret_2026',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Para o Render gratuito (sem HTTPS forçado no teste)
+    cookie: { secure: false }
 }));
 
 // Configuração do Active Directory da CST
@@ -27,7 +28,7 @@ const adConfig = {
     baseDN: 'DC=CST,DC=LOCAL'
 };
 
-// Lista de usuários administradores de TI autorizados
+// Lista de utilizadores administradores de TI autorizados
 const administradoresTI = ['wesley.lima', 'romulo.evangelista', 'rafael.silva'];
 
 // Middleware de autenticação para proteger as rotas
@@ -50,47 +51,48 @@ app.get('/login', (req, res) => {
 // Processamento do Login (POST - Active Directory)
 app.post('/login', (req, res) => {
     const { username, password, perfil } = req.body;
-    
-    const usernameClean = username.trim();
+
+    const usernameClean = (username || '').trim();
     const userPrincipalName = usernameClean.includes('@') ? usernameClean : `${usernameClean}@cst.local`;
 
     const ad = new ActiveDirectory(adConfig);
 
-    // SISTEMA DE TIMEOUT: Evita que a página fique rodando infinitamente
+    // Timeout de 5 segundos para evitar que a página fique a carregar infinitamente
     let respondeu = false;
     const timeoutConexao = setTimeout(() => {
         if (!respondeu) {
             respondeu = true;
-            return res.render('login', { erro: 'Erro: O servidor na nuvem (Render) não conseguiu acessar o AD local (192.168.102.1).' });
+            return res.render('login', {
+                erro: 'Tempo limite excedido: não foi possível contactar o Active Directory (192.168.102.1).'
+            });
         }
-    }, 5000); // Aguarda 5 segundos no máximo
+    }, 5000);
 
-    // Tenta autenticar no AD
     ad.authenticate(userPrincipalName, password, function(err, auth) {
-        if (respondeu) return; // Se o timeout já disparou, não faz nada
+        if (respondeu) return;
         respondeu = true;
         clearTimeout(timeoutConexao);
 
         if (err || !auth) {
             console.error('Erro LDAP:', err);
-            return res.render('login', { erro: 'Falha na autenticação do Active Directory. Usuário ou senha incorretos.' });
+            return res.render('login', {
+                erro: 'Falha na autenticação do Active Directory. Utilizador ou palavra-passe incorretos.'
+            });
         }
 
-        // Se autenticou com sucesso
         const isAdmin = administradoresTI.includes(usernameClean.toLowerCase());
 
-        // Se selecionou Admin mas não está na lista de TI
         if (perfil === 'admin' && !isAdmin) {
-            return res.render('login', { erro: 'Acesso negado: sua conta não possui privilégios de Administrador.' });
+            return res.render('login', {
+                erro: 'Acesso negado: a sua conta não possui privilégios de Administrador TI.'
+            });
         }
 
-        // Cria a sessão
         req.session.user = {
             login: usernameClean,
             admin: perfil === 'admin' && isAdmin
         };
 
-        // Redireciona para o painel correto
         if (req.session.user.admin) {
             return res.redirect('/admin');
         } else {
@@ -99,12 +101,11 @@ app.post('/login', (req, res) => {
     });
 });
 
-// Rota Raiz (/): Painel do Colaborador
+// Rota Raiz (/): Painel do Colaborador (Autoatendimento)
 app.get('/', autenticar, (req, res) => {
     if (req.session.user.admin && req.query.view !== 'colaborador') {
         return res.redirect('/admin');
     }
-    // Renderiza o arquivo vistas/colaborador.ejs
     res.render('colaborador', { usuario: req.session.user });
 });
 
@@ -113,24 +114,22 @@ app.get('/admin', autenticar, (req, res) => {
     if (!req.session.user.admin) {
         return res.redirect('/');
     }
-    // Renderiza o arquivo vistas/admin-dashboard.ejs
     res.render('admin-dashboard', { usuario: req.session.user });
 });
 
 // Rota para executar os scripts de reparo via PowerShell
 app.post('/executar-reparo', autenticar, (req, res) => {
     const { acao } = req.body;
-    
+
     const acoesPermitidas = ['limpar_cache', 'destravar_impressora'];
     if (!acoesPermitidas.includes(acao)) {
         return res.status(400).json({ sucesso: false, erro: 'Ação inválida.' });
     }
 
-    // Apontando para a sua pasta "roteiros" e arquivo "reparos.ps1"
-    const caminhoScript = path.join(__dirname, 'roteiros', 'reparos.ps1');
+    const caminhoScript = path.join(__dirname, 'scripts', 'reparos.ps1');
     const comando = `powershell -ExecutionPolicy Bypass -File "${caminhoScript}" -Acao ${acao}`;
 
-    exec(comando, (error, stdout, stderr) => {
+    exec(comando, (error, stdout) => {
         if (error) {
             console.error(`Erro PowerShell: ${error.message}`);
             return res.json({ sucesso: false, erro: 'Falha ao executar o script de reparo.' });
@@ -139,7 +138,7 @@ app.post('/executar-reparo', autenticar, (req, res) => {
     });
 });
 
-// Logout da sessão
+// Terminar sessão
 app.get('/logout', (req, res) => {
     req.session.destroy(() => {
         res.redirect('/login');
