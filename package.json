@@ -1,16 +1,16 @@
 {
   "name": "cst-rmm-portal",
   "version": "1.0.0",
-  "description": "Portal RMM e Telefonia CST com Active Directory",
+  "description": "Portal RMM e Inventário CST",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "activedirectory2": "^2.1.2",
+    "activedirectory2": "^2.2.0",
     "ejs": "^3.1.9",
-    "express": "^4.19.2",
-    "express-session": "^1.18.0",
-    "nodemailer": "^6.9.13"
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "multer": "^1.4.5-lts.1"
   }
 }
