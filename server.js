@@ -456,10 +456,7 @@ app.post('/api/v1/telefonia/simular-queda', async (req, res) => {
     res.json({ status: "ok" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor RMM Corporativo em Produção AD rodando na porta ${PORT}`));
-
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[CST TI] Servidor rodando em http://localhost:${PORT}`);
+    console.log(`[CST TI] Servidor rodando em http://0.0.0.0:${PORT}`);
 });
