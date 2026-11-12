@@ -297,24 +297,24 @@ app.get('/admin', autenticar, (req, res) => {
                         let html = '';
                         dados.forEach(maq => {
                             const isOnline = (new Date() - new Date(maq.ultimaVez)) < 35000;
-                            html += `
+                            html += \`
                                 <tr>
-                                    <td><strong>💻 ${maq.hostname}</strong></td>
-                                    <td>${maq.entidade || 'Entidade raiz > CST'}</td>
-                                    <td><span class="${isOnline ? 'badge-online' : 'badge-offline'}">${isOnline ? 'Online' : 'Offline'}</span></td>
-                                    <td>${maq.tipo || 'Desktop'}</td>
-                                    <td>${maq.usuario}</td>
-                                    <td>${maq.processador || 'Intel/AMD'}</td>
-                                    <td><strong>${maq.ram_total || '8 GB'}</strong> (${maq.ram}% uso)</td>
-                                    <td>${maq.disco}% uso</td>
-                                    <td><strong>${maq.ip}</strong></td>
-                                    <td style="color:#64748b;">${new Date(maq.ultimaVez).toLocaleTimeString()}</td>
+                                    <td><strong>💻 \${maq.hostname}</strong></td>
+                                    <td>\${maq.entidade || 'Entidade raiz > CST'}</td>
+                                    <td><span class="\${isOnline ? 'badge-online' : 'badge-offline'}">\${isOnline ? 'Online' : 'Offline'}</span></td>
+                                    <td>\${maq.tipo || 'Desktop'}</td>
+                                    <td>\${maq.usuario}</td>
+                                    <td>\${maq.processador || 'Intel/AMD'}</td>
+                                    <td><strong>\${maq.ram_total || '8 GB'}</strong> (\${maq.ram}% uso)</td>
+                                    <td>\${maq.disco}% uso</td>
+                                    <td><strong>\${maq.ip}</strong></td>
+                                    <td style="color:#64748b;">\${new Date(maq.ultimaVez).toLocaleTimeString()}</td>
                                     <td>
-                                        <button class="btn-cmd" onclick="enviarCmd('${maq.hostname}', 'limpar_cache')">🧹 Cache</button>
-                                        <button class="btn-cmd" onclick="enviarCmd('${maq.hostname}', 'destravar_impressora')">🔄 Spooler</button>
+                                        <button class="btn-cmd" onclick="enviarCmd('\${maq.hostname}', 'limpar_cache')">🧹 Cache</button>
+                                        <button class="btn-cmd" onclick="enviarCmd('\${maq.hostname}', 'destravar_impressora')">🔄 Spooler</button>
                                     </td>
                                 </tr>
-                            `;
+                            \`;
                         });
                         document.getElementById('tbComputadoresRmm').innerHTML = html;
                     } catch (e) {}
@@ -348,28 +348,28 @@ app.get('/admin', autenticar, (req, res) => {
                         let htmlTb = '';
                         dados.ramais.forEach(r => {
                             const badgeSt = r.status === 'Online' ? (r.emChamada ? '<span style="background:#0284c7;color:#fff;padding:2px 6px;border-radius:10px;font-size:10px;">📞 EM CHAMADA</span>' : '<span class="badge-online">🟢 Online</span>') : '<span class="badge-offline">🔴 Offline</span>';
-                            const lat = r.status === 'Online' ? `<strong style="color:#34d399;">${r.latencia} ms</strong>` : '<span style="color:#ef4444;">Timeout</span>';
-                            htmlTb += `
+                            const lat = r.status === 'Online' ? \`<strong style="color:#34d399;">\${r.latencia} ms</strong>\` : '<span style="color:#ef4444;">Timeout</span>';
+                            htmlTb += \`
                                 <tr>
-                                    <td style="font-weight:bold;color:#38bdf8;">${r.ramal}</td>
-                                    <td>${r.nome}</td>
-                                    <td><strong style="color:#60a5fa;">${r.ip}</strong></td>
-                                    <td style="font-size:11px;color:#9ca3af;">${r.mac}</td>
-                                    <td>${badgeSt}</td>
-                                    <td>${lat}</td>
-                                    <td>${r.status === 'Online' ? `<button onclick="simularQueda('${r.ramal}')" style="background:#ef4444;color:#fff;border:none;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:10px;">Queda (E-mail)</button>` : 'Offline'}</td>
+                                    <td style="font-weight:bold;color:#38bdf8;">\${r.ramal}</td>
+                                    <td>\${r.nome}</td>
+                                    <td><strong style="color:#60a5fa;">\${r.ip}</strong></td>
+                                    <td style="font-size:11px;color:#9ca3af;">\${r.mac}</td>
+                                    <td>\${badgeSt}</td>
+                                    <td>\${lat}</td>
+                                    <td>\${r.status === 'Online' ? \`<button onclick="simularQueda('\${r.ramal}')" style="background:#ef4444;color:#fff;border:none;padding:3px 6px;border-radius:4px;cursor:pointer;font-size:10px;">Queda (E-mail)</button>\` : 'Offline'}</td>
                                 </tr>
-                            `;
+                            \`;
                         });
                         document.getElementById('tbRamaisCorpo').innerHTML = htmlTb;
 
                         let htmlLog = '';
-                        dados.eventos.forEach(ev => { htmlLog += `<div class="event-log-item ${ev.tipo === 'danger' ? 'danger' : ''}"><span style="color:#94a3b8;">${ev.hora}</span> ${ev.texto}</div>`; });
+                        dados.eventos.forEach(ev => { htmlLog += \`<div class="event-log-item \${ev.tipo === 'danger' ? 'danger' : ''}"><span style="color:#94a3b8;">\${ev.hora}</span> \${ev.texto}</div>\`; });
                         document.getElementById('containerEventosLog').innerHTML = htmlLog;
 
                         let htmlCh = '';
                         dados.chamadas.forEach(c => {
-                            htmlCh += `<div style="background:#1f2937;border-left:4px solid #3b82f6;padding:10px;margin-bottom:8px;border-radius:4px;font-size:12px;"><div style="display:flex;justify-content:space-between;"><span style="font-weight:bold;color:#60a5fa;">${c.status}</span><span>⏱️ ${c.duracao}</span></div><div>${c.origem}</div><div style="color:#9ca3af;">➡️ ${c.destino}</div></div>`;
+                            htmlCh += \`<div style="background:#1f2937;border-left:4px solid #3b82f6;padding:10px;margin-bottom:8px;border-radius:4px;font-size:12px;"><div style="display:flex;justify-content:space-between;"><span style="font-weight:bold;color:#60a5fa;">\${c.status}</span><span>⏱️ \${c.duracao}</span></div><div>\${c.origem}</div><div style="color:#9ca3af;">➡️ \${c.destino}</div></div>\`;
                         });
                         document.getElementById('containerChamadasAtivas').innerHTML = htmlCh;
                     } catch (e) {}
@@ -380,7 +380,7 @@ app.get('/admin', autenticar, (req, res) => {
                     carregarTelefonia();
                 }
 
-                async function simularQupyter(ramal) {
+                async function simularQueda(ramal) {
                     if (!confirm("Simular queda no ramal " + ramal + "?")) return;
                     await fetch('/api/v1/telefonia/simular-queda', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ ramal }) });
                     alert("Alerta de queda enviado!");
@@ -447,7 +447,7 @@ app.post('/api/v1/telefonia/alternar-central', (req, res) => {
 
 app.post('/api/v1/telefonia/simular-queda', async (req, res) => {
     const { ramal } = req.body;
-    const r = ramaisTelefonia.front ? null : ramaisTelefonia.find(i => i.ramal === ramal);
+    const r = ramaisTelefonia.find(i => i.ramal === ramal);
     if (r) {
         r.status = "Offline";
         eventosTelefonia.unshift({ hora: new Date().toLocaleTimeString('pt-BR'), texto: `Queda detectada no Ramal ${r.ramal}. Notificação enviada.`, tipo: "danger" });
