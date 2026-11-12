@@ -1,45 +1,48 @@
+cat << 'EOF' > views/login.ejs
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Acesso CST - Produção AD</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Acesso CST - Active Directory</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #0b131e; color: #e2e8f0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .login-card { background: #132030; border: 1px solid #1e293b; padding: 40px; border-radius: 12px; width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        h2 { color: #38bdf8; text-align: center; margin-bottom: 25px; font-size: 22px; }
-        .alert-error { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; font-weight: 600; }
-        label { display: block; font-size: 12px; color: #94a3b8; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 18px; background: #0b131e; border: 1px solid #334155; color: #fff; border-radius: 6px; font-size: 14px; }
-        input:focus, select:focus { border-color: #0284c7; outline: none; }
-        .btn-submit { width: 100%; padding: 12px; background: #0284c7; color: #fff; border: none; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.2s; }
-        .btn-submit:hover { background: #0369a1; }
+        body { background-color: #0b131e; display: flex; justify-content: center; align-items: center; height: 100vh; color: #e2e8f0; }
+        .login-card { background: #111827; border: 1px solid #1f2937; padding: 30px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 20px; font-size: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: bold; color: #9ca3af; margin-bottom: 5px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; background: #1f2937; border: 1px solid #374151; border-radius: 6px; color: #fff; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #38bdf8; }
+        .btn-submit { width: 100%; background: #0284c7; color: #fff; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
+        .btn-submit:hover { background: #0284c7; }
+        .error-msg { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="login-card">
-        <h2>Acesso CST (Active Directory)</h2>
-
-        <% if (locals.erro && erro) { %>
-            <div class="alert-error"><%= erro %></div>
+        <h2>🔒 Acesso CST (AD)</h2>
+        <% if (erro) { %>
+            <div class="error-msg"><%= erro %></div>
         <% } %>
-
         <form action="/login" method="POST">
-            <label>Usuário de Rede</label>
-            <input type="text" name="username" placeholder="ex: wesley.lima" required autocomplete="off">
-
-            <label>Senha</label>
-            <input type="password" name="password" placeholder="Insira sua senha de rede do AD" required>
-
-            <label>Modo de Acesso</label>
-            <select name="perfil">
-                <option value="user">👤 Colaborador (Autoatendimento)</option>
-                <option value="admin">⚙️ TI (Administrador)</option>
-            </select>
-
+            <div class="form-group">
+                <label>Usuário de Rede</label>
+                <input type="text" name="username" placeholder="ex: wesley.lima" required autofocus>
+            </div>
+            <div class="form-group">
+                <label>Senha</label>
+                <input type="password" name="password" placeholder="Sua senha do AD" required>
+            </div>
+            <div class="form-group">
+                <label>Perfil de Acesso</label>
+                <select name="perfil">
+                    <option value="colaborador">Colaborador (Autoatendimento)</option>
+                    <option value="admin">Administrador TI</option>
+                </select>
+            </div>
             <button type="submit" class="btn-submit">Entrar no Portal</button>
         </form>
     </div>
 </body>
 </html>
+EOF
