@@ -1,4 +1,5 @@
 process.env.TZ = 'America/Sao_Paulo';
+
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
@@ -7,11 +8,29 @@ const net = require('net');
 const { exec } = require('child_process');
 const multer = require('multer');
 
-// Proteção global para impedir que qualquer erro assíncrono derrube o servidor (502/503)
 process.on('uncaughtException', (err) => console.error('[ANTI-CRASH]', err.message));
 process.on('unhandledRejection', (err) => console.error('[ANTI-CRASH PROMISE]', err));
 
 const app = express();
+
+// URL oficial do formulário de chamado GLPI
+const URL_GLPI_CHAMADO = 'https://glpi.cstbh.com.br/Form/Render/4?token=DETevjeUeRGCXLQ63FmHdj92pvP8KXCbbYHHoHGk';
+
+// LISTA RESTRITA DA EQUIPE DE TI (Somente estes logins podem acessar /admin)
+const EQUIPE_TI_OFICIAL = [
+  'wesley.lima',
+  'rafael.silva',
+  'romulo.evangelista',
+  'admsuporte',
+  'admin',
+  'wesley',
+  'lide'
+];
+
+function ehUsuarioTI(login) {
+  const limpo = String(login || '').trim().replace(/^CST\\/i, '').replace(/@cst\.local$/i, '').toLowerCase();
+  return EQUIPE_TI_OFICIAL.includes(limpo);
+}
 
 function formatarEntidadeAD(val) {
   if (!val) return "CST";
@@ -65,7 +84,6 @@ function salvarJson(arquivo, dados) {
   } catch (e) {}
 }
 
-// Variáveis Globais de Estado
 let estacoes = lerJson('estacoes.json', []);
 let ativos = lerJson('ativos.json', []);
 let ramaisPabx = lerJson('ramais.json', []);
@@ -79,7 +97,6 @@ if (Array.isArray(estacoes)) {
   estacoes.forEach(e => { e.entidade = formatarEntidadeAD(e.entidade); });
 }
 
-// Configuração de Upload de Imagens (Ativos)
 const uploadDir = path.join(__dirname, 'public/uploads/ativos');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -92,15 +109,18 @@ const storageAtivos = multer.diskStorage({
 });
 const uploadAtivos = multer({ storage: storageAtivos, limits: { fileSize: 25 * 1024 * 1024 } });
 
-const administradoresTI = ['wesley.lima', 'rafael.silva', 'romulo.evangelista', 'admin', 'wesley', 'lide'];
-
-function ehUsuarioTI(login) {
-  return administradoresTI.includes(String(login || '').trim().toLowerCase());
-}
-
 function autenticar(req, res, next) {
   if (req.session && req.session.user) return next();
   res.redirect('/login');
+}
+
+function apenasTI(req, res, next) {
+  if (!req.session || !req.session.user) return res.redirect('/login');
+  const login = req.session.user.login || req.session.user;
+  if (!ehUsuarioTI(login) || req.session.user.perfil !== 'admin') {
+    return res.redirect('/');
+  }
+  return next();
 }
 
 // ---------------- ROTAS WEB & LOGIN ----------------
@@ -120,23 +140,19 @@ app.post('/login', (req, res) => {
 
     const isAdmin = ehUsuarioTI(u);
 
-    // Contingência imediata para administradores da TI
     if (isAdmin && senha.length >= 4) {
       req.session.user = { login: u, perfil: "admin" };
       return res.redirect("/admin");
     }
 
-    // Verifica se há algum agente Windows online na rede interna para autenticar no AD
     const agora = Date.now();
     const temAgenteOnline = (estacoes || []).some(e => e.ultimaVez && (agora - new Date(e.ultimaVez).getTime()) < 30000);
 
     if (!temAgenteOnline) {
-      // Se nenhum agente estiver conectado ainda no Render, libera acesso como colaborador
       req.session.user = { login: u, perfil: isAdmin ? "admin" : "colaborador" };
       return res.redirect(isAdmin ? "/admin" : "/");
     }
 
-    // Delega a autenticação real ao agente Windows conectado no domínio CST.LOCAL
     const reqId = "auth_" + Date.now() + "_" + Math.round(Math.random() * 1000);
     filaAuthAD.set(reqId, { id: reqId, usuario: u, senha });
 
@@ -150,15 +166,17 @@ app.post('/login', (req, res) => {
         if (!r.ok) {
           return res.render("login", { erro: r.motivo || "Usuário ou senha inválidos no Active Directory." });
         }
-        const perfilFinal = (r.ehTI || isAdmin) ? "admin" : "colaborador";
+        // Só libera perfil admin se estiver explicitamente na EQUIPE_TI_OFICIAL
+        const perfilFinal = isAdmin ? "admin" : "colaborador";
         req.session.user = { login: u, perfil: perfilFinal };
         return res.redirect(perfilFinal === "admin" ? "/admin" : "/");
       }
-      if (tentativas >= 24) { // 6 segundos máximo
+      if (tentativas >= 24) {
         clearInterval(iv);
         filaAuthAD.delete(reqId);
-        req.session.user = { login: u, perfil: isAdmin ? "admin" : "colaborador" };
-        return res.redirect(isAdmin ? "/admin" : "/");
+        const perfilFinal = isAdmin ? "admin" : "colaborador";
+        req.session.user = { login: u, perfil: perfilFinal };
+        return res.redirect(perfilFinal === "admin" ? "/admin" : "/");
       }
     }, 250);
   } catch (err) {
@@ -173,12 +191,18 @@ app.get('/', autenticar, (req, res) => {
   const estacaoAlvo = (estacoes || []).find(e => e.ip === clientIp) ||
                       (estacoes || []).find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase())) ||
                       (estacoes || [])[0] || null;
-  res.render('colaborador', { usuario: req.session.user, ipUsuario: clientIp, estacaoAlvo, estacoes: estacoes || [] });
+  res.render('colaborador', {
+    usuario: req.session.user,
+    ipUsuario: clientIp,
+    estacaoAlvo,
+    estacoes: estacoes || [],
+    urlGlpi: URL_GLPI_CHAMADO
+  });
 });
 
+// Redireciona "Mais de TI" diretamente para o formulário de abrir chamado no GLPI
 app.get('/mais-ti', autenticar, (req, res) => {
-  const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
-  res.render('mais-ti', { usuario: req.session.user, ipUsuario: clientIp, estacoes: estacoes || [] });
+  return res.redirect(URL_GLPI_CHAMADO);
 });
 
 app.get('/api/minha-estacao', autenticar, (req, res) => {
@@ -192,18 +216,15 @@ app.get('/api/minha-estacao', autenticar, (req, res) => {
   res.json({ ipUsuario: clientIp, alvo, estacoes: lista });
 });
 
-app.get('/admin', autenticar, (req, res) => {
-  if (req.session.user && req.session.user.perfil !== 'admin') return res.redirect('/');
+app.get('/admin', apenasTI, (req, res) => {
   res.render('admin', { usuario: req.session.user });
 });
 
-app.get('/admin-legado', autenticar, (req, res) => {
-  if (req.session.user && req.session.user.perfil !== 'admin') return res.redirect('/');
+app.get('/admin-legado', apenasTI, (req, res) => {
   res.render('admin-dashboard', { usuario: req.session.user, estacoes: estacoes || [], configPabx: configPabx || {} });
 });
 
-app.get('/admin/maquina/:hostname', autenticar, (req, res) => {
-  if (req.session.user && req.session.user.perfil !== 'admin') return res.redirect('/');
+app.get('/admin/maquina/:hostname', apenasTI, (req, res) => {
   const h = req.params.hostname;
   const m = (estacoes || []).find(e => e.hostname.toLowerCase() === h.toLowerCase()) || {
     hostname: h, ip: "N/D", usuario: "N/D", so: "Windows",
@@ -333,7 +354,7 @@ app.get('/api/estacoes', autenticar, (req, res) => {
   res.json((estacoes || []).map(e => ({ ...e, online: (agora - new Date(e.ultimaVez).getTime()) < 20000 })));
 });
 
-app.post('/api/estacoes/:hostname/ramal', autenticar, (req, res) => {
+app.post('/api/estacoes/:hostname/ramal', apenasTI, (req, res) => {
   const est = estacoes.find(e => e.hostname.toLowerCase() === req.params.hostname.toLowerCase());
   if (!est) return res.status(404).json({ erro: 'Estacao nao encontrada' });
   est.ramal = (req.body.ramal || '-').trim();
@@ -370,7 +391,7 @@ app.get('/api/comando/:id', autenticar, (req, res) => {
   res.json(item);
 });
 
-app.get('/api/processos-live', autenticar, (req, res) => {
+app.get('/api/processos-live', apenasTI, (req, res) => {
   const agora = Date.now();
   const registros = [];
   for (const est of (estacoes || [])) {
@@ -392,9 +413,9 @@ app.get('/api/processos-live', autenticar, (req, res) => {
 
 // ---------------- ROTAS ATIVOS / INVENTÁRIO ----------------
 
-app.get('/api/ativos', autenticar, (req, res) => res.json(ativos || []));
+app.get('/api/ativos', apenasTI, (req, res) => res.json(ativos || []));
 
-app.post('/api/ativos', autenticar, uploadAtivos.fields([
+app.post('/api/ativos', apenasTI, uploadAtivos.fields([
   { name: 'foto_pc', maxCount: 1 },
   { name: 'foto_monitor', maxCount: 1 },
   { name: 'foto_perifericos', maxCount: 1 },
@@ -423,19 +444,19 @@ app.post('/api/ativos', autenticar, uploadAtivos.fields([
   res.json({ ok: true, ativo: novo });
 });
 
-app.delete('/api/ativos/:id', autenticar, (req, res) => {
+app.delete('/api/ativos/:id', apenasTI, (req, res) => {
   ativos = ativos.filter(a => String(a.id) !== String(req.params.id));
   salvarJson('ativos.json', ativos);
   res.json({ ok: true });
 });
 
-app.delete('/api/inventario/:id', autenticar, (req, res) => {
+app.delete('/api/inventario/:id', apenasTI, (req, res) => {
   ativos = ativos.filter(a => String(a.id) !== String(req.params.id));
   salvarJson('ativos.json', ativos);
   res.json({ ok: true });
 });
 
-app.get("/api/admin/inventario", autenticar, (req, res) => {
+app.get("/api/admin/inventario", apenasTI, (req, res) => {
   const agora = Date.now();
   const lista = (estacoes || []).map(e => {
     const online = (agora - new Date(e.ultimaVez).getTime()) < 25000;
@@ -461,7 +482,7 @@ app.get("/api/admin/inventario", autenticar, (req, res) => {
 
 // ---------------- ROTAS NET2PHONE / PABX ----------------
 
-app.get("/api/net2phone/status", (req, res) => {
+app.get("/api/net2phone/status", apenasTI, (req, res) => {
   const agora = Date.now();
   const ativas = [];
   for (const [host, info] of chamadasAtivasN2P.entries()) {
@@ -471,7 +492,7 @@ app.get("/api/net2phone/status", (req, res) => {
   res.json({ ativas, historico: historicoEventosN2P.slice(0, 30) });
 });
 
-app.get("/api/net2phone/painel", (req, res) => {
+app.get("/api/net2phone/painel", apenasTI, (req, res) => {
   const agora = Date.now();
   const estacoesOnline = (estacoes || []).filter(e => e.ultimaVez && (agora - new Date(e.ultimaVez).getTime() < 20000));
   const ramaisOnline = [];
@@ -561,18 +582,18 @@ async function cicloMonitoramentoPabx() {
 }
 setInterval(cicloMonitoramentoPabx, 10000);
 
-app.get('/api/pabx/status', autenticar, (req, res) => res.json({ config: configPabx, central: statusCentralPabx, ramais: ramaisPabx, logs: logsPabx, ligacoes: ligacoesAtivas }));
-app.post('/api/pabx/config', autenticar, async (req, res) => {
+app.get('/api/pabx/status', apenasTI, (req, res) => res.json({ config: configPabx, central: statusCentralPabx, ramais: ramaisPabx, logs: logsPabx, ligacoes: ligacoesAtivas }));
+app.post('/api/pabx/config', apenasTI, async (req, res) => {
   if (req.body.ipCentral) configPabx.ipCentral = req.body.ipCentral.trim();
   if (req.body.modelo) configPabx.modelo = req.body.modelo.trim();
   salvarJson('config.json', configPabx);
   res.json({ ok: true, config: configPabx, central: statusCentralPabx });
 });
-app.post('/api/pabx/testar', autenticar, async (req, res) => {
+app.post('/api/pabx/testar', apenasTI, async (req, res) => {
   await cicloMonitoramentoPabx();
   res.json({ ok: true, mensagem: statusCentralPabx.online ? `Teste Central: ONLINE (${statusCentralPabx.latenciaMs} ms)` : 'Teste Central: SEM RESPOSTA', central: statusCentralPabx });
 });
-app.post('/api/pabx/ramais', autenticar, async (req, res) => {
+app.post('/api/pabx/ramais', apenasTI, async (req, res) => {
   const { ramal, colaborador, setor, ip, mac } = req.body || {};
   if (!ramal || !ip) return res.status(400).json({ erro: 'Ramal e IP obrigatorios' });
   const novo = { ramal: ramal.trim(), colaborador: (colaborador || 'Colaborador').trim(), setor: (setor || 'Geral').trim(), ip: ip.trim(), mac: (mac || '-').trim(), online: false, latenciaMs: null };
@@ -581,7 +602,7 @@ app.post('/api/pabx/ramais', autenticar, async (req, res) => {
   salvarJson('ramais.json', ramaisPabx);
   res.json({ ok: true, ramais: ramaisPabx });
 });
-app.delete('/api/pabx/ramais/:ramal', autenticar, (req, res) => {
+app.delete('/api/pabx/ramais/:ramal', apenasTI, (req, res) => {
   ramaisPabx = ramaisPabx.filter(r => r.ramal !== req.params.ramal);
   salvarJson('ramais.json', ramaisPabx);
   res.json({ ok: true });
@@ -589,7 +610,7 @@ app.delete('/api/pabx/ramais/:ramal', autenticar, (req, res) => {
 
 const PORT = process.env.PORT || 8000;
 if (fs.existsSync(path.join(__dirname, 'admin-backend.js'))) {
-  require('./admin-backend')(app, autenticar, () => estacoes, () => []);
+  require('./admin-backend')(app, apenasTI, () => estacoes, () => []);
 }
 
 app.listen(PORT, '0.0.0.0', () => console.log(`[CST TI] Servidor rodando na porta ${PORT}`));
