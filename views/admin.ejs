@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>CST RMM • Admin</title>
+<style>
+body{background:#060a12;color:#f8fafc;font-family:system-ui,sans-serif;margin:0}
+header{background:#090f1d;border-bottom:1px solid #1e293b;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+nav a,nav button{background:transparent;border:1px solid transparent;color:#94a3b8;padding:9px 15px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;text-decoration:none}
+nav button.active{background:#e0f2fe;color:#0369a1}
+main{max-width:1440px;margin:20px auto;padding:0 20px}
+.pane{display:none}.pane.active{display:block}
+.card{background:#0d1424;border:1px solid #1e293b;border-radius:14px;padding:18px;margin-bottom:18px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;color:#334155;text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase}
+td{padding:12px;border-bottom:1px solid #162035}
+a.hlink{color:#38bdf8;font-weight:800;text-decoration:none}a.hlink:hover{text-decoration:underline}
+.on{background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:99px;font-weight:700;font-size:11.5px}
+.off{background:#fee2e2;color:#b91c1c;padding:3px 10px;border-radius:99px;font-weight:700;font-size:11.5px}
+.grid-at{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin:12px 0}
+.box-at{background:#090f1d;border:1px solid #1e293b;padding:12px;border-radius:10px}
+input{background:#080d18;border:1px solid #26354f;color:#fff;padding:8px 10px;border-radius:7px;font-size:12.5px;width:100%;margin-bottom:6px}
+.btn{background:#0284c7;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer}
+.thumb{width:46px;height:46px;object-fit:cover;border-radius:6px;cursor:zoom-in;border:1px solid #38bdf8}
+#m4k{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:999;justify-content:center;align-items:center;flex-direction:column}
+#m4k img{max-width:94vw;max-height:86vh;border-radius:10px}
+</style></head><body>
+<header>
+  <nav>
+    <a href="/">🏠 Home (Minha Máquina)</a>
+    <button class="tbtn active" onclick="tab('rede',this)">🖥️ Computadores & Switches (RMM 5s)</button>
+    <button class="tbtn" onclick="tab('ativos',this)">📁 Ativos & Inventário</button>
+    <button class="tbtn" onclick="tab('tel',this)">📞 Telefone (net2phone)</button>
+  </nav>
+  <div style="display:flex;align-items:center;gap:12px">
+    <b><%= typeof usuario==="object"?(usuario.login||"wesley.lima"):(usuario||"wesley.lima") %> (TI)</b>
+    <a href="/logout" style="background:#dc2626;color:#fff;padding:7px 14px;border-radius:8px;text-decoration:none;font-size:12.5px;font-weight:700">Sair</a>
+  </div>
+</header>
+<main>
+  <div id="p-rede" class="pane active"><div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div><h2 style="margin:0;font-size:18px">🖥️ Estações & Switches da Rede</h2><small style="color:#94a3b8">Clique no <b>Hostname</b> para abrir o acesso remoto completo da máquina.</small></div>
+      <span style="color:#10b981;font-size:12px;font-weight:700">↻ Auto-sincronizando a cada 5s</span>
+    </div>
+    <div style="overflow-x:auto"><table><thead><tr><th>Hostname (Clique)</th><th>Entidade / OU</th><th>Status</th><th>Sistema</th><th>Usuário</th><th>Memória RAM</th><th>Informação do SSD</th><th>IP</th><th>CPU / Info</th></tr></thead><tbody id="tbRede"></tbody></table></div>
+  </div></div>
+
+  <div id="p-ativos" class="pane">
+    
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:12px 16px; background:#0f172a; border:1px solid #1e293b; border-radius:10px;">
+  <div>
+    <h3 style="margin:0; color:#f8fafc; font-size:18px;">📦 Gestão de Inventário & Patrimônio</h3>
+    <span style="color:#94a3b8; font-size:12px;">Visualize todos os kits cadastrados abaixo ou adicione um novo com foto pela câmera.</span>
+  </div>
+  <button id="btnToggleInv" type="button" onclick="const b=document.getElementById('boxNovoInventario'); const aberto=b.style.display==='block'; b.style.display=aberto?'none':'block'; this.innerHTML=aberto?'+ Adicionar Inventário':'✕ Fechar Formulário';" style="background:#0ea5e9; color:#fff; border:none; padding:10px 18px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px;">
+    + Adicionar Inventário
+  </button>
+</div>
+<div id="boxNovoInventario" style="display:none; margin-bottom:20px;">
+<div class="card">
+      <h2 style="margin:0 0 10px;font-size:18px">📁 Cadastrar Novo Kit de Ativos </h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:650px">
+        <input id="cColab" placeholder="Colaborador / Estação (ex: Wesley Lima - PC0085)">
+        <input id="cSetor" placeholder="Setor / VLAN (ex: TI - VLAN 102)">
+      </div>
+      <div class="grid-at">
+        <div class="box-at"><b style="color:#38bdf8">1. Gabinete</b><input id="pGab" placeholder="Patrimônio"><input id="mGab" placeholder="Modelo"><input type="file" id="fGab" accept="image/*" accept="image/*" capture="environment"></div>
+        <div class="box-at"><b style="color:#38bdf8">2. Monitor 1</b><input id="pMon1" placeholder="Patrimônio"><input id="mMon1" placeholder="Modelo"><input type="file" id="fMon1" accept="image/*" accept="image/*" capture="environment"></div>
+        <div class="box-at"><b style="color:#38bdf8">3. Monitor 2</b><input id="pMon2" placeholder="Patrimônio"><input id="mMon2" placeholder="Modelo"><input type="file" id="fMon2" accept="image/*" accept="image/*" capture="environment"></div>
+        <div class="box-at"><b style="color:#38bdf8">4. Teclado / Mouse</b><input id="pTec" placeholder="Patrimônio"><input id="mTec" placeholder="Modelo"><input type="file" id="fTec" accept="image/*" accept="image/*" capture="environment"></div>
+        <div class="box-at"><b style="color:#38bdf8">5. Headset</b><input id="pHead" placeholder="Patrimônio"><input id="mHead" placeholder="Modelo"><input type="file" id="fHead" accept="image/*" accept="image/*" capture="environment"></div>
+        <div class="box-at"><b style="color:#38bdf8">6. Celular</b><input id="pCel" placeholder="Patrimônio"><input id="mCel" placeholder="Modelo"><input type="file" id="fCel" accept="image/*" accept="image/*" capture="environment"></div>
+      </div>
+      <button class="btn" onclick="addAtivo()">💾 Adicionar Ativo ao Inventário</button>
+    </div>
+    
+</div>
+<div class="card"><h3 style="margin:0 0 12px">📋 Ativos Cadastrados (Clique na foto para ampliar)</h3>
+      <div style="overflow-x:auto"><table><thead><tr><th>Colaborador / Setor</th><th>Gabinete</th><th>Monitor 1</th><th>Monitor 2</th><th>Teclado/Mouse</th><th>Headset</th><th>Celular</th></tr></thead><tbody id="tbAtivos"></tbody></table></div>
+    </div>
+  </div>
+
+  <div id="p-tel" class="pane">
+    <div id="zBanner" style="background:rgba(16,185,129,.12);border:1px solid #10b981;padding:14px 18px;border-radius:12px;margin-bottom:16px;display:flex;justify-content:space-between">
+      <b id="zTxt">● net2phone: Monitorando VLAN 192.168.122.1 • Monitoramento VoIP & Ramais em Tempo Real</b>
+      <span id="zTime">--:--:--</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card"><h3 style="color:#38bdf8;margin:0 0 10px">🟢 20 Usuários em Atendimento ao Vivo (net2phone)</h3>
+        <table><thead><tr><th>Ramal</th><th>Destino</th><th>Direção</th><th>Status</th></tr></thead><tbody id="tbVivas"><tr><td colspan="4" style="color:#94a3b8;text-align:center;padding:18px">0/20 chamadas ativas no momento (Sync 5s)</td></tr></tbody></table>
+      </div>
+      <div class="card"><h3 style="margin:0 0 10px">📜 Histórico & Eventos net2phone</h3>
+        <table><thead><tr><th>Horário</th><th>Evento / Ramal</th><th>Detalhes</th></tr></thead><tbody id="tbHist"></tbody></table>
+      </div>
+    </div>
+  </div>
+</main>
+<div id="m4k" onclick="this.style.display='none'"><img id="i4k"><p id="l4k" style="font-weight:700;margin-top:10px"></p></div>
+<script>
+function tab(id,b){document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));document.querySelectorAll(".tbtn").forEach(x=>x.classList.remove("active"));document.getElementById("p-"+id).classList.add("active");b.classList.add("active");}
+async function loadRede(){try{const r=await fetch("/api/admin/inventario");const d=await r.json();const rows=[];(d.estacoes||[]).forEach(e=>rows.push("<tr><td><a class='hlink' target='_blank' href='/admin/maquina/"+encodeURIComponent(e.hostname)+"'>🖥️ "+e.hostname+" ↗</a></td><td style='font-size:11px;color:#94a3b8'>"+(e.entidade||"CST")+"</td><td><span class='"+(e.online?"on":"off")+"'>"+(e.online?"Online":"Offline")+"</span></td><td>"+(e.tipoSistema||"Windows")+"</td><td><b>"+(e.usuario||"N/D")+"</b></td><td><b>"+(e.ram_total||"16GB")+" ("+(e.ram_uso||0)+"% uso)</b></td><td><b>"+e.ssdInfo+"</b></td><td><b>"+(e.ip||"N/D")+"</b></td><td>CPU "+(e.cpu_uso||0)+"%</td></tr>"));(d.switches||[]).forEach(s=>rows.push("<tr><td><a class='hlink' target='_blank' href='/admin/maquina/"+encodeURIComponent(s.hostname)+"'>🔀 "+s.hostname+" ↗</a></td><td>REDE</td><td><span class='on'>Online</span></td><td>"+s.sistema+"</td><td>Switch</td><td>—</td><td><b>"+s.ssd+"</b></td><td><b>"+s.ip+"</b></td><td>"+s.infoExtra+"</td></tr>"));document.getElementById("tbRede").innerHTML=rows.join("");}catch(e){}}
+const svgEx=t=>"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400'><rect width='100%' height='100%' fill='%230f172a'/><text x='50%' y='50%' fill='%2338bdf8' font-size='24' font-family='sans-serif' text-anchor='middle'>"+encodeURIComponent(t)+"</text></svg>";
+let ativos=[
+  {colab:"Exemplo 1 • Wesley Lima (GC-M08-PC0085)",setor:"TI • VLAN 102",gab:{p:"CST-1042",m:"Dell OptiPlex",f:svgEx("Gabinete CST-1042")},mon1:{p:"CST-2011",m:"LG 24 FHD",f:svgEx("Monitor 1 CST-2011")},mon2:{p:"CST-2012",m:"LG 24 FHD",f:svgEx("Monitor 2 CST-2012")},tec:{p:"CST-3088",m:"Logitech MK270",f:svgEx("Teclado/Mouse CST-3088")},head:{p:"CST-4015",m:"Jabra Evolve",f:svgEx("Headset CST-4015")},cel:{p:"CST-5009",m:"Samsung A54",f:svgEx("Celular CST-5009")}},
+  {colab:"Exemplo 2 • Atendimento Comercial",setor:"Comercial • VLAN 105",gab:{p:"CST-1099",m:"Lenovo ThinkCentre",f:svgEx("Gabinete CST-1099")},mon1:{p:"CST-2055",m:"Samsung 22",f:svgEx("Monitor 1 CST-2055")},mon2:{p:"S/N",m:"Não possui",f:""},tec:{p:"CST-3102",m:"Dell KB216",f:svgEx("Kit CST-3102")},head:{p:"CST-4077",m:"Logitech H390",f:svgEx("Headset CST-4077")},cel:{p:"CST-5021",m:"Moto G54",f:svgEx("Celular CST-5021")}}
+];
+function ver4k(src,txt){document.getElementById("i4k").src=src;document.getElementById("l4k").textContent=txt;document.getElementById("m4k").style.display="flex";}
+function cell(o,n){if(!o||(!o.p&&!o.m))return"—";const img=o.f?"<img src=\""+o.f+"\" class=\"thumb\" onclick=\"ver4k('"+o.f+"','"+n+" • Pat: "+o.p+"')\">":"";return "<div style='display:flex;gap:8px;align-items:center'>"+img+"<div><b style='color:#38bdf8'>Pat: "+o.p+"</b><br><small style='color:#94a3b8'>"+o.m+"</small></div></div>";}
+function renderAtivos(){document.getElementById("tbAtivos").innerHTML=ativos.map(a=>"<tr><td><b>"+a.colab+"</b><br><small style='color:#94a3b8'>"+a.setor+"</small></td><td>"+cell(a.gab,"Gabinete")+"</td><td>"+cell(a.mon1,"Monitor 1")+"</td><td>"+cell(a.mon2,"Monitor 2")+"</td><td>"+cell(a.tec,"Teclado/Mouse")+"</td><td>"+cell(a.head,"Headset")+"</td><td>"+cell(a.cel,"Celular")+"</td></tr>").join("");}
+const lerF=id=>new Promise(r=>{const f=document.getElementById(id).files[0];if(!f)return r("");const rd=new FileReader();rd.onload=()=>r(rd.result);rd.readAsDataURL(f);});
+async function addAtivo(){
+  ativos.unshift({
+    colab:document.getElementById("cColab").value||"Novo Colaborador",setor:document.getElementById("cSetor").value||"VLAN 102",
+    gab:{p:document.getElementById("pGab").value,m:document.getElementById("mGab").value,f:await lerF("fGab")},
+    mon1:{p:document.getElementById("pMon1").value,m:document.getElementById("mMon1").value,f:await lerF("fMon1")},
+    mon2:{p:document.getElementById("pMon2").value,m:document.getElementById("mMon2").value,f:await lerF("fMon2")},
+    tec:{p:document.getElementById("pTec").value,m:document.getElementById("mTec").value,f:await lerF("fTec")},
+    head:{p:document.getElementById("pHead").value,m:document.getElementById("mHead").value,f:await lerF("fHead")},
+    cel:{p:document.getElementById("pCel").value,m:document.getElementById("mCel").value,f:await lerF("fCel")}
+  });
+  renderAtivos();
+}
+loadRede();renderAtivos();setInterval(loadRede,5000);
+</script>
+<script>
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/net2phone/status");
+    const d = await r.json();
+    const tit = Array.from(document.querySelectorAll("*")).find(el => el.textContent && el.textContent.includes("Usuários em Atendimento ao Vivo (net2phone)") && el.children.length === 0);
+    if (tit) {
+      const card = tit.closest("div");
+      const tbody = card ? card.querySelector("tbody") : null;
+      if (tbody) {
+        if (d.ativas.length === 0) {
+          tbody.innerHTML = "<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:16px;\">0/20 chamadas ativas no momento (Sync 3s)</td></tr>";
+        } else {
+          tbody.innerHTML = d.ativas.map(c => `<tr><td><b>${c.ramal}</b></td><td>${c.destino}</td><td><span style="color:#38bdf8;">${c.direcao}</span></td><td><span style="color:#4ade80;font-weight:bold;">● ${c.status}</span></td></tr>`).join("");
+        }
+      }
+    }
+    const titHist = Array.from(document.querySelectorAll("*")).find(el => el.textContent && el.textContent.includes("Histórico & Eventos net2phone") && el.children.length === 0);
+    if (titHist && d.historico) {
+      const cardH = titHist.closest("div");
+      const tbodyH = cardH ? cardH.querySelector("tbody") : null;
+      if (tbodyH && d.historico.length > 0) {
+        tbodyH.innerHTML = d.historico.map(h => `<tr><td>${h.horario}</td><td>${h.evento}</td><td>${h.detalhes}</td></tr>`).join("");
+      }
+    }
+  } catch (e) {}
+}, 3000);
+</script>
+
+<style>
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.82) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 32px 16px !important;
+    overflow-y: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 780px !important;
+    margin: 20px auto !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 14px !important;
+    padding: 22px !important;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.75) !important;
+  }
+  #boxNovoInventario input[type="text"] {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+  }
+  #boxNovoInventario input[type="file"] {
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+  .badge-ou {
+    display: inline-block;
+    background: rgba(14, 165, 233, 0.14);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+</style>
+<script>
+// Formata qualquer DN bruto do AD que já esteja na tabela ou venha via sync (ex: OU=TI,OU=COMPUTADORES,OU=GCST -> TI • GCST)
+function limparTextoOU() {
+  document.querySelectorAll("td").forEach(td => {
+    const txt = td.textContent.trim();
+    if (txt.includes("DC=CST") || txt.includes("OU=")) {
+      const matches = [...txt.matchAll(/OU=([^,]+)/g)].map(m => m[1]).filter(v => v !== "COMPUTADORES" && v !== "EMPRESAS");
+      const limpo = matches.length >= 2 ? (matches[0] + " • " + matches[1]) : (matches[0] || "CST");
+      td.innerHTML = "<span class=\"badge-ou\">" + limpo + "</span>";
+    } else if (txt === "REDE") {
+      td.innerHTML = "<span class=\"badge-ou\" style=\"color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.12);\">INFRA / REDE</span>";
+    }
+  });
+}
+new MutationObserver(limparTextoOU).observe(document.body, { childList: true, subtree: true });
+document.addEventListener("DOMContentLoaded", limparTextoOU);
+</script>
+
+
+
+<!-- cst-ui-definitiva -->
+<style>
+  /* Modal Claro Limpo e Alinhado */
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.78) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 20px !important;
+    overflow-y: auto !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 760px !important;
+    margin: 20px auto !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-radius: 16px !important;
+    padding: 24px 28px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  }
+  /* Força todos os inputs dentro do modal a serem claros */
+  #boxNovoInventario input, #boxNovoInventario select {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    font-size: 13.5px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 8px !important;
+  }
+  #boxNovoInventario input::placeholder {
+    color: #94a3b8 !important;
+  }
+  #boxNovoInventario input:focus {
+    background: #ffffff !important;
+    border-color: #0ea5e9 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
+  }
+  .cst-topo-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .cst-chips-barra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .cst-chip {
+    border: 1.5px solid transparent;
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cst-chip:not(.ativo) {
+    background: #ffffff !important;
+    color: #64748b !important;
+    border-color: #cbd5e1 !important;
+  }
+  .cst-grade-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .cst-card-claro {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+  }
+  .cst-card-claro h4, .cst-card-claro strong, .cst-card-claro div:first-child {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+  }
+  .cst-btn-foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1.5px dashed #38bdf8;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .cst-btn-foto.ok {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1.5px solid #4ade80;
+  }
+  .cst-rodape-modal {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .cst-btn-sair {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cst-btn-sair:hover { background: #e2e8f0; color: #0f172a; }
+</style>
+<script>
+function fecharModalInv() {
+  const b = document.getElementById("boxNovoInventario");
+  if (b) b.style.display = "none";
+  const btn = document.getElementById("btnToggleInv") || document.getElementById("btnToggleInventario");
+  if (btn) btn.innerHTML = "+ Adicionar Inventário";
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModalInv(); });
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Organiza o Modal Claro de Inventário
+  const modal = document.getElementById("boxNovoInventario");
+  if (modal) {
+    modal.addEventListener("click", e => { if (e.target === modal) fecharModalInv(); });
+    const inner = modal.querySelector(":scope > div");
+    if (inner) {
+      const h = document.createElement("div");
+      h.style.cssText = "display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;";
+      h.innerHTML = `
+        <div>
+          <h3 style="margin:0;font-size:18px;color:#0f172a;">📦 Novo Registro de Inventário</h3>
+          <span style="font-size:12px;color:#64748b;">Escolha os equipamentos do colaborador e anexe a foto</span>
+        </div>
+        <button type="button" onclick="fecharModalInv()" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;font-size:16px;font-weight:bold;color:#475569;cursor:pointer;">✕</button>
+      `;
+      const oldH = inner.querySelector("h2,h3,h4");
+      if (oldH) oldH.replaceWith(h); else inner.prepend(h);
+
+      // Organiza os 2 inputs principais lado a lado
+      const topInputs = Array.from(inner.querySelectorAll("input[type=text]")).slice(0, 2);
+      if (topInputs.length === 2) {
+        const wrapTop = document.createElement("div");
+        wrapTop.className = "cst-topo-inputs";
+        topInputs[0].parentNode.insertBefore(wrapTop, topInputs[0]);
+        wrapTop.appendChild(topInputs[0]);
+        wrapTop.appendChild(topInputs[1]);
+      }
+
+      // Organiza os cards e cria chips coloridos no topo
+      const cores = [
+        { nome: "🖥️ Gabinete", bg: "#dbeafe", txt: "#1d4ed8", brd: "#93c5fd", ativo: true },
+        { nome: "🖵 Monitor 1", bg: "#e0e7ff", txt: "#4338ca", brd: "#a5b4fc", ativo: true },
+        { nome: "🖵 Monitor 2", bg: "#f3e8ff", txt: "#7e22ce", brd: "#d8b4fe", ativo: false },
+        { nome: "⌨️ Teclado/Mouse", bg: "#dcfce7", txt: "#15803d", brd: "#86efac", ativo: true },
+        { nome: "🎧 Headset", bg: "#fef3c7", txt: "#b45309", brd: "#fcd34d", ativo: false },
+        { nome: "📱 Celular", bg: "#ffe4e6", txt: "#be123c", brd: "#fda4af", ativo: false }
+      ];
+      const cards = Array.from(inner.querySelectorAll("div")).filter(d => d.querySelectorAll("input[type=file]").length === 1);
+      if (cards.length > 0) {
+        const barra = document.createElement("div");
+        barra.className = "cst-chips-barra";
+        const grade = document.createElement("div");
+        grade.className = "cst-grade-cards";
+        cards[0].parentNode.insertBefore(barra, cards[0]);
+        cards[0].parentNode.insertBefore(grade, cards[0]);
+
+        cards.forEach((card, i) => {
+          const cfg = cores[i] || { nome: "Item " + (i+1), bg: "#e2e8f0", txt: "#334155", brd: "#cbd5e1", ativo: true };
+          card.className = "cst-card-claro";
+          card.style.display = cfg.ativo ? "block" : "none";
+          grade.appendChild(card);
+
+          const fi = card.querySelector("input[type=file]");
+          if (fi) {
+            fi.style.display = "none";
+            const bf = document.createElement("button");
+            bf.type = "button";
+            bf.className = "cst-btn-foto";
+            bf.innerHTML = "📷 Tirar Foto / Anexar";
+            bf.onclick = () => fi.click();
+            fi.onchange = () => {
+              if (fi.files && fi.files[0]) {
+                bf.classList.add("ok");
+                bf.innerHTML = "✅ " + fi.files[0].name;
+              }
+            };
+            fi.parentNode.insertBefore(bf, fi);
+          }
+
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "cst-chip" + (cfg.ativo ? " ativo" : "");
+          chip.style.cssText = `background:${cfg.bg};color:${cfg.txt};border-color:${cfg.brd};`;
+          chip.innerHTML = (cfg.ativo ? "✓ " : "+ ") + cfg.nome;
+          chip.onclick = () => {
+            const on = card.style.display !== "none";
+            card.style.display = on ? "none" : "block";
+            chip.classList.toggle("ativo", !on);
+            chip.innerHTML = (!on ? "✓ " : "+ ") + cfg.nome;
+          };
+          barra.appendChild(chip);
+        });
+      }
+
+      // Coloca botão Cancelar ao lado de qualquer botão Salvar/Adicionar do modal
+      const btnSalvar = Array.from(inner.querySelectorAll("button")).find(b => /Adicionar Ativo|Salvar/i.test(b.textContent));
+      if (btnSalvar) {
+        const rodape = document.createElement("div");
+        rodape.className = "cst-rodape-modal";
+        const btnCancel = document.createElement("button");
+        btnCancel.type = "button";
+        btnCancel.className = "cst-btn-sair";
+        btnCancel.innerText = "Cancelar";
+        btnCancel.onclick = fecharModalInv;
+        btnSalvar.parentNode.insertBefore(rodape, btnSalvar);
+        rodape.appendChild(btnCancel);
+        rodape.appendChild(btnSalvar);
+      }
+    }
+  }
+
+  // 2. Remove linhas falsas ("Exemplo 1", "Exemplo 2") da tabela de Ativos Cadastrados
+  document.querySelectorAll("tr").forEach(tr => {
+    if (tr.textContent.includes("Exemplo 1") || tr.textContent.includes("Exemplo 2")) {
+      tr.remove();
+    }
+  });
+  document.querySelectorAll("table").forEach(tb => {
+    const tbody = tb.querySelector("tbody");
+    if (tbody && tbody.children.length === 0 && tb.textContent.includes("GABINETE")) {
+      tbody.innerHTML = "<tr><td colspan=\"7\" style=\"text-align:center;padding:28px;color:#94a3b8;\">Nenhum ativo cadastrado ainda. Clique em <b>+ Adicionar Inventário</b> acima para registrar o primeiro kit.</td></tr>";
+    }
+  });
+});
+
+// 3. Atualiza em tempo real o monitoramento real de ramais e chamadas do net2phone
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/net2phone/painel");
+    const d = await r.json();
+    const tit = Array.from(document.querySelectorAll("*")).find(el => el.textContent && el.textContent.includes("Usuários em Atendimento ao Vivo (net2phone)") && el.children.length === 0);
+    if (tit) {
+      const card = tit.closest("div");
+      const tbody = card ? card.querySelector("tbody") : null;
+      if (tbody) {
+        const linhas = [];
+        d.chamadasAtivas.forEach(c => {
+          linhas.push(`<tr style="background:rgba(34,197,94,0.08);"><td><b>${c.ramal}</b></td><td>${c.destino}</td><td><span style="color:#38bdf8;">${c.direcao}</span></td><td><span style="color:#4ade80;font-weight:bold;">● ${c.status}</span></td></tr>`);
+        });
+        d.ramaisOnline.forEach(rm => {
+          if (!d.chamadasAtivas.some(c => c.ramal.includes(rm.maquina))) {
+            linhas.push(`<tr><td><b>${rm.usuario}</b> <small style="color:#64748b;">(${rm.maquina})</small></td><td>${rm.ip}</td><td>Softphone RCon</td><td><span style="color:#94a3b8;">● ${rm.status}</span></td></tr>`);
+          }
+        });
+        tbody.innerHTML = linhas.length > 0
+          ? linhas.join("")
+          : "<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:18px;\">Nenhum ramal com Receptionist Console ativo detectado no momento</td></tr>";
+      }
+    }
+  } catch (e) {}
+}, 3000);
+</script>
+</body></html>

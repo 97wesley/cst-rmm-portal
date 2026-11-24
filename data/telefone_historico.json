@@ -1,0 +1,8 @@
+[
+  {
+    "data": "22/11/2026, 05:18:58",
+    "evento": "QUEDA DE TELEFONIA (ZABBIX / VLAN 192.168.122.1)",
+    "detalhe": "Sem resposta ICMP na VLAN 192.168.122.1 e falha na API net2phone.",
+    "destinoEmail": "ti@cstbh.com.br"
+  }
+]

@@ -1,0 +1,406 @@
+[
+  {
+    "hostname": "GC-M08-PC0085",
+    "entidade": "OU=TI,OU=COMPUTADORES,OU=GCST,OU=EMPRESAS,DC=CST,DC=LOCAL",
+    "tipo": "Desktop",
+    "usuario": "CST\\wesley.lima",
+    "so": "Microsoft Windows 11 Enterprise",
+    "processador": "AMD Ryzen 3 3200G with Radeon Vega Graphics    ",
+    "ram_total": "13.9 GB",
+    "ram_uso": 83,
+    "cpu_uso": 23,
+    "disco_c_livre": 46,
+    "disco_c_total": 237,
+    "disco_c_uso": 81,
+    "ramal": "-",
+    "ip": "192.168.56.1",
+    "ultimaVez": "2026-11-24T15:37:16.722Z",
+    "programas_abertos": [],
+    "historico": [
+      {
+        "hora": "15:35:46",
+        "cpu": 11,
+        "ram": 85,
+        "disco": 81
+      },
+      {
+        "hora": "15:35:50",
+        "cpu": 17,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:35:55",
+        "cpu": 9,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:00",
+        "cpu": 14,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:04",
+        "cpu": 36,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:09",
+        "cpu": 21,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:13",
+        "cpu": 15,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:18",
+        "cpu": 31,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:24",
+        "cpu": 23,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:28",
+        "cpu": 12,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:33",
+        "cpu": 14,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:37",
+        "cpu": 45,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:42",
+        "cpu": 26,
+        "ram": 84,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:48",
+        "cpu": 79,
+        "ram": 86,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:52",
+        "cpu": 33,
+        "ram": 85,
+        "disco": 81
+      },
+      {
+        "hora": "15:36:58",
+        "cpu": 18,
+        "ram": 85,
+        "disco": 81
+      },
+      {
+        "hora": "15:37:02",
+        "cpu": 7,
+        "ram": 85,
+        "disco": 81
+      },
+      {
+        "hora": "15:37:07",
+        "cpu": 20,
+        "ram": 85,
+        "disco": 81
+      },
+      {
+        "hora": "15:37:12",
+        "cpu": 25,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "15:37:16",
+        "cpu": 23,
+        "ram": 83,
+        "disco": 81
+      }
+    ]
+  },
+  {
+    "hostname": "CS-M02-PC0025",
+    "entidade": "RECEPCAO • CST",
+    "tipo": "Desktop",
+    "usuario": "CST\\pamela.araujo",
+    "so": "Microsoft Windows 11 Enterprise",
+    "processador": "Intel(R) Core(TM) i3-8100 CPU @ 3.60GHz",
+    "ram_total": "7.8 GB",
+    "ram_uso": 82,
+    "cpu_uso": 13,
+    "disco_c_livre": 23,
+    "disco_c_total": 118,
+    "disco_c_uso": 81,
+    "ramal": "-",
+    "ip": "192.168.111.13",
+    "ultimaVez": "2026-11-19T14:39:05.217Z",
+    "programas_abertos": [
+      {
+        "ram_mb": 245,
+        "titulo": "PassPanel",
+        "processo": "chrome"
+      },
+      {
+        "ram_mb": 45,
+        "titulo": "Chat | Wesley Lima | Microsoft Teams",
+        "processo": "ms-teams"
+      },
+      {
+        "ram_mb": 252,
+        "titulo": "Resultados - CECO - Caixa de Entrada - Resultados - CECO - Outlook",
+        "processo": "OUTLOOK"
+      },
+      {
+        "ram_mb": 73,
+        "titulo": "Elvécio Santos",
+        "processo": "Spark"
+      },
+      {
+        "ram_mb": 39,
+        "titulo": "Experiência de Entrada do Windows",
+        "processo": "TextInputHost"
+      },
+      {
+        "ram_mb": 98,
+        "titulo": "Windows PowerShell",
+        "processo": "WindowsTerminal"
+      }
+    ],
+    "historico": [
+      {
+        "hora": "14:37:39",
+        "cpu": 23,
+        "ram": 83,
+        "disco": 81
+      },
+      {
+        "hora": "14:37:43",
+        "cpu": 31,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:37:48",
+        "cpu": 8,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:37:52",
+        "cpu": 5,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:37:57",
+        "cpu": 8,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:01",
+        "cpu": 5,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:06",
+        "cpu": 3,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:10",
+        "cpu": 11,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:15",
+        "cpu": 2,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:19",
+        "cpu": 12,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:24",
+        "cpu": 10,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:28",
+        "cpu": 17,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:33",
+        "cpu": 8,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:37",
+        "cpu": 8,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:42",
+        "cpu": 5,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:46",
+        "cpu": 7,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:51",
+        "cpu": 11,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:38:56",
+        "cpu": 8,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:39:00",
+        "cpu": 5,
+        "ram": 82,
+        "disco": 81
+      },
+      {
+        "hora": "14:39:05",
+        "cpu": 13,
+        "ram": 82,
+        "disco": 81
+      }
+    ]
+  },
+  {
+    "disco_c_uso": 39,
+    "ram_total": "5.9 GB",
+    "programas_abertos": [
+      {
+        "ram_mb": 50,
+        "titulo": "Configurações",
+        "processo": "ApplicationFrameHost"
+      },
+      {
+        "ram_mb": 180,
+        "titulo": "CloudConnexa - Google Chrome",
+        "processo": "chrome"
+      },
+      {
+        "ram_mb": 65,
+        "titulo": "1230225925 - RustDesk",
+        "processo": "RustDesk"
+      }
+    ],
+    "ram_uso": 71,
+    "usuario": "CST\\admsuporte",
+    "processador": "AMD Ryzen 3 3200G with Radeon Vega Graphics",
+    "so": "Windows 11 Enterprise",
+    "tipo": "Desktop",
+    "disco_c_livre": 68,
+    "disco_c_total": 111,
+    "entidade": "CST",
+    "hostname": "CS-M08-PC0114",
+    "ip": "192.168.1.105",
+    "cpu_uso": 35,
+    "ultimaVez": "2026-11-23T13:02:02.376Z",
+    "chamadas_n2p": []
+  },
+  {
+    "disco_c_uso": 35,
+    "uptime": "0d 4h 57m",
+    "ram_total": "13.9 GB",
+    "ram_uso": 55,
+    "usuario": "CST\\bruna.fernandes",
+    "processador": "AMD Ryzen 3 3200G with Radeon Vega Graphics",
+    "so": "Windows 11 Enterprise",
+    "tipo": "Desktop",
+    "disco_c_livre": 144,
+    "disco_c_total": 222,
+    "entidade": "RELATORIO_ANALITICO • CST",
+    "hostname": "CS-M07-PC0279",
+    "programas_abertos": [
+      {
+        "ram_mb": 360,
+        "titulo": "atestados médicos 02.pdf - Adobe Acrobat Reader (64-bit)",
+        "processo": "Acrobat"
+      },
+      {
+        "ram_mb": 45,
+        "titulo": "Configurações",
+        "processo": "ApplicationFrameHost"
+      },
+      {
+        "ram_mb": 222,
+        "titulo": "SOC - [cad016i] - [Licença Médica ] - Google Chrome",
+        "processo": "chrome"
+      },
+      {
+        "ram_mb": 278,
+        "titulo": "Planilha - Excel",
+        "processo": "EXCEL"
+      },
+      {
+        "ram_mb": 23,
+        "titulo": "Chat | Bruna Fernandes (Você) | Microsoft Teams",
+        "processo": "ms-teams"
+      },
+      {
+        "ram_mb": 93,
+        "titulo": "net2phone",
+        "processo": "net2phone"
+      },
+      {
+        "ram_mb": 270,
+        "titulo": "Relatório Anual - CST - Caixa de Entrada - Relatório Anual - CST - Outlook",
+        "processo": "OUTLOOK"
+      },
+      {
+        "ram_mb": 4,
+        "titulo": "Configurações",
+        "processo": "SystemSettings"
+      }
+    ],
+    "ip": "192.168.108.34",
+    "cpu_uso": 1,
+    "ultimaVez": "2026-11-24T15:37:16.333Z"
+  }
+]

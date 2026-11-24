@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><title>Remoto • <%= maquina.hostname %></title>
+<style>
+body{background:#070b14;color:#f8fafc;font-family:system-ui,sans-serif;padding:20px;margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;background:#0d1424;border:1px solid #1e293b;padding:14px 20px;border-radius:14px;margin-bottom:18px}
+.btn-v{background:#1e293b;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px}
+.sp{background:#0d1424;border:1px solid #1e293b;padding:14px;border-radius:12px}
+.sp span{display:block;font-size:11px;color:#94a3b8;text-transform:uppercase;margin-bottom:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:15px;margin-bottom:18px}
+.card{background:#0d1424;border:1px solid #1e293b;border-radius:16px;padding:18px}
+.card h3{font-size:16px;margin:0 0 8px;color:#38bdf8}
+.card p{font-size:12px;color:#94a3b8;margin:0 0 14px}
+.act{width:100%;background:#131c31;border:1px solid #1e2d4a;color:#fff;padding:10px 12px;border-radius:9px;margin-bottom:8px;cursor:pointer;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between}
+.act:hover{border-color:#38bdf8;background:#1a2847}
+.act.pri{background:#1d7dfa;border-color:#38bdf8}
+.bot{display:grid;grid-template-columns:340px 1fr;gap:16px}
+@media(max-width:900px){.bot{grid-template-columns:1fr}}
+pre{background:#03060c;border:1px solid #1e293b;border-radius:10px;padding:14px;color:#34d399;font-size:12.5px;min-height:180px;white-space:pre-wrap;margin:10px 0 0}
+</style></head><body>
+<div class="top">
+  <div><small style="color:#38bdf8;font-weight:700">ACESSO REMOTO EXCLUSIVO TI</small><h2 style="margin:2px 0">🖥️ <%= maquina.hostname %></h2><small style="color:#94a3b8">Usuário: <b id="u"><%= maquina.usuario||"N/D" %></b> • IP: <b id="ip"><%= maquina.ip||"N/D" %></b></small></div>
+  <a href="/admin" class="btn-v">← Voltar ao Admin</a>
+</div>
+<div class="specs">
+  <div class="sp"><span>Sistema Operacional</span><strong id="so"><%= maquina.so||"Windows" %></strong></div>
+  <div class="sp"><span>Armazenamento SSD</span><strong id="ssd"><%= maquina.disco_c_livre||0 %>GB livres / <%= maquina.disco_c_total||0 %>GB</strong></div>
+  <div class="sp"><span>Memória RAM</span><strong id="ram"><%= maquina.ram_total||"N/D" %> (<%= maquina.ram_uso||0 %>%)</strong></div>
+  <div class="sp"><span>CPU & Hardware</span><strong id="cpu"><%= maquina.cpu_uso||0 %>% • <%= maquina.processador||"" %></strong></div>
+</div>
+<div class="grid">
+  <div class="card"><h3>🚀 Travamento & Lentidão</h3><p>Limpeza de temporários, navegadores e otimização SSD.</p>
+    <button class="act pri" onclick="run('limpar_temp','Limpar Cache')">Limpar Cache do Computador <span>TEMP</span></button>
+    <button class="act" onclick="run('limpar_navegadores','Cache Navegadores')">Cache Chrome / Edge / Firefox <span>WEB</span></button>
+    <button class="act" onclick="run('otimizar_disco','Otimizar SSD')">Otimizar Disco (Trim / Defrag) <span>SSD</span></button>
+    <button class="act" onclick="run('tracert_servidor','Tracert Servidor')">Tracert Rota ao Servidor <span>ROTA</span></button>
+  </div>
+  <div class="card"><h3>🖨️ Impressoras & Fila</h3><p>Destrava spooler e diagnostica impressoras.</p>
+    <button class="act pri" onclick="run('reiniciar_spooler','Reiniciar Spooler')">Reiniciar Spooler & Destravar <span>SPOOLER</span></button>
+    <button class="act" onclick="run('listar_impressoras','Listar Impressoras')">Listar Impressoras da Estação <span>LISTA</span></button>
+    <button class="act" onclick="run('limpar_fila_impressao','Limpar Fila')">Limpar Fila de Impressão <span>FILA</span></button>
+    <button class="act" onclick="run('pagina_teste_impressora','Página de Teste')">Imprimir Página de Teste <span>TESTE</span></button>
+  </div>
+  <div class="card"><h3>🌐 Rede & Internet</h3><p>Renova IP, limpa DNS e repara Winsock.</p>
+    <button class="act pri" onclick="run('limpar_dns','Limpar DNS')">Limpar Cache DNS <span>DNS</span></button>
+    <button class="act" onclick="run('renovar_ip','Renovar IP')">Renovar IP da Rede <span>DHCP</span></button>
+    <button class="act" onclick="run('ping_google','Ping 8.8.8.8')">Teste de Ping (8.8.8.8) <span>PING</span></button>
+    <button class="act" onclick="run('reset_winsock','Reparar Winsock')">Reparar Pilha de Rede (Winsock) <span>REPARO</span></button>
+  </div>
+  <div class="card"><h3>🛡️ Atualização & AD</h3><p>GPO, horário corporativo e Windows Update.</p>
+    <button class="act pri" onclick="run('atualizar_gpo','Atualizar GPO')">Atualizar GPO (Permissões AD) <span>GPO</span></button>
+    <button class="act" onclick="run('verificar_windows_update','Windows Update')">Verificar Atualizações Windows <span>UPDATE</span></button>
+    <button class="act" onclick="run('sincronizar_hora','Sincronizar Hora')">Sincronizar Relógio & Fuso <span>NTP</span></button>
+    <button class="act" onclick="run('inventario_rapido','Sync Inventário')">Sincronizar Inventário da Máquina <span>SYNC</span></button>
+  </div>
+  <div class="card"><h3>🖥️ Vídeo & Tela</h3><p>Driver de vídeo, resolução, DPI e tema.</p>
+    <button class="act pri" onclick="run('reiniciar_video','Reiniciar Vídeo')">Reiniciar Driver de Vídeo <span>GPU</span></button>
+    <button class="act" onclick="run('ajustar_resolucao','Resolução Nativa')">Ajustar Resolução Nativa <span>1080P</span></button>
+    <button class="act" onclick="run('ajustar_escala','Escala DPI')">Ajustar Melhor Escala de Tela <span>DPI</span></button>
+    <button class="act" onclick="run('alternar_tema_windows','Tema Claro/Escuro')">Alternar Tema Claro / Escuro <span>TEMA</span></button>
+  </div>
+</div>
+<div class="bot">
+  <div class="card"><h3>📂 Programas Abertos</h3><div id="apps" style="max-height:240px;overflow-y:auto;font-size:12.5px"></div></div>
+  <div class="card"><h3>⚡ Console Remoto (<%= maquina.hostname %>)</h3><pre id="log">Pronto para executar em <%= maquina.hostname %>...</pre></div>
+</div>
+<script>
+const H="<%= maquina.hostname %>";
+async function sync(){try{const r=await fetch("/api/admin/inventario");const d=await r.json();const m=(d.estacoes||[]).find(x=>x.hostname.toLowerCase()===H.toLowerCase());if(m){document.getElementById("u").textContent=m.usuario||"N/D";document.getElementById("ip").textContent=m.ip||"N/D";document.getElementById("so").textContent=m.tipoSistema||m.so;document.getElementById("ssd").textContent=m.ssdInfo;document.getElementById("ram").textContent=(m.ram_total||"")+" ("+(m.ram_uso||0)+"%)";document.getElementById("cpu").textContent=(m.cpu_uso||0)+"% • "+(m.processador||"");document.getElementById("apps").innerHTML=(m.programas_abertos||[]).map(a=>"<div style='padding:6px 0;border-bottom:1px solid #1e293b'><b>"+a.processo+"</b> ("+a.ram_mb+"MB)<br><small style='color:#94a3b8'>"+a.titulo+"</small></div>").join("")||"Sem janelas abertas";}}catch(e){}}
+async function run(acao,tit){const l=document.getElementById("log");l.style.color="#38bdf8";l.textContent="[1/2] Enviando "+tit+" para "+H+"...";const r=await fetch("/api/executar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({hostname:H,acao})});const d=await r.json();if(!r.ok||d.erro){l.style.color="#ef4444";l.textContent="[ERRO] "+(d.erro||"Falha");return;}let n=0;const t=setInterval(async()=>{n++;const r2=await fetch("/api/comando/"+d.id);if(r2.ok){const c=await r2.json();if(c.status==="concluido"){clearInterval(t);l.style.color=c.sucesso?"#34d399":"#f87171";l.textContent=c.saida||"Concluído";}}if(n>25){clearInterval(t);l.textContent="Timeout aguardo agente";}},1500);}
+sync();setInterval(sync,5000);
+</script>
+<style>
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.82) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 32px 16px !important;
+    overflow-y: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 780px !important;
+    margin: 20px auto !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 14px !important;
+    padding: 22px !important;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.75) !important;
+  }
+  #boxNovoInventario input[type="text"] {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+  }
+  #boxNovoInventario input[type="file"] {
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+  .badge-ou {
+    display: inline-block;
+    background: rgba(14, 165, 233, 0.14);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+</style>
+<script>
+// Formata qualquer DN bruto do AD que já esteja na tabela ou venha via sync (ex: OU=TI,OU=COMPUTADORES,OU=GCST -> TI • GCST)
+function limparTextoOU() {
+  document.querySelectorAll("td").forEach(td => {
+    const txt = td.textContent.trim();
+    if (txt.includes("DC=CST") || txt.includes("OU=")) {
+      const matches = [...txt.matchAll(/OU=([^,]+)/g)].map(m => m[1]).filter(v => v !== "COMPUTADORES" && v !== "EMPRESAS");
+      const limpo = matches.length >= 2 ? (matches[0] + " • " + matches[1]) : (matches[0] || "CST");
+      td.innerHTML = "<span class=\"badge-ou\">" + limpo + "</span>";
+    } else if (txt === "REDE") {
+      td.innerHTML = "<span class=\"badge-ou\" style=\"color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.12);\">INFRA / REDE</span>";
+    }
+  });
+}
+new MutationObserver(limparTextoOU).observe(document.body, { childList: true, subtree: true });
+document.addEventListener("DOMContentLoaded", limparTextoOU);
+</script>
+
+
+
+<!-- cst-ui-definitiva -->
+<style>
+  /* Modal Claro Limpo e Alinhado */
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.78) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 20px !important;
+    overflow-y: auto !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 760px !important;
+    margin: 20px auto !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-radius: 16px !important;
+    padding: 24px 28px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  }
+  /* Força todos os inputs dentro do modal a serem claros */
+  #boxNovoInventario input, #boxNovoInventario select {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    font-size: 13.5px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 8px !important;
+  }
+  #boxNovoInventario input::placeholder {
+    color: #94a3b8 !important;
+  }
+  #boxNovoInventario input:focus {
+    background: #ffffff !important;
+    border-color: #0ea5e9 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
+  }
+  .cst-topo-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .cst-chips-barra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .cst-chip {
+    border: 1.5px solid transparent;
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cst-chip:not(.ativo) {
+    background: #ffffff !important;
+    color: #64748b !important;
+    border-color: #cbd5e1 !important;
+  }
+  .cst-grade-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .cst-card-claro {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+  }
+  .cst-card-claro h4, .cst-card-claro strong, .cst-card-claro div:first-child {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+  }
+  .cst-btn-foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1.5px dashed #38bdf8;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .cst-btn-foto.ok {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1.5px solid #4ade80;
+  }
+  .cst-rodape-modal {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .cst-btn-sair {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cst-btn-sair:hover { background: #e2e8f0; color: #0f172a; }
+</style>
+<script>
+function fecharModalInv() {
+  const b = document.getElementById("boxNovoInventario");
+  if (b) b.style.display = "none";
+  const btn = document.getElementById("btnToggleInv") || document.getElementById("btnToggleInventario");
+  if (btn) btn.innerHTML = "+ Adicionar Inventário";
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModalInv(); });
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Organiza o Modal Claro de Inventário
+  const modal = document.getElementById("boxNovoInventario");
+  if (modal) {
+    modal.addEventListener("click", e => { if (e.target === modal) fecharModalInv(); });
+    const inner = modal.querySelector(":scope > div");
+    if (inner) {
+      const h = document.createElement("div");
+      h.style.cssText = "display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;";
+      h.innerHTML = `
+        <div>
+          <h3 style="margin:0;font-size:18px;color:#0f172a;">📦 Novo Registro de Inventário</h3>
+          <span style="font-size:12px;color:#64748b;">Escolha os equipamentos do colaborador e anexe a foto</span>
+        </div>
+        <button type="button" onclick="fecharModalInv()" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;font-size:16px;font-weight:bold;color:#475569;cursor:pointer;">✕</button>
+      `;
+      const oldH = inner.querySelector("h2,h3,h4");
+      if (oldH) oldH.replaceWith(h); else inner.prepend(h);
+
+      // Organiza os 2 inputs principais lado a lado
+      const topInputs = Array.from(inner.querySelectorAll("input[type=text]")).slice(0, 2);
+      if (topInputs.length === 2) {
+        const wrapTop = document.createElement("div");
+        wrapTop.className = "cst-topo-inputs";
+        topInputs[0].parentNode.insertBefore(wrapTop, topInputs[0]);
+        wrapTop.appendChild(topInputs[0]);
+        wrapTop.appendChild(topInputs[1]);
+      }
+
+      // Organiza os cards e cria chips coloridos no topo
+      const cores = [
+        { nome: "🖥️ Gabinete", bg: "#dbeafe", txt: "#1d4ed8", brd: "#93c5fd", ativo: true },
+        { nome: "🖵 Monitor 1", bg: "#e0e7ff", txt: "#4338ca", brd: "#a5b4fc", ativo: true },
+        { nome: "🖵 Monitor 2", bg: "#f3e8ff", txt: "#7e22ce", brd: "#d8b4fe", ativo: false },
+        { nome: "⌨️ Teclado/Mouse", bg: "#dcfce7", txt: "#15803d", brd: "#86efac", ativo: true },
+        { nome: "🎧 Headset", bg: "#fef3c7", txt: "#b45309", brd: "#fcd34d", ativo: false },
+        { nome: "📱 Celular", bg: "#ffe4e6", txt: "#be123c", brd: "#fda4af", ativo: false }
+      ];
+      const cards = Array.from(inner.querySelectorAll("div")).filter(d => d.querySelectorAll("input[type=file]").length === 1);
+      if (cards.length > 0) {
+        const barra = document.createElement("div");
+        barra.className = "cst-chips-barra";
+        const grade = document.createElement("div");
+        grade.className = "cst-grade-cards";
+        cards[0].parentNode.insertBefore(barra, cards[0]);
+        cards[0].parentNode.insertBefore(grade, cards[0]);
+
+        cards.forEach((card, i) => {
+          const cfg = cores[i] || { nome: "Item " + (i+1), bg: "#e2e8f0", txt: "#334155", brd: "#cbd5e1", ativo: true };
+          card.className = "cst-card-claro";
+          card.style.display = cfg.ativo ? "block" : "none";
+          grade.appendChild(card);
+
+          const fi = card.querySelector("input[type=file]");
+          if (fi) {
+            fi.style.display = "none";
+            const bf = document.createElement("button");
+            bf.type = "button";
+            bf.className = "cst-btn-foto";
+            bf.innerHTML = "📷 Tirar Foto / Anexar";
+            bf.onclick = () => fi.click();
+            fi.onchange = () => {
+              if (fi.files && fi.files[0]) {
+                bf.classList.add("ok");
+                bf.innerHTML = "✅ " + fi.files[0].name;
+              }
+            };
+            fi.parentNode.insertBefore(bf, fi);
+          }
+
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "cst-chip" + (cfg.ativo ? " ativo" : "");
+          chip.style.cssText = `background:${cfg.bg};color:${cfg.txt};border-color:${cfg.brd};`;
+          chip.innerHTML = (cfg.ativo ? "✓ " : "+ ") + cfg.nome;
+          chip.onclick = () => {
+            const on = card.style.display !== "none";
+            card.style.display = on ? "none" : "block";
+            chip.classList.toggle("ativo", !on);
+            chip.innerHTML = (!on ? "✓ " : "+ ") + cfg.nome;
+          };
+          barra.appendChild(chip);
+        });
+      }
+
+      // Coloca botão Cancelar ao lado de qualquer botão Salvar/Adicionar do modal
+      const btnSalvar = Array.from(inner.querySelectorAll("button")).find(b => /Adicionar Ativo|Salvar/i.test(b.textContent));
+      if (btnSalvar) {
+        const rodape = document.createElement("div");
+        rodape.className = "cst-rodape-modal";
+        const btnCancel = document.createElement("button");
+        btnCancel.type = "button";
+        btnCancel.className = "cst-btn-sair";
+        btnCancel.innerText = "Cancelar";
+        btnCancel.onclick = fecharModalInv;
+        btnSalvar.parentNode.insertBefore(rodape, btnSalvar);
+        rodape.appendChild(btnCancel);
+        rodape.appendChild(btnSalvar);
+      }
+    }
+  }
+
+  // 2. Remove linhas falsas ("Exemplo 1", "Exemplo 2") da tabela de Ativos Cadastrados
+  document.querySelectorAll("tr").forEach(tr => {
+    if (tr.textContent.includes("Exemplo 1") || tr.textContent.includes("Exemplo 2")) {
+      tr.remove();
+    }
+  });
+  document.querySelectorAll("table").forEach(tb => {
+    const tbody = tb.querySelector("tbody");
+    if (tbody && tbody.children.length === 0 && tb.textContent.includes("GABINETE")) {
+      tbody.innerHTML = "<tr><td colspan=\"7\" style=\"text-align:center;padding:28px;color:#94a3b8;\">Nenhum ativo cadastrado ainda. Clique em <b>+ Adicionar Inventário</b> acima para registrar o primeiro kit.</td></tr>";
+    }
+  });
+});
+
+// 3. Atualiza em tempo real o monitoramento real de ramais e chamadas do net2phone
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/net2phone/painel");
+    const d = await r.json();
+    const tit = Array.from(document.querySelectorAll("*")).find(el => el.textContent && el.textContent.includes("Usuários em Atendimento ao Vivo (net2phone)") && el.children.length === 0);
+    if (tit) {
+      const card = tit.closest("div");
+      const tbody = card ? card.querySelector("tbody") : null;
+      if (tbody) {
+        const linhas = [];
+        d.chamadasAtivas.forEach(c => {
+          linhas.push(`<tr style="background:rgba(34,197,94,0.08);"><td><b>${c.ramal}</b></td><td>${c.destino}</td><td><span style="color:#38bdf8;">${c.direcao}</span></td><td><span style="color:#4ade80;font-weight:bold;">● ${c.status}</span></td></tr>`);
+        });
+        d.ramaisOnline.forEach(rm => {
+          if (!d.chamadasAtivas.some(c => c.ramal.includes(rm.maquina))) {
+            linhas.push(`<tr><td><b>${rm.usuario}</b> <small style="color:#64748b;">(${rm.maquina})</small></td><td>${rm.ip}</td><td>Softphone RCon</td><td><span style="color:#94a3b8;">● ${rm.status}</span></td></tr>`);
+          }
+        });
+        tbody.innerHTML = linhas.length > 0
+          ? linhas.join("")
+          : "<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:18px;\">Nenhum ramal com Receptionist Console ativo detectado no momento</td></tr>";
+      }
+    }
+  } catch (e) {}
+}, 3000);
+</script>
+</body></html>

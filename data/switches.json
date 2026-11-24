@@ -1,0 +1,18 @@
+[
+  {
+    "hostname": "SW-CORE-VLAN101",
+    "ip": "192.168.101.2",
+    "sistema": "Switch Gerenciável L3",
+    "ssd": "Flash 256MB (18% uso)",
+    "infoExtra": "24 Portas PoE • VLAN 101/102/122",
+    "online": true
+  },
+  {
+    "hostname": "SW-VOIP-VLAN122",
+    "ip": "192.168.122.1",
+    "sistema": "Gateway / Switch VoIP",
+    "ssd": "Flash 128MB (22% uso)",
+    "infoExtra": "Tronco SIP net2phone • QoS Ativo",
+    "online": true
+  }
+]

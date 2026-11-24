@@ -1,188 +1,1257 @@
-cat << 'EOF' > ~/cst-rmm-portal/views/colaborador.ejs
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>CST Autoatendimento TI</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CST TI — Central de Autoatendimento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
-    body { margin: 0; background: #f1f5f9; color: #0f172a; }
-    .header { background: #0f172a; color: #fff; padding: 16px 28px; display: flex; justify-content: space-between; align-items: center; }
-    .header h1 { margin: 0; font-size: 18px; color: #38bdf8; }
-    .btn-sair { background: #ef4444; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 13px; }
-    .wrap { max-width: 1120px; margin: 28px auto; padding: 0 20px; }
-    .status-bar { background: #fff; border-radius: 12px; padding: 16px 22px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(15,23,42,0.06); margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
-    .pill-ok { background: #dcfce7; color: #166534; padding: 5px 12px; border-radius: 99px; font-weight: 700; font-size: 12.5px; }
-    .pill-warn { background: #fef3c7; color: #92400e; padding: 5px 12px; border-radius: 99px; font-weight: 700; font-size: 12.5px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; }
-    .card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 4px 15px rgba(15,23,42,0.06); border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
-    .card h3 { margin: 0 0 8px 0; font-size: 16px; color: #0f172a; }
-    .card p { margin: 0 0 16px 0; font-size: 13px; color: #64748b; line-height: 1.45; }
-    .btn-fix { background: #0284c7; color: #fff; border: none; padding: 11px 14px; border-radius: 9px; font-weight: 700; font-size: 13.5px; cursor: pointer; width: 100%; transition: 0.2s; margin-bottom: 8px; }
-    .btn-fix:hover { background: #0369a1; }
-    .btn-sec { background: #f8fafc; color: #0f172a; border: 1px solid #cbd5e1; padding: 9px 12px; border-radius: 8px; font-weight: 600; font-size: 12.5px; cursor: pointer; width: 100%; margin-bottom: 6px; }
-    .btn-sec:hover { background: #e2e8f0; }
+    :root {
+      --bg-deep: #060914;
+      --bg-card: rgba(15, 23, 42, 0.72);
+      --bg-card-hover: rgba(22, 34, 62, 0.88);
+      --border-glass: rgba(99, 130, 214, 0.22);
+      --border-glow: rgba(56, 189, 248, 0.55);
+      --primary: #0ea5e9;
+      --primary-hover: #0284c7;
+      --accent: #6366f1;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
 
-    /* Caixa de Resultado Ao Vivo */
-    .result-panel { margin-top: 24px; background: #fff; border-radius: 14px; padding: 20px; border-left: 6px solid #0284c7; box-shadow: 0 8px 25px rgba(15,23,42,0.08); display: none; }
-    .result-panel.show { display: block; }
-    .result-panel.sucesso { border-left-color: #16a34a; }
-    .result-panel.erro { border-left-color: #dc2626; }
-    .tech-details { background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 8px; font-family: Consolas, monospace; font-size: 12px; margin-top: 12px; white-space: pre-wrap; max-height: 220px; overflow-y: auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-deep);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    #particles-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      width: 650px;
+      height: 650px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(14, 165, 233, 0.14) 0%, rgba(99, 102, 241, 0.06) 45%, transparent 70%);
+      top: -180px;
+      left: 15%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+
+    /* NAVBAR */
+    header.navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 28px;
+      margin-top: 16px;
+      background: rgba(10, 16, 32, 0.78);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+      font-size: 16px;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.4);
+    }
+
+    .brand-title { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 12px; color: var(--text-muted); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-btn {
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      color: #fff;
+      background: rgba(14, 165, 233, 0.14);
+      border-color: rgba(14, 165, 233, 0.35);
+    }
+
+    .user-area {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .greeting {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .greeting strong {
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    .btn-logout {
+      background: rgba(239, 68, 68, 0.16);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.38);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: 0.2s;
+    }
+    .btn-logout:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+
+    /* HERO / STATUS BAR */
+    .hero-section {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 20px;
+      align-items: center;
+    }
+
+    @media (max-width: 960px) {
+      .hero-section { grid-template-columns: 1fr; }
+    }
+
+    .hero-copy h1 {
+      font-size: clamp(26px, 3.2vw, 38px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      background: linear-gradient(90deg, #ffffff 0%, #bae6fd 60%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-copy p {
+      margin-top: 10px;
+      color: var(--text-muted);
+      font-size: 15px;
+      line-height: 1.55;
+      max-width: 600px;
+    }
+
+    .station-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 16px;
+      padding: 18px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .station-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ip-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+      padding: 5px 11px;
+      border-radius: 8px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.14);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .status-badge.offline {
+      background: rgba(245, 158, 11, 0.14);
+      color: #fcd34d;
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .station-select {
+      width: 100%;
+      background: rgba(6, 11, 25, 0.85);
+      color: #f8fafc;
+      border: 1px solid var(--border-glass);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: 13.5px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+    }
+    .station-select:focus { border-color: var(--primary); }
+
+    /* GRID DE CATEGORIAS */
+    .cards-grid {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 22px;
+    }
+
+    .action-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .action-card:hover {
+      transform: translateY(-5px);
+      background: var(--bg-card-hover);
+      border-color: var(--border-glow);
+      box-shadow: 0 18px 40px rgba(2, 132, 199, 0.18);
+    }
+
+    .card-visual {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .illustration-box {
+      width: 74px;
+      height: 74px;
+      min-width: 74px;
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(14, 165, 233, 0.18), rgba(99, 102, 241, 0.14));
+      border: 1px solid rgba(125, 211, 252, 0.28);
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 1px 1px rgba(255,255,255,0.15), 0 8px 20px rgba(0,0,0,0.35);
+    }
+
+    .illustration-box svg {
+      width: 48px;
+      height: 48px;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+    }
+
+    .card-visual h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.25;
+    }
+
+    .card-desc {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .btn-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      margin-top: auto;
+    }
+
+    .btn-action {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 11px;
+      border: 1px solid rgba(148, 163, 184, 0.22);
+      background: rgba(15, 23, 42, 0.85);
+      color: #e2e8f0;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      text-align: left;
+    }
+
+    .btn-action:hover {
+      background: rgba(14, 165, 233, 0.2);
+      border-color: #38bdf8;
+      color: #fff;
+      transform: translateX(3px);
+    }
+
+    .btn-action.primary-act {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border-color: rgba(125, 211, 252, 0.45);
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.32);
+    }
+
+    .btn-action.primary-act:hover {
+      background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+      box-shadow: 0 8px 24px rgba(14, 165, 233, 0.45);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+
+    .tag-cmd {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      color: #bae6fd;
+    }
+
+    /* CONSOLE DE EXECUÇÃO */
+    .console-card {
+      margin-top: 28px;
+      background: rgba(9, 14, 28, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glass);
+      border-radius: 18px;
+      padding: 22px 26px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .console-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .terminal-output {
+      background: #03060f;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #38bdf8;
+      min-height: 92px;
+      max-height: 280px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .terminal-output.ok { color: #34d399; border-color: rgba(16, 185, 129, 0.4); }
+    .terminal-output.err { color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
   </style>
 </head>
 <body>
-  <% const nomeColab = typeof usuario === 'object' && usuario !== null ? (usuario.nome || usuario.login || 'Colaborador') : (usuario || 'Colaborador'); %>
+  <canvas id="particles-canvas"></canvas>
+  <div class="ambient-glow"></div>
 
-  <div class="header">
-    <h1>🛠️ CST — Central de Autoatendimento TI</h1>
-    <div style="display:flex; align-items:center; gap:14px;">
-      <span style="font-size:13.5px;">Olá, <strong><%= nomeColab %></strong></span>
-      <a href="/logout" class="btn-sair">Sair</a>
-    </div>
+  <div class="wrapper">
+    <!-- NAVBAR -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-badge">CST</div>
+        <div>
+          <div class="brand-title">CST — Central de Autoatendimento TI</div>
+          <div class="brand-sub">Automação Inteligente &amp; Suporte Instantâneo</div>
+        </div>
+      </div>
+
+      <nav class="nav-links">
+        <a href="/" class="nav-btn active">Autoatendimento</a>
+        <a href="/mais-ti" class="nav-btn">Mais de TI</a>
+        <% if (usuario && usuario.perfil === 'admin') { %>
+          <a href="/admin" class="nav-btn">Painel Admin</a>
+        <% } %>
+      </nav>
+
+      <div class="user-area">
+        <span class="greeting">Olá, <strong><%= typeof usuario === "object" ? (usuario.login || usuario.usuario || usuario.nome || "Usuário") : usuario %></strong></span>
+        <a href="/logout" class="btn-logout">Sair</a>
+      </div>
+    </header>
+
+    <!-- HERO & ESTAÇÃO -->
+    <section class="hero-section">
+      <div class="hero-copy">
+        <h1>Resolva falhas no seu computador em segundos</h1>
+        <p>Execute otimizações remotas, destrave impressoras, renove sua conexão de rede e ajuste o vídeo sem precisar aguardar atendimento técnico.</p>
+      </div>
+
+      <div class="station-panel">
+        <div class="station-row">
+          <span class="ip-pill">Seu IP de Acesso: <strong><%= ipUsuario %></strong></span>
+          <span id="badge-status" class="status-badge <%= estacaoAlvo ? '' : 'offline' %>">
+            <span class="dot"></span>
+            <span id="texto-status"><%= estacaoAlvo ? 'Agente Conectado' : 'Sincronizando Estação...' %></span>
+          </span>
+        </div>
+
+        <div>
+          <label for="select-estacao" style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 5px;">
+            Computador Alvo para Execução:
+          </label>
+          <select id="select-estacao" class="station-select">
+            <% if (estacaoAlvo) { %>
+              <option value="<%= estacaoAlvo.hostname %>"><%= estacaoAlvo.hostname %> — IP Local: <%= estacaoAlvo.ip %> (<%= estacaoAlvo.usuario %>)</option>
+            <% } else { %>
+              <option value="AUTO">Detecção Automática (<%= typeof usuario === "object" ? (usuario.login || usuario.usuario || usuario.nome || "Usuário") : usuario %>)</option>
+            <% } %>
+            <% (estacoes || []).forEach(est => { if (!estacaoAlvo || est.hostname !== estacaoAlvo.hostname) { %>
+              <option value="<%= est.hostname %>"><%= est.hostname %> — IP Local: <%= est.ip %> (<%= est.usuario %>)</option>
+            <% } }) %>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 CATEGORIAS DE AJUSTES -->
+    <main class="cards-grid">
+
+      <!-- 1. TRAVAMENTO E PERFORMANCE -->
+      <article class="action-card">
+        <div class="card-visual">
+          <div class="illustration-box">
+            <!-- Ícone 3D Foguete / Performance -->
+            <svg viewBox="0 0 64 64" fill="none">
+              <defs>
+                <linearGradient id="g1" x1="12" y1="8" x2="52" y2="56" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#38BDF8"/>
+                  <stop offset="1" stop-color="#6366F1"/>
+                </linearGradient>
+                <linearGradient id="g1f" x1="20" y1="40" x2="10" y2="54" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#F59E0B"/>
+                  <stop offset="1" stop-color="#EF4444"/>
+                </linearGradient>
+              </defs>
+              <path d="M47 9C36 10 25 18 19 29L27 37L35 45C46 39 54 28 55 17C55 12 52 9 47 9Z" fill="url(#g1)"/>
+              <circle cx="40" cy="24" r="5" fill="#E0F2FE"/>
+              <path d="M19 29L11 32L17 39L27 37L19 29Z" fill="#0284C7"/>
+              <path d="M35 45L32 53L25 47L27 37L35 45Z" fill="#4F46E5"/>
+              <path d="M21 41C16 43 12 49 11 53C15 52 21 48 23 43L21 41Z" fill="url(#g1f)"/>
+            </svg>
+          </div>
+          <h2>Travamento &amp; Lentidão</h2>
+        </div>
+        <p class="card-desc">Libera memória, remove arquivos temporários acumulados, otimiza o disco e testa a rota até o servidor.</p>
+        <div class="btn-stack">
+          <button class="btn-action primary-act" onclick="executarAcao('limpar_temp', 'Limpar Cache do Computador')">
+            <span>Limpar Cache do Computador</span>
+            <span class="tag-cmd">TEMP</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('limpar_navegadores', 'Limpar Cache Chrome, Firefox, Edge e Opera')">
+            <span>Cache Chrome / Firefox / Edge / Opera</span>
+            <span class="tag-cmd">BROWSERS</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('otimizar_disco', 'Otimizar e Limpar Disco')">
+            <span>Otimizar Disco (Trim / Defrag)</span>
+            <span class="tag-cmd">DISCO</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('tracert_servidor', 'Rastrear Rota até o Servidor (Tracert)')">
+            <span>Tracert Rota ao Servidor</span>
+            <span class="tag-cmd">ROTA</span>
+          </button>
+        </div>
+      </article>
+
+      <!-- 2. IMPRESSORAS -->
+      <article class="action-card">
+        <div class="card-visual">
+          <div class="illustration-box">
+            <!-- Ícone 3D Impressora -->
+            <svg viewBox="0 0 64 64" fill="none">
+              <defs>
+                <linearGradient id="g2" x1="10" y1="16" x2="54" y2="50" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#34D399"/>
+                  <stop offset="1" stop-color="#0284C7"/>
+                </linearGradient>
+              </defs>
+              <rect x="18" y="10" width="28" height="14" rx="3" fill="#BAE6FD"/>
+              <rect x="8" y="22" width="48" height="22" rx="6" fill="url(#g2)"/>
+              <circle cx="48" cy="29" r="2.5" fill="#FEF08A"/>
+              <rect x="18" y="36" width="28" height="18" rx="3" fill="#F8FAFC"/>
+              <line x1="23" y1="42" x2="41" y2="42" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="23" y1="48" x2="36" y2="48" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h2>Impressoras &amp; Fila</h2>
+        </div>
+        <p class="card-desc">Destrava documentos parados na fila, reinicia o serviço de spooler e diagnostica impressoras instaladas.</p>
+        <div class="btn-stack">
+          <button class="btn-action primary-act" onclick="executarAcao('reiniciar_spooler', 'Reiniciar Spooler de Impressão')">
+            <span>Reiniciar Spooler &amp; Destravar</span>
+            <span class="tag-cmd">SPOOLER</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('listar_impressoras', 'Listar Impressoras Instaladas')">
+            <span>Listar Impressoras da Estação</span>
+            <span class="tag-cmd">LISTA</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('limpar_fila_impressao', 'Limpar Documentos Presos na Fila')">
+            <span>Limpar Fila de Impressão</span>
+            <span class="tag-cmd">FILA</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('pagina_teste_impressora', 'Enviar Página de Teste')">
+            <span>Imprimir Página de Teste</span>
+            <span class="tag-cmd">TESTE</span>
+          </button>
+        </div>
+      </article>
+
+      <!-- 3. REDE E CONECTIVIDADE -->
+      <article class="action-card">
+        <div class="card-visual">
+          <div class="illustration-box">
+            <!-- Ícone 3D Globo / Rede -->
+            <svg viewBox="0 0 64 64" fill="none">
+              <defs>
+                <linearGradient id="g3" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#38BDF8"/>
+                  <stop offset="1" stop-color="#3B82F6"/>
+                </linearGradient>
+              </defs>
+              <circle cx="32" cy="32" r="22" fill="url(#g3)" fill-opacity="0.25" stroke="#38BDF8" stroke-width="3"/>
+              <ellipse cx="32" cy="32" rx="10" ry="22" stroke="#7DD3FC" stroke-width="2.5"/>
+              <line x1="10" y1="32" x2="54" y2="32" stroke="#7DD3FC" stroke-width="2.5"/>
+              <circle cx="46" cy="18" r="5" fill="#10B981"/>
+              <circle cx="18" cy="46" r="4" fill="#6366F1"/>
+            </svg>
+          </div>
+          <h2>Rede &amp; Internet</h2>
+        </div>
+        <p class="card-desc">Restabelece o acesso a sistemas internos, limpa registros antigos de DNS e renova o IP da placa de rede.</p>
+        <div class="btn-stack">
+          <button class="btn-action primary-act" onclick="executarAcao('limpar_dns', 'Limpar Cache DNS (FlushDNS)')">
+            <span>Limpar Cache DNS</span>
+            <span class="tag-cmd">DNS</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('renovar_ip', 'Renovar Endereço IP (Release/Renew)')">
+            <span>Renovar IP da Rede</span>
+            <span class="tag-cmd">DHCP</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('ping_google', 'Teste de Ping 8.8.8.8')">
+            <span>Teste de Ping (8.8.8.8)</span>
+            <span class="tag-cmd">PING</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('reset_winsock', 'Resetar Adaptador & Winsock')">
+            <span>Reparar Pilha de Rede (Winsock)</span>
+            <span class="tag-cmd">REPARO</span>
+          </button>
+        </div>
+      </article>
+
+      <!-- 4. ATUALIZAÇÕES E POLÍTICAS -->
+      <article class="action-card">
+        <div class="card-visual">
+          <div class="illustration-box">
+            <!-- Ícone 3D Escudo / Atualização -->
+            <svg viewBox="0 0 64 64" fill="none">
+              <defs>
+                <linearGradient id="g4" x1="14" y1="8" x2="50" y2="56" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#818CF8"/>
+                  <stop offset="1" stop-color="#C084FC"/>
+                </linearGradient>
+              </defs>
+              <path d="M32 8L12 16V31C12 44.5 20.5 55.8 32 59C43.5 55.8 52 44.5 52 31V16L32 8Z" fill="url(#g4)"/>
+              <path d="M23 32L29 38L42 25" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h2>Atualização &amp; AD</h2>
+        </div>
+        <p class="card-desc">Verifica pacotes pendentes do Windows, sincroniza permissões do servidor e ajusta o relógio corporativo.</p>
+        <div class="btn-stack">
+          <button class="btn-action primary-act" onclick="executarAcao('atualizar_gpo', 'Atualizar Políticas do Servidor (GPUpdate)')">
+            <span>Atualizar GPO (Permissões AD)</span>
+            <span class="tag-cmd">GPO</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('verificar_windows_update', 'Verificar Atualizações do Windows')">
+            <span>Verificar Atualizações Windows</span>
+            <span class="tag-cmd">UPDATE</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('sincronizar_hora', 'Sincronizar Horário com Servidor AD')">
+            <span>Sincronizar Relógio &amp; Fuso</span>
+            <span class="tag-cmd">NTP</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('inventario_rapido', 'Atualizar Inventário de Software')">
+            <span>Sincronizar Inventário da Máquina</span>
+            <span class="tag-cmd">SYNC</span>
+          </button>
+        </div>
+      </article>
+
+      <!-- 5. VÍDEO E APARÊNCIA -->
+      <article class="action-card">
+        <div class="card-visual">
+          <div class="illustration-box">
+            <!-- Ícone 3D Monitor / Vídeo -->
+            <svg viewBox="0 0 64 64" fill="none">
+              <defs>
+                <linearGradient id="g5" x1="8" y1="12" x2="56" y2="46" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#0EA5E9"/>
+                  <stop offset="1" stop-color="#14B8A6"/>
+                </linearGradient>
+              </defs>
+              <rect x="8" y="12" width="48" height="32" rx="5" fill="url(#g5)"/>
+              <rect x="12" y="16" width="40" height="24" rx="2" fill="#0F172A"/>
+              <path d="M18 34L27 25L34 31L44 21" stroke="#38BDF8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M26 44H38L41 52H23L26 44Z" fill="#94A3B8"/>
+            </svg>
+          </div>
+          <h2>Vídeo &amp; Tela</h2>
+        </div>
+        <p class="card-desc">Corrige tela piscando ou travada, ajusta a resolução nativa, calibra a escala de texto e alterna o tema do Windows.</p>
+        <div class="btn-stack">
+          <button class="btn-action primary-act" onclick="executarAcao('reiniciar_video', 'Reiniciar Driver de Vídeo')">
+            <span>Reiniciar Driver de Vídeo</span>
+            <span class="tag-cmd">GPU</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('ajustar_resolucao', 'Ajustar Dimensão / Resolução Ideal')">
+            <span>Ajustar Dimensão (Resolução Nativa)</span>
+            <span class="tag-cmd">1080P</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('ajustar_escala', 'Ajustar Melhor Escala (DPI 100%)')">
+            <span>Ajustar Melhor Escala de Tela</span>
+            <span class="tag-cmd">DPI</span>
+          </button>
+          <button class="btn-action" onclick="executarAcao('alternar_tema_windows', 'Alternar Tema Claro / Escuro no Windows')">
+            <span>Alternar Tema Claro / Escuro</span>
+            <span class="tag-cmd">TEMA</span>
+          </button>
+        </div>
+      </article>
+
+    </main>
+
+    <!-- CONSOLE DE RETORNO EM TEMPO REAL -->
+    <section class="console-card">
+      <div class="console-header">
+        <div class="console-title">
+          <span>⚡ Console de Diagnóstico em Tempo Real</span>
+        </div>
+        <span id="console-meta" style="font-size: 12.5px; color: var(--text-muted);">Pronto para executar comandos na estação selecionada</span>
+      </div>
+      <div id="console-output" class="terminal-output">Aguardando seleção de ferramenta acima...</div>
+    </section>
   </div>
 
-  <div class="wrap">
-    <div class="status-bar">
-      <div>
-        <strong style="font-size:15px;">Estação Vinculada:</strong>
-        <span id="minhaMaquina" style="color:#0284c7; font-weight:700; margin-left:6px;">Localizando computador na rede...</span>
-      </div>
-      <span id="statusSinc" class="pill-warn">Sincronizando (5s)...</span>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <div>
-          <h3>🚀 Computador Lento ou Travando</h3>
-          <p>Limpa arquivos temporários do Windows e o cache acumulado dos navegadores sem apagar suas senhas.</p>
-        </div>
-        <div>
-          <button class="btn-fix" onclick="solicitarReparo('limpar_cache', 'Limpeza de Cache do Sistema')">Limpar Arquivos Temporários</button>
-          <button class="btn-sec" onclick="solicitarReparo('limpar_navegadores', 'Limpeza de Cache dos Navegadores')">Limpar Cache Chrome / Edge / Firefox</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div>
-          <h3>🖨️ Problemas na Impressora</h3>
-          <p>Destrava documentos parados na fila e reinicia o serviço de impressão da sua estação.</p>
-        </div>
-        <div>
-          <button class="btn-fix" onclick="solicitarReparo('destravar_impressora', 'Reinicio do Spooler de Impressão')">Destravar & Reiniciar Impressora</button>
-          <button class="btn-sec" onclick="solicitarReparo('limpar_fila_impressao', 'Limpeza da Fila de Impressão')">Limpar Documentos Presos</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div>
-          <h3>🌐 Internet ou Sistema Fora</h3>
-          <p>Atualiza o endereço de rede e limpa o cache DNS quando algum sistema interno ou site não abre.</p>
-        </div>
-        <div>
-          <button class="btn-fix" onclick="solicitarReparo('flush_dns', 'Limpeza de Cache DNS')">Corrigir Acesso / Limpar DNS</button>
-          <button class="btn-sec" onclick="solicitarReparo('renovar_ip', 'Renovação de IP na Rede')">Renovar Conexão de Rede (IP)</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div>
-          <h3>🖥️ Tela, Políticas e Horário</h3>
-          <p>Reinicia o driver gráfico se a tela piscar/travar ou sincroniza suas permissões com o servidor da empresa.</p>
-        </div>
-        <div>
-          <button class="btn-fix" onclick="solicitarReparo('reiniciar_video', 'Reinício do Driver de Vídeo')">Destravar Tela / Vídeo</button>
-          <button class="btn-sec" onclick="solicitarReparo('atualizar_gpo', 'Atualização de Políticas da Empresa')">Atualizar Permissões (GPO)</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Resultado Ao Vivo na Tela -->
-    <div id="painelResultado" class="result-panel">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <strong id="resTitulo" style="font-size:16px;">Executando diagnóstico...</strong>
-        <span id="resHora" style="font-size:12px; color:#64748b;"></span>
-      </div>
-      <p id="resResumo" style="margin:8px 0 0 0; font-size:14px;"></p>
-      <div id="resDetalhes" class="tech-details"></div>
-    </div>
-  </div>
-
+  <!-- SCRIPT DE PARTÍCULAS INTERATIVAS (ESTILO NEXTTOOL) + AUTOMAÇÃO RMM -->
   <script>
-    const loginAtual = "<%= typeof usuario === 'object' && usuario !== null ? (usuario.login || '') : (usuario || '') %>".toLowerCase();
-    let hostnameAlvo = 'AUTO';
+    // 1. Canvas de Partículas Interativas com o Mouse
+    (function initParticles() {
+      const canvas = document.getElementById('particles-canvas');
+      const ctx = canvas.getContext('2d');
+      let width, height, particles = [];
+      const mouse = { x: null, y: null, radius: 150 };
 
-    async function sincronizarMinhaEstacao() {
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+      window.addEventListener('mouseleave', () => {
+        mouse.x = null;
+        mouse.y = null;
+      });
+
+      function resize() {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+        criarParticulas();
+      }
+
+      function criarParticulas() {
+        const qtd = Math.min(95, Math.floor((width * height) / 14000));
+        particles = [];
+        for (let i = 0; i < qtd; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.65,
+            vy: (Math.random() - 0.5) * 0.65,
+            size: Math.random() * 2.2 + 1
+          });
+        }
+      }
+
+      function animar() {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+
+          // Interação suave com o cursor do mouse
+          if (mouse.x !== null && mouse.y !== null) {
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < mouse.radius) {
+              const force = (mouse.radius - dist) / mouse.radius;
+              p.x -= (dx / dist) * force * 1.4;
+              p.y -= (dy / dist) * force * 1.4;
+            }
+          }
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
+          ctx.fill();
+
+          for (let j = i + 1; j < particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p.x - p2.x;
+            const dy = p.y - p2.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 130) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.strokeStyle = `rgba(99, 102, 241, ${(1 - dist / 130) * 0.35})`;
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
+          }
+
+          if (mouse.x !== null && mouse.y !== null) {
+            const dxm = p.x - mouse.x;
+            const dym = p.y - mouse.y;
+            const distM = Math.sqrt(dxm * dxm + dym * dym);
+            if (distM < 160) {
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(mouse.x, mouse.y);
+              ctx.strokeStyle = `rgba(56, 189, 248, ${(1 - distM / 160) * 0.45})`;
+              ctx.lineWidth = 1.1;
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(animar);
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+      animar();
+    })();
+
+    // 2. Sincronização automática de estações ativas
+    async function atualizarEstacoes() {
       try {
-        const res = await fetch('/api/estacoes');
-        const lista = await res.json();
-        const minha = lista.find(e => e.usuario && loginAtual && e.usuario.toLowerCase().includes(loginAtual)) || lista.find(e => e.online);
-        const pill = document.getElementById('statusSinc');
-        if (minha) {
-          hostnameAlvo = minha.hostname;
-          document.getElementById('minhaMaquina').innerText = `${minha.hostname} (IP: ${minha.ip})`;
-          pill.className = minha.online ? 'pill-ok' : 'pill-warn';
-          pill.innerText = minha.online ? '● Estação Online e Sincronizada' : '● Estação Offline';
-        } else {
-          document.getElementById('minhaMaquina').innerText = 'Identificação automática por IP';
-          pill.className = 'pill-warn';
-          pill.innerText = 'Aguardando agente na estação';
+        const res = await fetch('/api/minha-estacao');
+        if (!res.ok) return;
+        const data = await res.json();
+        const select = document.getElementById('select-estacao');
+        const badge = document.getElementById('badge-status');
+        const texto = document.getElementById('texto-status');
+        const atual = select.value;
+
+        if (data.estacoes && data.estacoes.length > 0) {
+          select.innerHTML = '';
+          data.estacoes.forEach(est => {
+            const opt = document.createElement('option');
+            opt.value = est.hostname;
+            opt.textContent = `${est.hostname} — IP: ${est.ip} (${est.usuario}) ${est.online ? '● Online' : '○ Offline'}`;
+            select.appendChild(opt);
+          });
+          if (atual && Array.from(select.options).some(o => o.value === atual)) {
+            select.value = atual;
+          } else if (data.alvo) {
+            select.value = data.alvo.hostname;
+          }
+
+          const selecionada = data.estacoes.find(e => e.hostname === select.value) || data.alvo;
+          if (selecionada && selecionada.online) {
+            badge.classList.remove('offline');
+            texto.textContent = `Agente Online (${selecionada.hostname})`;
+          } else {
+            badge.classList.add('offline');
+            texto.textContent = `Estação Offline (${selecionada ? selecionada.hostname : 'Aguardando'})`;
+          }
         }
       } catch (e) {}
     }
+    setInterval(atualizarEstacoes, 6000);
+    atualizarEstacoes();
 
-    async function solicitarReparo(acao, nomeAmigavel) {
-      const painel = document.getElementById('painelResultado');
-      const titulo = document.getElementById('resTitulo');
-      const resumo = document.getElementById('resResumo');
-      const detalhes = document.getElementById('resDetalhes');
+    // 3. Execução de comandos com polling em alta performance
+    async function executarAcao(acao, titulo) {
+      const out = document.getElementById('console-output');
+      const meta = document.getElementById('console-meta');
+      const hostname = document.getElementById('select-estacao').value || 'AUTO';
+      const botoes = document.querySelectorAll('.btn-action');
 
-      painel.className = 'result-panel show';
-      titulo.innerText = '⏳ Executando: ' + nomeAmigavel + '...';
-      resumo.innerText = 'Aguardando resposta em tempo real da sua estação de trabalho...';
-      detalhes.innerText = 'Enviando instrução para ' + hostnameAlvo + '...';
+      botoes.forEach(b => b.disabled = true);
+      out.className = 'terminal-output';
+      out.textContent = `[INICIANDO] ${titulo}...\nEnviando ordem segura para o agente RMM (${hostname})...`;
+      meta.textContent = `Executando: ${titulo}`;
 
-      const res = await fetch('/api/comando', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hostname: hostnameAlvo, acao })
-      });
-      const data = await res.json();
+      try {
+        const resp = await fetch('/api/comando', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hostname, acao })
+        });
+        const dados = await resp.json();
 
-      if (!data.ok) {
-        painel.className = 'result-panel show erro';
-        titulo.innerText = '❌ Não foi possível executar';
-        resumo.innerText = data.erro || 'Estação não respondeu.';
-        detalhes.innerText = 'Verifique se o agente CST RMM está ativo nesta estação.';
-        return;
+        if (!resp.ok || !dados.ok) {
+          out.className = 'terminal-output err';
+          out.textContent = `[FALHA] ${dados.erro || 'Não foi possível comunicar com a estação.'}`;
+          botoes.forEach(b => b.disabled = false);
+          return;
+        }
+
+        out.textContent = `[ENVIADO] Comando #${dados.id} recebido pela fila de ${dados.hostname}.\nAguardando resposta do computador...`;
+
+        let tentativas = 0;
+        const timer = setInterval(async () => {
+          tentativas++;
+          try {
+            const rCheck = await fetch(`/api/comando/${dados.id}`);
+            const statusCmd = await rCheck.json();
+
+            if (statusCmd.concluido) {
+              clearInterval(timer);
+              botoes.forEach(b => b.disabled = false);
+              out.className = statusCmd.sucesso ? 'terminal-output ok' : 'terminal-output err';
+              out.textContent = `[CONCLUÍDO às ${statusCmd.finalizadoEm}] ${titulo} (${dados.hostname})\n------------------------------------------------------------\n${statusCmd.saida}`;
+              meta.textContent = `Última execução: ${titulo} (${statusCmd.finalizadoEm})`;
+            } else if (tentativas >= 25) {
+              clearInterval(timer);
+              botoes.forEach(b => b.disabled = false);
+              out.className = 'terminal-output err';
+              out.textContent = `[TEMPO ESGOTADO] O comando foi enviado para ${dados.hostname}, mas o agente Windows demorou mais de 35s para responder.\nVerifique se o serviço do agente CST RMM está rodando nessa máquina.`;
+            }
+          } catch (errPoll) {}
+        }, 1400);
+      } catch (err) {
+        out.className = 'terminal-output err';
+        out.textContent = `[ERRO DE REDE] Falha ao contactar o servidor: ${err.message}`;
+        botoes.forEach(b => b.disabled = false);
+      }
+    }
+  </script>
+
+<style>
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.82) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 32px 16px !important;
+    overflow-y: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 780px !important;
+    margin: 20px auto !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 14px !important;
+    padding: 22px !important;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.75) !important;
+  }
+  #boxNovoInventario input[type="text"] {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+  }
+  #boxNovoInventario input[type="file"] {
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+  .badge-ou {
+    display: inline-block;
+    background: rgba(14, 165, 233, 0.14);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+</style>
+<script>
+// Formata qualquer DN bruto do AD que já esteja na tabela ou venha via sync (ex: OU=TI,OU=COMPUTADORES,OU=GCST -> TI • GCST)
+function limparTextoOU() {
+  document.querySelectorAll("td").forEach(td => {
+    const txt = td.textContent.trim();
+    if (txt.includes("DC=CST") || txt.includes("OU=")) {
+      const matches = [...txt.matchAll(/OU=([^,]+)/g)].map(m => m[1]).filter(v => v !== "COMPUTADORES" && v !== "EMPRESAS");
+      const limpo = matches.length >= 2 ? (matches[0] + " • " + matches[1]) : (matches[0] || "CST");
+      td.innerHTML = "<span class=\"badge-ou\">" + limpo + "</span>";
+    } else if (txt === "REDE") {
+      td.innerHTML = "<span class=\"badge-ou\" style=\"color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.12);\">INFRA / REDE</span>";
+    }
+  });
+}
+new MutationObserver(limparTextoOU).observe(document.body, { childList: true, subtree: true });
+document.addEventListener("DOMContentLoaded", limparTextoOU);
+</script>
+
+
+
+<!-- cst-ui-definitiva -->
+<style>
+  /* Modal Claro Limpo e Alinhado */
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.78) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 20px !important;
+    overflow-y: auto !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 760px !important;
+    margin: 20px auto !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-radius: 16px !important;
+    padding: 24px 28px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  }
+  /* Força todos os inputs dentro do modal a serem claros */
+  #boxNovoInventario input, #boxNovoInventario select {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    font-size: 13.5px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 8px !important;
+  }
+  #boxNovoInventario input::placeholder {
+    color: #94a3b8 !important;
+  }
+  #boxNovoInventario input:focus {
+    background: #ffffff !important;
+    border-color: #0ea5e9 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
+  }
+  .cst-topo-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .cst-chips-barra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .cst-chip {
+    border: 1.5px solid transparent;
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cst-chip:not(.ativo) {
+    background: #ffffff !important;
+    color: #64748b !important;
+    border-color: #cbd5e1 !important;
+  }
+  .cst-grade-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .cst-card-claro {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+  }
+  .cst-card-claro h4, .cst-card-claro strong, .cst-card-claro div:first-child {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+  }
+  .cst-btn-foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1.5px dashed #38bdf8;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .cst-btn-foto.ok {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1.5px solid #4ade80;
+  }
+  .cst-rodape-modal {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .cst-btn-sair {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cst-btn-sair:hover { background: #e2e8f0; color: #0f172a; }
+</style>
+<script>
+function fecharModalInv() {
+  const b = document.getElementById("boxNovoInventario");
+  if (b) b.style.display = "none";
+  const btn = document.getElementById("btnToggleInv") || document.getElementById("btnToggleInventario");
+  if (btn) btn.innerHTML = "+ Adicionar Inventário";
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModalInv(); });
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Organiza o Modal Claro de Inventário
+  const modal = document.getElementById("boxNovoInventario");
+  if (modal) {
+    modal.addEventListener("click", e => { if (e.target === modal) fecharModalInv(); });
+    const inner = modal.querySelector(":scope > div");
+    if (inner) {
+      const h = document.createElement("div");
+      h.style.cssText = "display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;";
+      h.innerHTML = `
+        <div>
+          <h3 style="margin:0;font-size:18px;color:#0f172a;">📦 Novo Registro de Inventário</h3>
+          <span style="font-size:12px;color:#64748b;">Escolha os equipamentos do colaborador e anexe a foto</span>
+        </div>
+        <button type="button" onclick="fecharModalInv()" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;font-size:16px;font-weight:bold;color:#475569;cursor:pointer;">✕</button>
+      `;
+      const oldH = inner.querySelector("h2,h3,h4");
+      if (oldH) oldH.replaceWith(h); else inner.prepend(h);
+
+      // Organiza os 2 inputs principais lado a lado
+      const topInputs = Array.from(inner.querySelectorAll("input[type=text]")).slice(0, 2);
+      if (topInputs.length === 2) {
+        const wrapTop = document.createElement("div");
+        wrapTop.className = "cst-topo-inputs";
+        topInputs[0].parentNode.insertBefore(wrapTop, topInputs[0]);
+        wrapTop.appendChild(topInputs[0]);
+        wrapTop.appendChild(topInputs[1]);
       }
 
-      let tentativas = 0;
-      const timer = setInterval(async () => {
-        tentativas++;
-        const r = await fetch('/api/comando/' + data.id);
-        const st = await r.json();
-        if (st.concluido) {
-          clearInterval(timer);
-          painel.className = st.sucesso ? 'result-panel show sucesso' : 'result-panel show erro';
-          titulo.innerText = st.sucesso ? '✅ Concluído com Sucesso: ' + nomeAmigavel : '❌ Erro ao Executar: ' + nomeAmigavel;
-          resumo.innerText = st.sucesso
-            ? 'A ação foi aplicada diretamente no computador ' + st.hostname + '.'
-            : 'Houve uma falha durante a execução no computador ' + st.hostname + '.';
-          document.getElementById('resHora').innerText = 'Finalizado às ' + st.finalizadoEm;
-          detalhes.innerText = st.saida;
-        } else if (tentativas > 25) {
-          clearInterval(timer);
-          painel.className = 'result-panel show erro';
-          titulo.innerText = '⚠️ Tempo limite excedido';
-          resumo.innerText = 'A estação ' + data.hostname + ' demorou para responder.';
-        }
-      }, 1000);
-    }
+      // Organiza os cards e cria chips coloridos no topo
+      const cores = [
+        { nome: "🖥️ Gabinete", bg: "#dbeafe", txt: "#1d4ed8", brd: "#93c5fd", ativo: true },
+        { nome: "🖵 Monitor 1", bg: "#e0e7ff", txt: "#4338ca", brd: "#a5b4fc", ativo: true },
+        { nome: "🖵 Monitor 2", bg: "#f3e8ff", txt: "#7e22ce", brd: "#d8b4fe", ativo: false },
+        { nome: "⌨️ Teclado/Mouse", bg: "#dcfce7", txt: "#15803d", brd: "#86efac", ativo: true },
+        { nome: "🎧 Headset", bg: "#fef3c7", txt: "#b45309", brd: "#fcd34d", ativo: false },
+        { nome: "📱 Celular", bg: "#ffe4e6", txt: "#be123c", brd: "#fda4af", ativo: false }
+      ];
+      const cards = Array.from(inner.querySelectorAll("div")).filter(d => d.querySelectorAll("input[type=file]").length === 1);
+      if (cards.length > 0) {
+        const barra = document.createElement("div");
+        barra.className = "cst-chips-barra";
+        const grade = document.createElement("div");
+        grade.className = "cst-grade-cards";
+        cards[0].parentNode.insertBefore(barra, cards[0]);
+        cards[0].parentNode.insertBefore(grade, cards[0]);
 
-    sincronizarMinhaEstacao();
-    setInterval(sincronizarMinhaEstacao, 5000);
-  </script>
+        cards.forEach((card, i) => {
+          const cfg = cores[i] || { nome: "Item " + (i+1), bg: "#e2e8f0", txt: "#334155", brd: "#cbd5e1", ativo: true };
+          card.className = "cst-card-claro";
+          card.style.display = cfg.ativo ? "block" : "none";
+          grade.appendChild(card);
+
+          const fi = card.querySelector("input[type=file]");
+          if (fi) {
+            fi.style.display = "none";
+            const bf = document.createElement("button");
+            bf.type = "button";
+            bf.className = "cst-btn-foto";
+            bf.innerHTML = "📷 Tirar Foto / Anexar";
+            bf.onclick = () => fi.click();
+            fi.onchange = () => {
+              if (fi.files && fi.files[0]) {
+                bf.classList.add("ok");
+                bf.innerHTML = "✅ " + fi.files[0].name;
+              }
+            };
+            fi.parentNode.insertBefore(bf, fi);
+          }
+
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "cst-chip" + (cfg.ativo ? " ativo" : "");
+          chip.style.cssText = `background:${cfg.bg};color:${cfg.txt};border-color:${cfg.brd};`;
+          chip.innerHTML = (cfg.ativo ? "✓ " : "+ ") + cfg.nome;
+          chip.onclick = () => {
+            const on = card.style.display !== "none";
+            card.style.display = on ? "none" : "block";
+            chip.classList.toggle("ativo", !on);
+            chip.innerHTML = (!on ? "✓ " : "+ ") + cfg.nome;
+          };
+          barra.appendChild(chip);
+        });
+      }
+
+      // Coloca botão Cancelar ao lado de qualquer botão Salvar/Adicionar do modal
+      const btnSalvar = Array.from(inner.querySelectorAll("button")).find(b => /Adicionar Ativo|Salvar/i.test(b.textContent));
+      if (btnSalvar) {
+        const rodape = document.createElement("div");
+        rodape.className = "cst-rodape-modal";
+        const btnCancel = document.createElement("button");
+        btnCancel.type = "button";
+        btnCancel.className = "cst-btn-sair";
+        btnCancel.innerText = "Cancelar";
+        btnCancel.onclick = fecharModalInv;
+        btnSalvar.parentNode.insertBefore(rodape, btnSalvar);
+        rodape.appendChild(btnCancel);
+        rodape.appendChild(btnSalvar);
+      }
+    }
+  }
+
+  // 2. Remove linhas falsas ("Exemplo 1", "Exemplo 2") da tabela de Ativos Cadastrados
+  document.querySelectorAll("tr").forEach(tr => {
+    if (tr.textContent.includes("Exemplo 1") || tr.textContent.includes("Exemplo 2")) {
+      tr.remove();
+    }
+  });
+  document.querySelectorAll("table").forEach(tb => {
+    const tbody = tb.querySelector("tbody");
+    if (tbody && tbody.children.length === 0 && tb.textContent.includes("GABINETE")) {
+      tbody.innerHTML = "<tr><td colspan=\"7\" style=\"text-align:center;padding:28px;color:#94a3b8;\">Nenhum ativo cadastrado ainda. Clique em <b>+ Adicionar Inventário</b> acima para registrar o primeiro kit.</td></tr>";
+    }
+  });
+});
+
+// 3. Atualiza em tempo real o monitoramento real de ramais e chamadas do net2phone
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/net2phone/painel");
+    const d = await r.json();
+    const tit = Array.from(document.querySelectorAll("*")).find(el => el.textContent && el.textContent.includes("Usuários em Atendimento ao Vivo (net2phone)") && el.children.length === 0);
+    if (tit) {
+      const card = tit.closest("div");
+      const tbody = card ? card.querySelector("tbody") : null;
+      if (tbody) {
+        const linhas = [];
+        d.chamadasAtivas.forEach(c => {
+          linhas.push(`<tr style="background:rgba(34,197,94,0.08);"><td><b>${c.ramal}</b></td><td>${c.destino}</td><td><span style="color:#38bdf8;">${c.direcao}</span></td><td><span style="color:#4ade80;font-weight:bold;">● ${c.status}</span></td></tr>`);
+        });
+        d.ramaisOnline.forEach(rm => {
+          if (!d.chamadasAtivas.some(c => c.ramal.includes(rm.maquina))) {
+            linhas.push(`<tr><td><b>${rm.usuario}</b> <small style="color:#64748b;">(${rm.maquina})</small></td><td>${rm.ip}</td><td>Softphone RCon</td><td><span style="color:#94a3b8;">● ${rm.status}</span></td></tr>`);
+          }
+        });
+        tbody.innerHTML = linhas.length > 0
+          ? linhas.join("")
+          : "<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:18px;\">Nenhum ramal com Receptionist Console ativo detectado no momento</td></tr>";
+      }
+    }
+  } catch (e) {}
+}, 3000);
+</script>
 </body>
 </html>
-EOF

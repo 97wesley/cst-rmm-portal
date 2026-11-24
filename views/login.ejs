@@ -43,5 +43,347 @@
             <button type="submit" class="btn-submit">Entrar no Portal</button>
         </form>
     </div>
+
+<style>
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.82) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 32px 16px !important;
+    overflow-y: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 780px !important;
+    margin: 20px auto !important;
+    background: #0f172a !important;
+    border: 1px solid #334155 !important;
+    border-radius: 14px !important;
+    padding: 22px !important;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.75) !important;
+  }
+  #boxNovoInventario input[type="text"] {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+  }
+  #boxNovoInventario input[type="file"] {
+    font-size: 11px !important;
+    padding: 4px !important;
+  }
+  .badge-ou {
+    display: inline-block;
+    background: rgba(14, 165, 233, 0.14);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+</style>
+<script>
+// Formata qualquer DN bruto do AD que já esteja na tabela ou venha via sync (ex: OU=TI,OU=COMPUTADORES,OU=GCST -> TI • GCST)
+function limparTextoOU() {
+  document.querySelectorAll("td").forEach(td => {
+    const txt = td.textContent.trim();
+    if (txt.includes("DC=CST") || txt.includes("OU=")) {
+      const matches = [...txt.matchAll(/OU=([^,]+)/g)].map(m => m[1]).filter(v => v !== "COMPUTADORES" && v !== "EMPRESAS");
+      const limpo = matches.length >= 2 ? (matches[0] + " • " + matches[1]) : (matches[0] || "CST");
+      td.innerHTML = "<span class=\"badge-ou\">" + limpo + "</span>";
+    } else if (txt === "REDE") {
+      td.innerHTML = "<span class=\"badge-ou\" style=\"color:#a78bfa;border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.12);\">INFRA / REDE</span>";
+    }
+  });
+}
+new MutationObserver(limparTextoOU).observe(document.body, { childList: true, subtree: true });
+document.addEventListener("DOMContentLoaded", limparTextoOU);
+</script>
+
+
+
+<!-- cst-ui-definitiva -->
+<style>
+  /* Modal Claro Limpo e Alinhado */
+  #boxNovoInventario {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(2, 6, 23, 0.78) !important;
+    backdrop-filter: blur(6px) !important;
+    z-index: 9999 !important;
+    padding: 20px !important;
+    overflow-y: auto !important;
+  }
+  #boxNovoInventario > div {
+    max-width: 760px !important;
+    margin: 20px auto !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-radius: 16px !important;
+    padding: 24px 28px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  }
+  /* Força todos os inputs dentro do modal a serem claros */
+  #boxNovoInventario input, #boxNovoInventario select {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+    font-size: 13.5px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-bottom: 8px !important;
+  }
+  #boxNovoInventario input::placeholder {
+    color: #94a3b8 !important;
+  }
+  #boxNovoInventario input:focus {
+    background: #ffffff !important;
+    border-color: #0ea5e9 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15) !important;
+  }
+  .cst-topo-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .cst-chips-barra {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .cst-chip {
+    border: 1.5px solid transparent;
+    padding: 6px 13px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cst-chip:not(.ativo) {
+    background: #ffffff !important;
+    color: #64748b !important;
+    border-color: #cbd5e1 !important;
+  }
+  .cst-grade-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .cst-card-claro {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 14px !important;
+  }
+  .cst-card-claro h4, .cst-card-claro strong, .cst-card-claro div:first-child {
+    color: #0369a1 !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+  }
+  .cst-btn-foto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1.5px dashed #38bdf8;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .cst-btn-foto.ok {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1.5px solid #4ade80;
+  }
+  .cst-rodape-modal {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+  }
+  .cst-btn-sair {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .cst-btn-sair:hover { background: #e2e8f0; color: #0f172a; }
+</style>
+<script>
+function fecharModalInv() {
+  const b = document.getElementById("boxNovoInventario");
+  if (b) b.style.display = "none";
+  const btn = document.getElementById("btnToggleInv") || document.getElementById("btnToggleInventario");
+  if (btn) btn.innerHTML = "+ Adicionar Inventário";
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") fecharModalInv(); });
+
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. Organiza o Modal Claro de Inventário
+  const modal = document.getElementById("boxNovoInventario");
+  if (modal) {
+    modal.addEventListener("click", e => { if (e.target === modal) fecharModalInv(); });
+    const inner = modal.querySelector(":scope > div");
+    if (inner) {
+      const h = document.createElement("div");
+      h.style.cssText = "display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:14px;";
+      h.innerHTML = `
+        <div>
+          <h3 style="margin:0;font-size:18px;color:#0f172a;">📦 Novo Registro de Inventário</h3>
+          <span style="font-size:12px;color:#64748b;">Escolha os equipamentos do colaborador e anexe a foto</span>
+        </div>
+        <button type="button" onclick="fecharModalInv()" style="background:#f1f5f9;border:none;width:32px;height:32px;border-radius:50%;font-size:16px;font-weight:bold;color:#475569;cursor:pointer;">✕</button>
+      `;
+      const oldH = inner.querySelector("h2,h3,h4");
+      if (oldH) oldH.replaceWith(h); else inner.prepend(h);
+
+      // Organiza os 2 inputs principais lado a lado
+      const topInputs = Array.from(inner.querySelectorAll("input[type=text]")).slice(0, 2);
+      if (topInputs.length === 2) {
+        const wrapTop = document.createElement("div");
+        wrapTop.className = "cst-topo-inputs";
+        topInputs[0].parentNode.insertBefore(wrapTop, topInputs[0]);
+        wrapTop.appendChild(topInputs[0]);
+        wrapTop.appendChild(topInputs[1]);
+      }
+
+      // Organiza os cards e cria chips coloridos no topo
+      const cores = [
+        { nome: "🖥️ Gabinete", bg: "#dbeafe", txt: "#1d4ed8", brd: "#93c5fd", ativo: true },
+        { nome: "🖵 Monitor 1", bg: "#e0e7ff", txt: "#4338ca", brd: "#a5b4fc", ativo: true },
+        { nome: "🖵 Monitor 2", bg: "#f3e8ff", txt: "#7e22ce", brd: "#d8b4fe", ativo: false },
+        { nome: "⌨️ Teclado/Mouse", bg: "#dcfce7", txt: "#15803d", brd: "#86efac", ativo: true },
+        { nome: "🎧 Headset", bg: "#fef3c7", txt: "#b45309", brd: "#fcd34d", ativo: false },
+        { nome: "📱 Celular", bg: "#ffe4e6", txt: "#be123c", brd: "#fda4af", ativo: false }
+      ];
+      const cards = Array.from(inner.querySelectorAll("div")).filter(d => d.querySelectorAll("input[type=file]").length === 1);
+      if (cards.length > 0) {
+        const barra = document.createElement("div");
+        barra.className = "cst-chips-barra";
+        const grade = document.createElement("div");
+        grade.className = "cst-grade-cards";
+        cards[0].parentNode.insertBefore(barra, cards[0]);
+        cards[0].parentNode.insertBefore(grade, cards[0]);
+
+        cards.forEach((card, i) => {
+          const cfg = cores[i] || { nome: "Item " + (i+1), bg: "#e2e8f0", txt: "#334155", brd: "#cbd5e1", ativo: true };
+          card.className = "cst-card-claro";
+          card.style.display = cfg.ativo ? "block" : "none";
+          grade.appendChild(card);
+
+          const fi = card.querySelector("input[type=file]");
+          if (fi) {
+            fi.style.display = "none";
+            const bf = document.createElement("button");
+            bf.type = "button";
+            bf.className = "cst-btn-foto";
+            bf.innerHTML = "📷 Tirar Foto / Anexar";
+            bf.onclick = () => fi.click();
+            fi.onchange = () => {
+              if (fi.files && fi.files[0]) {
+                bf.classList.add("ok");
+                bf.innerHTML = "✅ " + fi.files[0].name;
+              }
+            };
+            fi.parentNode.insertBefore(bf, fi);
+          }
+
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = "cst-chip" + (cfg.ativo ? " ativo" : "");
+          chip.style.cssText = `background:${cfg.bg};color:${cfg.txt};border-color:${cfg.brd};`;
+          chip.innerHTML = (cfg.ativo ? "✓ " : "+ ") + cfg.nome;
+          chip.onclick = () => {
+            const on = card.style.display !== "none";
+            card.style.display = on ? "none" : "block";
+            chip.classList.toggle("ativo", !on);
+            chip.innerHTML = (!on ? "✓ " : "+ ") + cfg.nome;
+          };
+          barra.appendChild(chip);
+        });
+      }
+
+      // Coloca botão Cancelar ao lado de qualquer botão Salvar/Adicionar do modal
+      const btnSalvar = Array.from(inner.querySelectorAll("button")).find(b => /Adicionar Ativo|Salvar/i.test(b.textContent));
+      if (btnSalvar) {
+        const rodape = document.createElement("div");
+        rodape.className = "cst-rodape-modal";
+        const btnCancel = document.createElement("button");
+        btnCancel.type = "button";
+        btnCancel.className = "cst-btn-sair";
+        btnCancel.innerText = "Cancelar";
+        btnCancel.onclick = fecharModalInv;
+        btnSalvar.parentNode.insertBefore(rodape, btnSalvar);
+        rodape.appendChild(btnCancel);
+        rodape.appendChild(btnSalvar);
+      }
+    }
+  }
+
+  // 2. Remove linhas falsas ("Exemplo 1", "Exemplo 2") da tabela de Ativos Cadastrados
+  document.querySelectorAll("tr").forEach(tr => {
+    if (tr.textContent.includes("Exemplo 1") || tr.textContent.includes("Exemplo 2")) {
+      tr.remove();
+    }
+  });
+  document.querySelectorAll("table").forEach(tb => {
+    const tbody = tb.querySelector("tbody");
+    if (tbody && tbody.children.length === 0 && tb.textContent.includes("GABINETE")) {
+      tbody.innerHTML = "<tr><td colspan=\"7\" style=\"text-align:center;padding:28px;color:#94a3b8;\">Nenhum ativo cadastrado ainda. Clique em <b>+ Adicionar Inventário</b> acima para registrar o primeiro kit.</td></tr>";
+    }
+  });
+});
+
+// 3. Atualiza em tempo real o monitoramento real de ramais e chamadas do net2phone
+setInterval(async () => {
+  try {
+    const r = await fetch("/api/net2phone/painel");
+    const d = await r.json();
+    const tit = Array.from(document.querySelectorAll("*")).find(el => el.textContent && el.textContent.includes("Usuários em Atendimento ao Vivo (net2phone)") && el.children.length === 0);
+    if (tit) {
+      const card = tit.closest("div");
+      const tbody = card ? card.querySelector("tbody") : null;
+      if (tbody) {
+        const linhas = [];
+        d.chamadasAtivas.forEach(c => {
+          linhas.push(`<tr style="background:rgba(34,197,94,0.08);"><td><b>${c.ramal}</b></td><td>${c.destino}</td><td><span style="color:#38bdf8;">${c.direcao}</span></td><td><span style="color:#4ade80;font-weight:bold;">● ${c.status}</span></td></tr>`);
+        });
+        d.ramaisOnline.forEach(rm => {
+          if (!d.chamadasAtivas.some(c => c.ramal.includes(rm.maquina))) {
+            linhas.push(`<tr><td><b>${rm.usuario}</b> <small style="color:#64748b;">(${rm.maquina})</small></td><td>${rm.ip}</td><td>Softphone RCon</td><td><span style="color:#94a3b8;">● ${rm.status}</span></td></tr>`);
+          }
+        });
+        tbody.innerHTML = linhas.length > 0
+          ? linhas.join("")
+          : "<tr><td colspan=\"4\" style=\"text-align:center;color:#94a3b8;padding:18px;\">Nenhum ramal com Receptionist Console ativo detectado no momento</td></tr>";
+      }
+    }
+  } catch (e) {}
+}, 3000);
+</script>
 </body>
 </html>

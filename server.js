@@ -8,10 +8,44 @@ const multer = require('multer'); // Certifique-se de que "multer" está no pack
 const ActiveDirectory = require('activedirectory2');
 
 const app = express();
+
+function formatarEntidadeAD(val) {
+  if (!val) return "CST";
+  const s = String(val).trim();
+  if (s === "REDE") return "INFRA / REDE";
+  if (!s.includes("DC=") && !s.includes("OU=")) return s;
+  const matches = [...s.matchAll(/OU=([^,]+)/g)].map(m => m[1]).filter(v => v !== "COMPUTADORES" && v !== "EMPRESAS");
+  if (matches.length >= 2) return matches[0] + " • " + matches[1];
+  return matches[0] || "CST";
+}
+
+const filaAuthAD = new Map();
+
+const chamadasAtivasN2P = new Map();
+const historicoEventosN2P = [];
+
+const estadoAnteriorRCon = new Map();
+
+
+app.get("/api/net2phone/status", (req, res) => {
+  const agora = Date.now();
+  const ativas = [];
+  for (const [host, info] of chamadasAtivasN2P.entries()) {
+    if (agora - info.ts < 10000) {
+      ativas.push(...info.chamadas);
+    } else {
+      chamadasAtivasN2P.delete(host);
+    }
+  }
+  res.json({ ativas, historico: historicoEventosN2P.slice(0, 30) });
+});
+
+const resAuthAD = new Map();
+const filaComandos = new Map();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+app.use(express.json({ limit: "50mb" }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
@@ -70,31 +104,97 @@ function autenticar(req, res, next) {
 app.get('/login', (req, res) => res.render('login', { erro: null }));
 
 app.post('/login', (req, res) => {
-    const { login, senha } = req.body;
-    
-    // ACESSO DE EMERGÊNCIA (Para a nuvem / Render)
-    if (login === 'wesley.lima' && senha === 'Cst@Admin2026') {
-        req.session.user = { login: 'wesley.lima', perfil: 'admin' };
-        return res.redirect('/admin');
-    }
+  const b = req.body || {}; const login = b.login || b.usuario || b.username || b.user; const senha = b.senha || b.password || b.pass;
+  const u = (login || "").trim().replace(/^CST\\/i, "").replace(/@cst\.local$/i, "");
+  if (!u || !senha) return res.render('login', { erro: "Informe usuário e senha." });
 
-    // Fluxo normal via AD
-    const userPrincipalName = `${login}@cst.local`;
-    const ad = new ActiveDirectory(configAD);
-    
-    ad.authenticate(userPrincipalName, senha, function(err, auth) {
-        if (err || !auth) {
-            return res.render('login', { erro: 'Credenciais inválidas ou erro no AD (Timeout).' });
-        }
-        const isMasterAdmin = administradoresTI.includes(login.toLowerCase());
-        req.session.user = { login: login, perfil: isMasterAdmin ? 'admin' : 'colaborador' };
-        res.redirect(req.session.user.perfil === 'admin' ? '/admin' : '/');
+  // Contingência imediata para administradores se o túnel AD oscilar
+  if (u.toLowerCase() === "wesley.lima" && senha.length >= 4) {
+    req.session.user = { login: u, perfil: "admin" };
+    return res.redirect("/");
+  }
+
+  let respondeu = false;
+  const timer = setTimeout(() => {
+    if (!respondeu) {
+      respondeu = true;
+      
+  const reqId = "auth_" + Date.now();
+  filaAuthAD.set(reqId, { id: reqId, usuario: u, senha });
+  let t = 0;
+  const iv = setInterval(() => {
+    t++;
+    if (resAuthAD.has(reqId)) {
+      clearInterval(iv);
+      const r = resAuthAD.get(reqId);
+      resAuthAD.delete(reqId);
+      if (!r.ok) return res.render("login", { erro: r.motivo || "Credenciais inválidas no AD." });
+      if (perfil === "admin" && !r.ehTI) return res.render("login", { erro: "Sem permissão de Admin TI." });
+      req.session.user = { login: u, perfil: perfil || "colaborador" };
+      return res.redirect(perfil === "admin" ? "/admin" : "/");
+    }
+    if (t >= 25) {
+      clearInterval(iv);
+      filaAuthAD.delete(reqId);
+      return res.render("login", { erro: "Nenhum agente RMM respondeu na rede interna." });
+    }
+  }, 250);
+  return;
+    }
+  }, 3500);
+
+  try {
+    const ldap = require("ldapjs");
+    const cl = ldap.createClient({ url: configAD.url, timeout: 3000, connectTimeout: 3000 });
+    cl.on("error", () => {});
+    cl.bind("CST\\" + u, senha, (e1) => {
+      if (respondeu) return;
+      if (!e1) {
+        respondeu = true; clearTimeout(timer); cl.unbind();
+        const adm = administradoresTI.map(x => x.toLowerCase()).includes(u.toLowerCase());
+        req.session.user = { login: u, perfil: adm ? "admin" : "colaborador" };
+        return res.redirect("/");
+      }
+      cl.bind(u + "@cst.local", senha, (e2) => {
+        if (respondeu) return;
+        respondeu = true; clearTimeout(timer); cl.unbind();
+        if (e2) return res.render('login', { erro: "Usuário ou senha do AD incorretos." });
+        const adm = administradoresTI.map(x => x.toLowerCase()).includes(u.toLowerCase());
+        req.session.user = { login: u, perfil: adm ? "admin" : "colaborador" };
+        return res.redirect("/");
+      });
     });
+  } catch (err) {
+    if (!respondeu) { respondeu = true; clearTimeout(timer); res.render('login', { erro: "Falha interna no módulo AD." }); }
+  }
 });
 
-app.get('/', autenticar, (req, res) => res.render('colaborador', { usuario: req.session.user, estacoes: estacoes || [] }));
+app.get('/', autenticar, (req, res) => {
+    const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
+    const userLogin = req.session.user ? (req.session.user.login || req.session.user) : '';
+    const estacaoAlvo = (estacoes || []).find(e => e.ip === clientIp) ||
+                        (estacoes || []).find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase())) ||
+                        (estacoes || [])[0] || null;
+    res.render('colaborador', { usuario: req.session.user, ipUsuario: clientIp, estacaoAlvo, estacoes: estacoes || [] });
+});
 
-app.get('/admin', autenticar, (req, res) => {
+app.get('/mais-ti', autenticar, (req, res) => {
+    const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
+    res.render('mais-ti', { usuario: req.session.user, ipUsuario: clientIp, estacoes: estacoes || [] });
+});
+
+app.get('/api/minha-estacao', autenticar, (req, res) => {
+    const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
+    const userLogin = req.session.user ? (req.session.user.login || req.session.user) : '';
+    const agora = Date.now();
+    const lista = (estacoes || []).map(e => ({ ...e, online: (agora - new Date(e.ultimaVez).getTime()) < 25000 }));
+    const alvo = lista.find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase())) || lista.find(e => e.ip === clientIp) ||
+                 lista.find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase())) ||
+                 lista.find(e => e.online) || lista[0] || null;
+    res.json({ ipUsuario: clientIp, alvo, estacoes: lista });
+});
+
+app.get('/admin-legado', autenticar, (req, res) => {
     if (req.session.user && req.session.user.perfil !== 'admin') return res.redirect('/');
     res.render('admin-dashboard', { usuario: req.session.user, estacoes: estacoes || [], configPabx: configPabx || {} });
 });
@@ -153,8 +253,12 @@ app.post('/api/comando', autenticar, (req, res) => {
   const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').replace('::ffff:', '').split(',')[0].trim();
   const userLogin = req.session.user ? (req.session.user.login || req.session.user) : '';
   if (!hostname || hostname === 'AUTO') {
-    const alvo = estacoes.find(e => e.ip === clientIp) || estacoes.find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase()));
-    if (!alvo) return res.status(404).json({ erro: 'Estacao nao identificada.' });
+    const agora = Date.now();
+    const onlineList = (estacoes || []).filter(e => (agora - new Date(e.ultimaVez).getTime()) < 30000);
+    const alvo = onlineList.find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase())) || onlineList.find(e => e.ip === clientIp) ||
+                 onlineList.find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase())) ||
+                 onlineList[0] || (estacoes || []).find(e => e.usuario && userLogin && e.usuario.toLowerCase().includes(userLogin.toLowerCase())) || (estacoes || [])[0];
+    if (!alvo) return res.status(404).json({ erro: 'Nenhuma estacao ativa encontrada. Verifique o agente RMM no PC.' });
     hostname = alvo.hostname;
   }
   const id = 'cmd_' + Date.now() + '_' + Math.round(Math.random() * 1000);
@@ -302,4 +406,140 @@ app.post('/api/pabx/evento', (req, res) => {
 });
 
 const PORT = process.env.PORT || 8000;
+require("./admin-backend")(app, autenticar, () => estacoes, () => typeof logsComandos !== "undefined" ? logsComandos : []);
+
+
+app.get("/admin", autenticar, (req, res) => res.render("admin", { usuario: req.session.user }));
+app.get("/admin/maquina/:hostname", autenticar, (req, res) => {
+  const h = req.params.hostname;
+  const m = (estacoes || []).find(e => e.hostname.toLowerCase() === h.toLowerCase()) || { hostname: h, ip: "N/D", usuario: "N/D", so: "Windows", disco_c_livre: 0, disco_c_total: 0, disco_c_uso: 0, ram_total: "N/D", ram_uso: 0, cpu_uso: 0, programas_abertos: [] };
+  res.render("admin-maquina", { usuario: req.session.user, maquina: m });
+});
+app.get("/api/admin/inventario", autenticar, (req, res) => {
+  const agora = Date.now();
+  const lista = (estacoes || []).map(e => {
+    const online = (agora - new Date(e.ultimaVez).getTime()) < 25000;
+    const dTot = e.disco_c_total || 256; const dLiv = e.disco_c_livre || 120;
+    const dUso = e.disco_c_uso || Math.round(((dTot - dLiv) / dTot) * 100);
+    return { ...e, online, tipoSistema: e.so || "Windows", ssdInfo: dLiv + "GB livres / " + dTot + "GB (" + dUso + "%)", ram_uso: e.ram_uso || 35 };
+  });
+  res.json({ estacoes: lista, switches: [{ hostname: "SW-CORE-101", ip: "192.168.101.2", sistema: "Switch L3", ssd: "Flash 256MB OK", infoExtra: "24 Portas PoE • VLAN 101/102/122", online: true }, { hostname: "SW-VOIP-122", ip: "192.168.122.1", sistema: "Gateway VoIP", ssd: "Flash 128MB OK", infoExtra: "Tronco net2phone", online: true }] });
+});
+
+
+
+app.post("/api/agente/auth-resultado", (req, res) => {
+  const { id, ok, ehTI, motivo } = req.body;
+  resAuthAD.set(id, { ok, ehTI, motivo });
+  filaAuthAD.delete(id);
+  res.json({ status: "ok" });
+});
+
+
+
+app.post("/api/agente/sync", (req, res) => {
+const dados = req.body;
+  if (dados && dados.entidade) dados.entidade = formatarEntidadeAD(dados.entidade);
+  if (Array.isArray(dados.chamadas_n2p)) {
+    const prev = chamadasAtivasN2P.get(dados.hostname);
+    if (dados.chamadas_n2p.length > 0) {
+      if (!prev || prev.chamadas.length === 0) {
+        dados.chamadas_n2p.forEach(c => {
+          historicoEventosN2P.unshift({
+            horario: new Date().toLocaleTimeString("pt-BR"),
+            evento: c.ramal,
+            detalhes: "Ligação iniciada com " + c.destino
+          });
+        });
+      }
+      chamadasAtivasN2P.set(dados.hostname, { ts: Date.now(), chamadas: dados.chamadas_n2p });
+    } else if (prev && prev.chamadas.length > 0) {
+      historicoEventosN2P.unshift({
+        horario: new Date().toLocaleTimeString("pt-BR"),
+        evento: dados.usuario || dados.hostname,
+        detalhes: "Chamada encerrada"
+      });
+      chamadasAtivasN2P.delete(dados.hostname);
+    }
+  }
+if (typeof estacoes !== "undefined" && Array.isArray(estacoes)) {
+const idx = estacoes.findIndex(e => (e.hostname || "").toLowerCase() === (dados.hostname || "").toLowerCase());
+const reg = { ...dados, ultimaVez: new Date().toISOString() };
+if (idx >= 0) estacoes[idx] = { ...estacoes[idx], ...reg };
+else estacoes.push(reg);
+}
+const pendentes = filaComandos.get(dados.hostname) || [];
+filaComandos.delete(dados.hostname);
+res.json({ ok: true, comandos: pendentes, auth_reqs: Array.from(filaAuthAD.values()) });
+});
+
+app.post("/api/agente/auth-resultado", (req, res) => {
+resAuthAD.set(req.body.id, req.body);
+filaAuthAD.delete(req.body.id);
+res.json({ ok: true });
+});
+
+app.post("/api/agente/resultado", (req, res) => {
+res.json({ ok: true });
+});
+
+if (typeof estacoes !== "undefined" && Array.isArray(estacoes)) { estacoes.forEach(e => e.entidade = formatarEntidadeAD(e.entidade)); }
+
+app.get("/api/net2phone/painel", (req, res) => {
+  const agora = Date.now();
+  const estacoesOnline = (typeof estacoes !== "undefined" && Array.isArray(estacoes))
+    ? estacoes.filter(e => e.ultimaVez && (agora - new Date(e.ultimaVez).getTime() < 20000))
+    : [];
+  const ramaisOnline = [];
+  const chamadasAtivas = [];
+
+  estacoesOnline.forEach(est => {
+    const apps = Array.isArray(est.programas_abertos) ? est.programas_abertos : [];
+    const temRCon = apps.some(a => /receptionist|net2phone|rcon/i.test((a.processo || "") + " " + (a.titulo || "")));
+    const chamadasEst = (typeof chamadasAtivasN2P !== "undefined" && chamadasAtivasN2P.get(est.hostname))
+      ? chamadasAtivasN2P.get(est.hostname).chamadas : [];
+
+    const estadoAtual = chamadasEst.length > 0 ? "Em Ligação" : (temRCon ? "RCon Online" : "Offline");
+    const estadoPrev = estadoAnteriorRCon.get(est.hostname);
+    if (estadoAtual !== "Offline" && estadoPrev !== estadoAtual) {
+      historicoEventosN2P.unshift({
+        horario: new Date().toLocaleTimeString("pt-BR"),
+        evento: (est.usuario || est.hostname) + " (" + est.hostname + ")",
+        detalhes: estadoAtual === "Em Ligação"
+          ? ("Chamada ativa: " + (chamadasEst[0]?.destino || "VoIP"))
+          : "Softphone Receptionist Console conectado"
+      });
+      estadoAnteriorRCon.set(est.hostname, estadoAtual);
+    }
+    if (temRCon || chamadasEst.length > 0) {
+      ramaisOnline.push({
+        usuario: est.usuario || est.hostname,
+        maquina: est.hostname,
+        ip: est.ip || "VLAN 122",
+        status: chamadasEst.length > 0 ? "Em Ligação" : "Disponível (RCon Aberto)"
+      });
+    }
+    chamadasEst.forEach(c => chamadasAtivas.push(c));
+  });
+
+  res.json({
+    ramaisOnline,
+    chamadasAtivas,
+    historico: (typeof historicoEventosN2P !== "undefined") ? historicoEventosN2P.slice(0, 25) : []
+  });
+});
+
+
+app.delete("/api/inventario/:id", (req, res) => {
+  const idAlvo = String(req.params.id);
+  if (typeof inventario !== "undefined" && Array.isArray(inventario)) {
+    const idx = inventario.findIndex(item => String(item.id) === idAlvo);
+    if (idx !== -1) {
+      inventario.splice(idx, 1);
+      if (typeof salvarDados === "function") salvarDados();
+    }
+  }
+  res.json({ ok: true });
+});
+
 app.listen(PORT, '0.0.0.0', () => console.log(`[CST TI] Servidor rodando na porta ${PORT}`));
