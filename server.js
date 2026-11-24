@@ -1,3 +1,4 @@
+process.env.TZ = 'America/Sao_Paulo';
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
