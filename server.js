@@ -608,6 +608,45 @@ app.delete('/api/pabx/ramais/:ramal', apenasTI, (req, res) => {
   res.json({ ok: true });
 });
 
+// Ponte unificada para a tela individual da máquina (/admin/maquina/:hostname)
+function enfileirarComandoUnificado(req, res) {
+  const b = req.body || {};
+  const hostname = b.hostname || b.target || b.maquina || b.host;
+  const acao = b.acao || b.comando || b.action || b.cmd;
+  if (!hostname || !acao) {
+    return res.status(400).json({ ok: false, erro: 'Hostname ou ação ausente.' });
+  }
+  const hostKey = String(hostname).trim().toUpperCase();
+  const id = 'cmd_' + Date.now() + '_' + Math.round(Math.random() * 1000);
+  if (!comandosPendentes[hostKey]) comandosPendentes[hostKey] = [];
+  comandosPendentes[hostKey].push({ id, acao });
+  resultadosComandos[id] = {
+    id,
+    hostname: hostKey,
+    acao,
+    concluido: false,
+    sucesso: false,
+    saida: 'Aguardando agente...'
+  };
+  return res.json({ ok: true, status: 'ok', id, cmdId: id, hostname: hostKey });
+}
+
+function consultarResultadoUnificado(req, res) {
+  const id = req.params.id;
+  const item = resultadosComandos[id];
+  if (!item) return res.status(404).json({ ok: false, erro: 'Comando não encontrado' });
+  return res.json({
+    ...item,
+    status: item.concluido ? 'concluido' : 'pendente',
+    resultado: item.saida
+  });
+}
+
+app.post('/api/admin/comando', apenasTI, enfileirarComandoUnificado);
+app.post('/api/admin/executar', apenasTI, enfileirarComandoUnificado);
+app.get('/api/admin/comando/:id', apenasTI, consultarResultadoUnificado);
+app.get('/api/admin/resultado/:id', apenasTI, consultarResultadoUnificado);
+
 const PORT = process.env.PORT || 8000;
 if (fs.existsSync(path.join(__dirname, 'admin-backend.js'))) {
   require('./admin-backend')(app, apenasTI, () => estacoes, () => []);
