@@ -325,6 +325,10 @@ app.post('/api/agente/sync', (req, res) => {
 app.post("/api/agente/auth-resultado", (req, res) => {
   const { id, ok, ehTI, motivo } = req.body || {};
   if (id) {
+    // Ignora exceção de agente antigo rodando ValidateCredentials
+    if (!ok && String(motivo || '').includes('ValidateCredentials')) {
+      return res.json({ ok: true, ignored: true });
+    }
     resAuthAD.set(id, { ok: Boolean(ok), ehTI: Boolean(ehTI), motivo });
     filaAuthAD.delete(id);
   }
